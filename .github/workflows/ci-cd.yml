@@ -60,5 +60,5 @@ jobs:
           context: .
           push: true
           tags: |
-            mihaisgit/jobmatcher-server:latest
-            mihaisgit/jobmatcher-server:${{ github.sha }}
+            ingsuciumihai/jobmatcher-server:latest
+            ingsuciumihai/jobmatcher-server:${{ github.sha }}
