@@ -32,10 +32,7 @@ jobs:
           restore-keys: gradle-
 
       - name: Build with Gradle
-        run: ./gradlew clean build --no-daemon
-
-      - name: Run tests
-        run: ./gradlew test --no-daemon
+        run: ./gradlew clean build --no-daemon --continue
 
   docker:
     needs: build
