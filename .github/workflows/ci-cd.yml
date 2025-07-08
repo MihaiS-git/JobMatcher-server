@@ -32,6 +32,21 @@ jobs:
           restore-keys: gradle-
 
       - name: Build with Gradle
+        env:
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          SPRING_SECURITY_USER_NAME: ${{ secrets.SPRING_SECURITY_USER_NAME }}
+          SPRING_SECURITY_USER_PASSWORD: ${{ secrets.SPRING_SECURITY_USER_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_SCOPE: ${{ secrets.GOOGLE_SCOPE }}
+          GOOGLE_AUTH_URI: ${{ secrets.GOOGLE_AUTH_URI }}
+          GOOGLE_TOKEN_URI: ${{ secrets.GOOGLE_TOKEN_URI }}
+          GOOGLE_USER_INFO_URI: ${{ secrets.GOOGLE_USER_INFO_URI }}
+          GOOGLE_USER_NAME_ATTRIBUTE: ${{ secrets.GOOGLE_USER_NAME_ATTRIBUTE }}
+          FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
         run: ./gradlew clean build --no-daemon --continue
 
   docker:
