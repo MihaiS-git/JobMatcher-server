@@ -8,5 +8,5 @@ import lombok.Getter;
 public class AuthResponse {
     private String token;
     private String refreshToken;
-    private UserDTO user;
+    private AuthUserDTO user;
 }

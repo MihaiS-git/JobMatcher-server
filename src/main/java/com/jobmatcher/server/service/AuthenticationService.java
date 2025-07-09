@@ -5,14 +5,13 @@ import com.jobmatcher.server.domain.Role;
 import com.jobmatcher.server.domain.User;
 import com.jobmatcher.server.exception.EmailAlreadyExistsException;
 import com.jobmatcher.server.exception.InvalidAuthException;
+import com.jobmatcher.server.mapper.UserMapper;
 import com.jobmatcher.server.model.AuthResponse;
 import com.jobmatcher.server.model.AuthenticationRequest;
 import com.jobmatcher.server.model.RegisterRequest;
-import com.jobmatcher.server.model.UserDTO;
 import com.jobmatcher.server.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,19 +24,21 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final IRefreshTokenService refreshTokenService;
     private final IUserService userService;
+    private final UserMapper userMapper;
 
     public AuthenticationService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             IRefreshTokenService refreshTokenService,
-            IUserService userService
+            IUserService userService, UserMapper userMapper
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.userService = userService;
+        this.userMapper = userMapper;
     }
 
     public String register(RegisterRequest request) {
@@ -107,20 +108,9 @@ public class AuthenticationService {
     @Transactional
     public AuthResponse login(AuthenticationRequest request) {
         String jwtToken = authenticate(request);
-
         User user = userService.getUserByEmail(request.getEmail());
-
         refreshTokenService.deleteByUser(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-
-        UserDTO userDto = UserDTO.builder()
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .role(user.getRole().name())
-                .pictureUrl(user.getPictureUrl())
-                .build();
-
-        return new AuthResponse(jwtToken, refreshToken.getToken(), userDto);
+        return new AuthResponse(jwtToken, refreshToken.getToken(), userMapper.toDto(user));
     }
 }
