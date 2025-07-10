@@ -15,4 +15,12 @@ public class RegisterRequest {
     @NotBlank
     @Size(min=10, message="Password must be at least 10 characters")
     private String password;
+
+    @NotBlank
+    @Size(min=2, message="First name must be at least 2 characters")
+    private String firstName;
+
+    @NotBlank
+    @Size(min=2, message="Last name must be at least 2 characters")
+    private String lastName;
 }
