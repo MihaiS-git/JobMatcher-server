@@ -41,7 +41,7 @@ public class AuthenticationService {
         this.userMapper = userMapper;
     }
 
-    public String register(RegisterRequest request) {
+    public void register(RegisterRequest request) {
         log.info("User {} is attempting to register.", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -53,11 +53,12 @@ public class AuthenticationService {
             user.setEmail(request.getEmail());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setRole(Role.CUSTOMER);
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
 
             User savedUser = userRepository.save(user);
 
             log.info("User {} registered successfully with role {}", savedUser.getEmail(), savedUser.getRole());
-            return jwtService.generateToken(savedUser);
         } catch (Exception e) {
             log.error("Error during registration: {}", e.getMessage());
             throw new InvalidAuthException("An error occurred during registration: " + e.getMessage());
