@@ -38,6 +38,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
           GOOGLE_SCOPE: ${{ secrets.GOOGLE_SCOPE }}
           GOOGLE_AUTH_URI: ${{ secrets.GOOGLE_AUTH_URI }}
           GOOGLE_TOKEN_URI: ${{ secrets.GOOGLE_TOKEN_URI }}

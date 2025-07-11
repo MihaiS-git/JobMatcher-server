@@ -12,20 +12,23 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name="refresh_tokens")
-public class RefreshToken {
+public class PasswordResetToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(unique = true,nullable = false)
     private String token;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="user_id", nullable = false)
+    @JoinColumn(nullable = false, name="user_id")
     private User user;
 
     @Column(name="expiry_date", nullable = false)
     private LocalDateTime expiryDate;
+
+    public boolean isExpired(){
+        return expiryDate.isBefore(LocalDateTime.now());
+    }
 }
