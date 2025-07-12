@@ -1,5 +1,7 @@
 package com.jobmatcher.server.service;
 
+import com.google.api.client.googleapis.json.GoogleJsonError;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 
@@ -25,9 +27,18 @@ public class GmailSender {
         this.gmail = gmail;
     }
     public void sendEmail(String to, String subject, String bodyText) throws Exception {
-        MimeMessage email = createEmail(to, "me", subject, bodyText);
-        Message message = createMessageWithEmail(email);
-        gmail.users().messages().send("me", message).execute();
+            MimeMessage email = createEmail(to, "me", subject, bodyText);
+            Message message = createMessageWithEmail(email);
+        try {
+            gmail.users().messages().send("me", message).execute();
+        } catch (GoogleJsonResponseException e){
+            GoogleJsonError error = e.getDetails();
+            if(error.getCode() == 403){
+                log.error("Unable to send message: " + e.getDetails());
+            } else {
+                throw e;
+            }
+        }
     }
 
     private MimeMessage createEmail(String to, String from, String subject, String bodyText)
