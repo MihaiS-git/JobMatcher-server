@@ -15,13 +15,17 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
 
     Optional<RefreshToken> findByUserId(UUID id);
 
+    @Query("SELECT r FROM RefreshToken r JOIN FETCH r.user WHERE r.token = :token")
+    Optional<RefreshToken> findByToken(@Param("token") String token);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM RefreshToken rt WHERE rt.expiryDate < :now")
     int deleteAllExpiredSince(@Param("now") LocalDateTime now);
 
     @Modifying
-    @Transactional
     @Query("DELETE FROM RefreshToken rt WHERE rt.user.id = :userId")
     void deleteByUserId(@Param("userId") UUID userId);
+
+
 }

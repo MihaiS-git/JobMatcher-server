@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -28,11 +29,13 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final IRefreshTokenService refreshTokenService;
+    private final PasswordEncoder passwordEncoder;
 
-    public CustomOAuth2SuccessHandler(JwtService jwtService, UserRepository userRepository, IRefreshTokenService refreshTokenService) {
+    public CustomOAuth2SuccessHandler(JwtService jwtService, UserRepository userRepository, IRefreshTokenService refreshTokenService, PasswordEncoder passwordEncoder) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.refreshTokenService = refreshTokenService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -40,6 +43,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                                         Authentication authentication) throws IOException {
 
         DefaultOAuth2User oauthUser = (DefaultOAuth2User) authentication.getPrincipal();
+        System.out.println(oauthUser.toString());
 
         String email = Optional.ofNullable(oauthUser.getAttribute("email"))
                 .map(String.class::cast)
@@ -48,10 +52,10 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             User newUser = new User();
             newUser.setEmail(email);
-            newUser.setPassword(UUID.randomUUID().toString());
-            newUser.setFirstName(oauthUser.getAttribute("first_name"));
-            newUser.setFirstName(oauthUser.getAttribute("last_name"));
-            newUser.setPictureUrl(oauthUser.getAttribute("picture_url"));
+            newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            newUser.setFirstName(oauthUser.getAttribute("given_name") != null ? oauthUser.getAttribute("given_name") : "");
+            newUser.setLastName(oauthUser.getAttribute("family_name") != null ? oauthUser.getAttribute("family_name") : "");
+            newUser.setPictureUrl(oauthUser.getAttribute("picture") != null ? oauthUser.getAttribute("picture")  : "");
             newUser.setRole(Role.CUSTOMER);
             newUser.setAccountNonExpired(true);
             newUser.setAccountNonLocked(true);

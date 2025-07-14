@@ -146,16 +146,16 @@ public class AuthenticationService {
         resetToken.setExpiryDate(LocalDateTime.now().plusMinutes(30));
         tokenRepo.save(resetToken);
 
-        String resetLink = FRONTEND_BASE_URL + "reset-password?token=" + token;
+        String resetUrl = "%s/reset-password?token=%s".formatted(FRONTEND_BASE_URL, token);
 
         String body = """
                     <p>Hello,</p>
                     <p>Click the following link to reset your JobMatcher password:</p>
-                    <p><a href="https://jobmatcherclient.netlify.app/reset-password?token=%s">
+                    <p><a href="%s">
                     Reset Password</a></p>
                     <p>If you didn't request this, please ignore.</p>
                     <p>Thanks,<br/>JobMatcher Team</p>
-                """.formatted(token);
+                """.formatted(resetUrl);
 
         try {
             gmailSender.sendEmail(user.getEmail(), "JobMatcher reset password", body);

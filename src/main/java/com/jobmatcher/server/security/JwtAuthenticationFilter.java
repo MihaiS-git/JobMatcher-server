@@ -1,6 +1,9 @@
 package com.jobmatcher.server.security;
 
+import com.jobmatcher.server.domain.User;
 import com.jobmatcher.server.exception.InvalidAuthException;
+import com.jobmatcher.server.exception.ResourceNotFoundException;
+import com.jobmatcher.server.repository.UserRepository;
 import com.jobmatcher.server.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,9 +23,11 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
         this.jwtService = jwtService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -32,12 +37,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         final String requestURI = request.getRequestURI();
-        if (requestURI.startsWith("/api/auth/reset-password") || requestURI.startsWith("/api/auth/recover-password")) {
+        if (requestURI.startsWith("/api/v0/auth/reset-password") || requestURI.startsWith("/api/v0/auth/recover-password")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         final String authHeader = request.getHeader("Authorization");
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -48,13 +54,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             if (jwtService.isTokenValid(jwt)) {
                 String email = jwtService.extractUsername(jwt);
-                String role = jwtService.extractClaim(jwt, claims -> claims.get("role", String.class));
-                if (email == null || role == null || role.isEmpty()) {
-                    throw new InvalidAuthException("JWT token missing required claims");
-                }
+                User user = userRepository.findByEmail(email).orElseThrow(() -> new InvalidAuthException("USer not found"));
 
-                var authorities = AuthorityUtils.createAuthorityList("ROLE_" + role);
-                var authToken = new UsernamePasswordAuthenticationToken(email, null, authorities);
+                var authorities = AuthorityUtils.createAuthorityList("ROLE_" + user.getRole().name());
+
+                var authToken = new UsernamePasswordAuthenticationToken(user, null, authorities);
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             } else {

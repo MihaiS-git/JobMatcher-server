@@ -62,7 +62,13 @@ public class SecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v0/auth/**").permitAll()
+                        .requestMatchers(
+                                "/api/v0/auth/register",
+                                "/api/v0/auth/login",
+                                "/api/v0/auth/recover-password",
+                                "/api/v0/auth/validate-reset-token",
+                                "/api/v0/auth/reset-password"
+                        ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(customOAuth2SuccessHandler)
