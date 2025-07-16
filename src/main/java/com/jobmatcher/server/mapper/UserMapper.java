@@ -13,12 +13,12 @@ public class UserMapper {
         }
 
         return AuthUserDTO.builder()
-                .id(user.getId())
+                .id(user.getId() != null ? user.getId() : null)
                 .email(user.getEmail())
+                .firstName(user.getFirstName() != null ? user.getFirstName() : "unknown")
+                .lastName(user.getLastName() != null ? user.getLastName() : "unknown")
                 .role(user.getRole().name())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .pictureUrl(user.getPictureUrl())
+                .pictureUrl(user.getPictureUrl() != null ? user.getPictureUrl() : "unknown")
                 .build();
     }
 }

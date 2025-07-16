@@ -3,9 +3,6 @@ package com.jobmatcher.server.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -15,7 +12,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @Table(name="addresses")
-public class Address {
+public class Address extends Auditable{
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -35,21 +32,4 @@ public class Address {
 
     @Column(nullable = false)
     private String country;
-
-    @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt;
-
-    @Column(name = "last_update", nullable = false)
-    private OffsetDateTime lastUpdate;
-
-
-    @PrePersist
-    @PreUpdate
-    private void updateTimeStamps(){
-        OffsetDateTime now = OffsetDateTime.now();
-        if (createdAt == null) {
-            createdAt = now;
-        }
-        lastUpdate = now;
-    }
 }

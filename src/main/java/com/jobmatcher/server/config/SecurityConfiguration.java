@@ -3,6 +3,7 @@ package com.jobmatcher.server.config;
 import com.jobmatcher.server.security.CustomOAuth2FailureHandler;
 import com.jobmatcher.server.security.CustomOAuth2SuccessHandler;
 import com.jobmatcher.server.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -20,10 +21,22 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
+import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfiguration {
+
+    @Value("${frontend.url.prod}")
+    private String FRONTEND_URL_PROD;
+
+    @Value("${frontend.url.dev}")
+    private String FRONTEND_URL_DEV;
+
+    @Value("${frontend.url.built}")
+    private String FRONTEND_URL_BUILT;
+
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
@@ -43,9 +56,9 @@ public class SecurityConfiguration {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",
-                "http://localhost:4173",
-                "https://jobmatcherclient.netlify.app"
+                FRONTEND_URL_PROD,
+                FRONTEND_URL_DEV,
+                FRONTEND_URL_BUILT
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
@@ -63,11 +76,11 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/v0/auth/register",
-                                "/api/v0/auth/login",
-                                "/api/v0/auth/recover-password",
-                                "/api/v0/auth/validate-reset-token",
-                                "/api/v0/auth/reset-password"
+                                API_VERSION + "/auth/register",
+                                API_VERSION + "/auth/login",
+                                API_VERSION + "/auth/recover-password",
+                                API_VERSION + "/auth/validate-reset-token",
+                                API_VERSION + "/auth/reset-password"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2

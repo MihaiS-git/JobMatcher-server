@@ -23,7 +23,7 @@ public class RefreshToken {
     private String token;
 
     @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="user_id", nullable = false)
+    @JoinColumn(name="user_id", nullable = false, unique = true)
     private User user;
 
     @Column(name="expiry_date", nullable = false)

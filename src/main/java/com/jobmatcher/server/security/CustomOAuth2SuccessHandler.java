@@ -8,6 +8,7 @@ import com.jobmatcher.server.service.IRefreshTokenService;
 import com.jobmatcher.server.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,7 +24,7 @@ import java.util.UUID;
 @Component
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
-    @Value("${frontend.base-url}")
+    @Value("${frontend.base.url}")
     private String FRONTEND_BASE_URL;
 
     private final JwtService jwtService;
@@ -31,13 +32,19 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final IRefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
 
-    public CustomOAuth2SuccessHandler(JwtService jwtService, UserRepository userRepository, IRefreshTokenService refreshTokenService, PasswordEncoder passwordEncoder) {
+    public CustomOAuth2SuccessHandler(
+            JwtService jwtService,
+            UserRepository userRepository,
+            IRefreshTokenService refreshTokenService,
+            PasswordEncoder passwordEncoder
+    ) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.refreshTokenService = refreshTokenService;
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {

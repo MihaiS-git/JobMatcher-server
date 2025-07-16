@@ -1,9 +1,9 @@
 package com.jobmatcher.server.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -11,10 +11,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
-@EqualsAndHashCode(exclude = {"password", "refreshToken"})
+@EqualsAndHashCode(callSuper = false, exclude = {"password", "refreshToken"})
 @ToString
 @Table(name = "users")
-public class User {
+public class User extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -23,6 +23,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -58,23 +59,7 @@ public class User {
     @Column(name = "picture_url", nullable = true)
     private String pictureUrl;
 
+    @JsonIgnore
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private RefreshToken refreshToken;
-
-    @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt;
-
-    @Column(name = "last_update", nullable = false)
-    private OffsetDateTime lastUpdate;
-
-
-    @PrePersist
-    @PreUpdate
-    private void updateTimeStamps() {
-        OffsetDateTime now = OffsetDateTime.now();
-        if (createdAt == null) {
-            createdAt = now;
-        }
-        lastUpdate = now;
-    }
 }

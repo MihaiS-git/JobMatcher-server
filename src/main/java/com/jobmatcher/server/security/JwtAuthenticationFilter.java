@@ -2,7 +2,6 @@ package com.jobmatcher.server.security;
 
 import com.jobmatcher.server.domain.User;
 import com.jobmatcher.server.exception.InvalidAuthException;
-import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.repository.UserRepository;
 import com.jobmatcher.server.service.JwtService;
 import jakarta.servlet.FilterChain;

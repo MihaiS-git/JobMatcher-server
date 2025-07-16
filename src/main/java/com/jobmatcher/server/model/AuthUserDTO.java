@@ -11,9 +11,16 @@ public class AuthUserDTO {
 
     private UUID id;
     private String email;
+
     private String role;
-    private String firstName;
-    private String lastName;
-    private String pictureUrl;
+
+    @Builder.Default
+    private String firstName = "unknown";
+
+    @Builder.Default
+    private String lastName = "unknown";
+
+    @Builder.Default
+    private String pictureUrl = "unknown";
 
 }

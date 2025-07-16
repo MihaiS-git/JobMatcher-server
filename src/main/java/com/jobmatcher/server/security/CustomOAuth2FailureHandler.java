@@ -14,10 +14,8 @@ import java.io.IOException;
 @Component
 public class CustomOAuth2FailureHandler implements AuthenticationFailureHandler {
 
-    @Value("${frontend.base-url}")
+    @Value("${frontend.base.url}")
     private String FRONTEND_BASE_URL;
-
-    private final String REDIRECT_URI = FRONTEND_BASE_URL + "/oauth2/redirect";
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request,
@@ -26,7 +24,7 @@ public class CustomOAuth2FailureHandler implements AuthenticationFailureHandler 
         exception.printStackTrace();
 
         String redirectUri = UriComponentsBuilder
-                .fromUriString(REDIRECT_URI)
+                .fromUriString(FRONTEND_BASE_URL + "/oauth2/redirect")
                 .queryParam("error", exception.getLocalizedMessage())
                 .build()
                 .toUriString();

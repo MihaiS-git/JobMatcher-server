@@ -17,13 +17,13 @@ import java.util.Collections;
 @Configuration
 public class GmailConfig {
 
-    @Value("${google.client-id}")
+    @Value("${google.client.id}")
     private String clientId;
 
-    @Value("${google.client-secret}")
+    @Value("${google.client.secret}")
     private String clientSecret;
 
-    @Value("${google.refresh-token}")
+    @Value("${google.refresh.token}")
     private String refreshToken;
 
     @Bean
