@@ -5,7 +5,6 @@ import com.jobmatcher.server.domain.User;
 import com.jobmatcher.server.exception.*;
 import com.jobmatcher.server.mapper.UserMapper;
 import com.jobmatcher.server.model.*;
-import com.jobmatcher.server.repository.PasswordResetTokenRepository;
 import com.jobmatcher.server.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -23,15 +22,14 @@ public class AuthenticationService {
     private final IRefreshTokenService refreshTokenService;
     private final IUserService userService;
     private final UserMapper userMapper;
-    private final GmailSender gmailSender;
-    private final PasswordResetTokenRepository tokenRepo;
 
     public AuthenticationService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             IRefreshTokenService refreshTokenService,
-            IUserService userService, UserMapper userMapper, GmailSender gmailSender, PasswordResetTokenRepository tokenRepo
+            IUserService userService,
+            UserMapper userMapper
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -39,8 +37,6 @@ public class AuthenticationService {
         this.refreshTokenService = refreshTokenService;
         this.userService = userService;
         this.userMapper = userMapper;
-        this.gmailSender = gmailSender;
-        this.tokenRepo = tokenRepo;
     }
 
 

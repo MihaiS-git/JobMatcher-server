@@ -36,9 +36,9 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<SuccessResponse> register(@Valid @RequestBody RegisterRequest request) {
         registrationService.register(request);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().body(new SuccessResponse(true));
     }
 
     @PostMapping("/login")
@@ -48,12 +48,12 @@ public class AuthController {
     }
 
     @PostMapping("/recover-password")
-    public ResponseEntity<?> recoverPassword(@RequestBody RecoverPasswordRequest request) {
+    public ResponseEntity<SuccessResponse> recoverPassword(@RequestBody RecoverPasswordRequest request) {
         boolean success = passwordRecoveryService.recoverPassword(request);
         if (!success) {
             throw new PasswordRecoveryException("No account found with this email.");
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(new SuccessResponse(true));
     }
 
     @GetMapping("/validate-reset-token")
