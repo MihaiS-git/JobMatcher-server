@@ -67,7 +67,12 @@ public class JwtService {
     }
 
     public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        try {
+            return extractExpiration(token).before(new Date());
+        } catch (InvalidAuthException e) {
+            // Token invalid due to expiration or other JWT exceptions
+            return true;
+        }
     }
 
     private Date extractExpiration(String token) {

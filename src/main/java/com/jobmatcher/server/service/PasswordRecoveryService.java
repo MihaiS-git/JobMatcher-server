@@ -10,14 +10,12 @@ import com.jobmatcher.server.model.RecoverPasswordRequest;
 import com.jobmatcher.server.model.ResetPasswordRequest;
 import com.jobmatcher.server.repository.PasswordResetTokenRepository;
 import com.jobmatcher.server.repository.UserRepository;
-import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
