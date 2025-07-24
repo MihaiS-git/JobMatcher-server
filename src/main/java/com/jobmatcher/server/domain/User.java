@@ -12,13 +12,13 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = false, exclude = {"password", "refreshToken"})
-@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Table(name = "users")
 public class User extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(unique = true, nullable = false)

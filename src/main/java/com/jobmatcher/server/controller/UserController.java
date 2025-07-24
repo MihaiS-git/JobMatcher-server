@@ -23,8 +23,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable UUID id){
-        UserResponseDTO userResponseDTO = userService.getUserById(id);
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable String id){
+        UserResponseDTO userResponseDTO = userService.getUserById(UUID.fromString(id));
         return ResponseEntity.ok(userResponseDTO);
     }
 
@@ -39,10 +39,10 @@ public class UserController {
 
     @PatchMapping("/update/{id}/address")
     public ResponseEntity<UserResponseDTO> updateAddress(
-            @PathVariable String userId,
+            @PathVariable String id,
             @RequestBody @Valid AddressRequestDTO addressRequest
     ){
-        UserResponseDTO userResponseDTO = userService.updateAddressByUserId(UUID.fromString(userId), addressRequest);
+        UserResponseDTO userResponseDTO = userService.updateAddressByUserId(UUID.fromString(id), addressRequest);
         return ResponseEntity.ok(userResponseDTO);
     }
 
