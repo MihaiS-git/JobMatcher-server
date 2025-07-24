@@ -18,18 +18,14 @@ public class Address extends Auditable{
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @Column(nullable = false)
     private String street;
 
-    @Column(nullable = false)
     private String city;
 
-    @Column(nullable = false)
     private String state;
 
-    @Column(name="postal_code", nullable = false)
+    @Column(name="postal_code")
     private String postalCode;
 
-    @Column(nullable = false)
     private String country;
 }

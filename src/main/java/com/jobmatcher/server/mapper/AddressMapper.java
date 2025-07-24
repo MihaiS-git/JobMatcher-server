@@ -1,18 +1,18 @@
 package com.jobmatcher.server.mapper;
 
 import com.jobmatcher.server.domain.Address;
-import com.jobmatcher.server.model.AddressDTO;
+import com.jobmatcher.server.model.AddressResponseDTO;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AddressMapper {
 
-    public AddressDTO toDto(Address address){
+    public AddressResponseDTO toDto(Address address){
         if(address == null){
             return null;
         }
 
-        return AddressDTO.builder()
+        return AddressResponseDTO.builder()
                 .id(address.getId())
                 .street(address.getStreet())
                 .city(address.getCity())

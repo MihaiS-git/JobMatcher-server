@@ -8,8 +8,7 @@ import java.util.UUID;
 
 @Getter
 @Builder
-public class AddressDTO {
-
+public class AddressResponseDTO {
     private UUID id;
     private String street;
     private String city;
@@ -18,5 +17,4 @@ public class AddressDTO {
     private String country;
     private OffsetDateTime createdAt;
     private OffsetDateTime lastUpdate;
-
 }

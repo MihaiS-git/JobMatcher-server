@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageConversionException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -43,6 +45,24 @@ public class GlobalExceptionHandler {
             errors.put(fieldError.getField(), fieldError.getDefaultMessage());
         }
         return buildErrorResponse(errors, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
+    }
+
+    @ExceptionHandler({ HttpMessageConversionException.class })
+    public ResponseEntity<ErrorResponse> handleConversionException(HttpMessageConversionException ex, HttpServletRequest request) {
+        log.warn("Invalid enum or input type. ", ex);
+        return buildErrorResponse(
+                "Invalid input. Please check your request body.",
+                HttpStatus.BAD_REQUEST,
+                request.getRequestURI(),
+                ErrorCode.VALIDATION_FAILED
+        );
+    }
+
+    @ExceptionHandler({HttpMessageNotReadableException.class})
+    public ResponseEntity<ErrorResponse> handleInvalidEnumException(HttpMessageNotReadableException ex, HttpServletRequest request){
+        log.warn("Invalid enum or input type. ", ex);
+        String message = "Invalid input: " + ex.getMostSpecificCause().getMessage();
+        return buildErrorResponse(message, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
