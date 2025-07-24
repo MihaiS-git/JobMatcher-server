@@ -87,25 +87,25 @@ class UserServiceImplTest {
     @Test
     void getUserById_existingUser_returnsUserResponseDto() {
         UserResponseDTO responseDto = UserResponseDTO.builder().build();
-        when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
+        when(userRepository.findByIdWithAddress(userId)).thenReturn(Optional.of(sampleUser));
         when(userMapper.toUserResponseDto(sampleUser)).thenReturn(responseDto);
 
         UserResponseDTO result = userService.getUserById(userId);
 
         assertThat(result).isEqualTo(responseDto);
-        verify(userRepository).findById(userId);
+        verify(userRepository).findByIdWithAddress(userId);
         verify(userMapper).toUserResponseDto(sampleUser);
     }
 
     @Test
     void getUserById_userNotFound_throwsResourceNotFoundException() {
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        when(userRepository.findByIdWithAddress(userId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.getUserById(userId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("User not found");
 
-        verify(userRepository).findById(userId);
+        verify(userRepository).findByIdWithAddress(userId);
     }
 
     @Test
