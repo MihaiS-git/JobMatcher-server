@@ -53,7 +53,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             if (jwtService.isTokenValid(jwt)) {
                 String email = jwtService.extractUsername(jwt);
-                User user = userRepository.findByEmail(email).orElseThrow(() -> new InvalidAuthException("USer not found"));
+                User user = userRepository.findByEmail(email)
+                        .orElseThrow(() -> new InvalidAuthException("User not found"));
 
                 var authorities = AuthorityUtils.createAuthorityList("ROLE_" + user.getRole().name());
 
@@ -63,10 +64,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } else {
                 // Token invalid: respond with 401
                 handleUnauthorized(response, "Invalid JWT token");
+                return;
             }
         } catch (InvalidAuthException e) {
             SecurityContextHolder.clearContext();
             handleUnauthorized(response, e.getMessage());
+            return;
         }
 
         filterChain.doFilter(request, response);
