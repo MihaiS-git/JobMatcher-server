@@ -16,6 +16,8 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +49,7 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(errors, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
     }
 
-    @ExceptionHandler({ HttpMessageConversionException.class })
+    @ExceptionHandler({HttpMessageConversionException.class})
     public ResponseEntity<ErrorResponse> handleConversionException(HttpMessageConversionException ex, HttpServletRequest request) {
         log.warn("Invalid enum or input type. ", ex);
         return buildErrorResponse(
@@ -59,7 +61,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class})
-    public ResponseEntity<ErrorResponse> handleInvalidEnumException(HttpMessageNotReadableException ex, HttpServletRequest request){
+    public ResponseEntity<ErrorResponse> handleInvalidEnumException(HttpMessageNotReadableException ex, HttpServletRequest request) {
         log.warn("Invalid enum or input type. ", ex);
         String message = "Invalid input: " + ex.getMostSpecificCause().getMessage();
         return buildErrorResponse(message, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
@@ -107,6 +109,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("Password recovery failed. Please check the email address and try again.", HttpStatus.NOT_FOUND, request.getRequestURI(), ErrorCode.PASSWORD_RECOVERY_FAILED);
     }
 
+    @ExceptionHandler(PasswordResetException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordResetException(PasswordResetException ex, HttpServletRequest request) {
+        log.warn("Password reset token has expired. ", ex);
+        return buildErrorResponse("Password reset failed. Password reset token has expired. Please try again.", HttpStatus.NOT_FOUND, request.getRequestURI(), ErrorCode.PASSWORD_RECOVERY_FAILED);
+    }
+
     @ExceptionHandler(EmailSendException.class)
     public ResponseEntity<ErrorResponse> handleEmailSendException(EmailSendException ex, HttpServletRequest request) {
         log.warn("Unable to send password recovery email. ", ex);
@@ -136,6 +144,33 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(),
                 ErrorCode.TOKEN_CREATION_FAILED
         );
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ErrorResponse> handleMultipartException(MultipartException ex, HttpServletRequest request) {
+        Throwable cause = ex.getCause();
+        if (cause instanceof MaxUploadSizeExceededException) {
+            log.error("Failed to upload file. File size exceeds the maximum allowed size of 10MB.");
+            return buildErrorResponse(
+                    "File size exceeds the maximum allowed size of 10MB.",
+                    HttpStatus.PAYLOAD_TOO_LARGE,
+                    request.getRequestURI(),
+                    ErrorCode.FILE_UPLOAD_FAILED
+            );
+        }
+        log.error("Multipart error: ", ex);
+        return buildErrorResponse(
+                "File upload failed. Please try again.",
+                HttpStatus.BAD_REQUEST,
+                request.getRequestURI(),
+                ErrorCode.FILE_UPLOAD_FAILED
+        );
+    }
+
+    @ExceptionHandler(UploadFileException.class)
+    public ResponseEntity<ErrorResponse> handleUploadFileException(UploadFileException ex, HttpServletRequest request) {
+        log.warn("File upload failed. ", ex);
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.FILE_UPLOAD_FAILED);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(Object message, HttpStatus status, String path, ErrorCode errorCode) {
