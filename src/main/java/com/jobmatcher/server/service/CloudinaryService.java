@@ -7,6 +7,7 @@ import com.jobmatcher.server.model.UserRequestDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,11 +34,16 @@ public class CloudinaryService {
 
         String contentType = file.getContentType();
         if (contentType == null ||
-                !(contentType.equals("image/png") ||
-                        contentType.equals("image/jpg") ||
+                !(contentType.equals("image/tiff") ||
+                        contentType.equals("image/bmp") ||
+                        contentType.equals("image/avif") ||
+                        contentType.equals("image/gif") ||
                         contentType.equals("image/jpeg") ||
-                        contentType.equals("image/webp"))) {
-            throw new UploadFileException("Only image files are allowed (png, jpg, jpeg, webp).");
+                        contentType.equals("image/jpg") ||
+                        contentType.equals("image/png") ||
+                        contentType.equals("image/webp")
+                )) {
+            throw new UnsupportedMediaTypeStatusException("Unsupported media format. Allowed: tiff, bmp, avif, gif, jpeg, jpg, png, webp");
         }
 
         if (file.getSize() > MAX_FILE_SIZE) {

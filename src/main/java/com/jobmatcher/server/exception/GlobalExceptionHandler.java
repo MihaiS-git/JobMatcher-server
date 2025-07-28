@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -171,6 +172,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUploadFileException(UploadFileException ex, HttpServletRequest request) {
         log.warn("File upload failed. ", ex);
         return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.FILE_UPLOAD_FAILED);
+    }
+
+    @ExceptionHandler(UnsupportedMediaTypeStatusException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedMediaTypeStatusException(UnsupportedMediaTypeStatusException ex, HttpServletRequest request) {
+        log.warn("Unsupported media format. ", ex);
+        return buildErrorResponse(ex.getMessage(), HttpStatus.UNSUPPORTED_MEDIA_TYPE, request.getRequestURI(), ErrorCode.UNSUPPORTED_MEDIA_TYPE);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(Object message, HttpStatus status, String path, ErrorCode errorCode) {
