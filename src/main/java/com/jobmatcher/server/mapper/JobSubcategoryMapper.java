@@ -6,13 +6,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class JobSubcategoryMapper {
-    public JobSubcategoryDTO toDto(JobSubcategory subcategory){
-        if(subcategory == null) return null;
+    public JobSubcategoryDTO toDto(JobSubcategory entity){
+        if(entity == null) return null;
 
         return JobSubcategoryDTO.builder()
-                .id(subcategory.getId())
-                .name(subcategory.getName())
-                .description(subcategory.getDescription())
+                .id(entity.getId())
+                .name(entity.getName())
+                .description(entity.getDescription())
                 .build();
     }
+
 }
