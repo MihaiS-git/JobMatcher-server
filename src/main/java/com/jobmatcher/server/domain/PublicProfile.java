@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.*;
@@ -23,7 +24,7 @@ public class PublicProfile extends Auditable {
     @OneToOne
     private User user;
 
-    @Min(value = 2)
+    @Size(min = 2, max = 25)
     @Column(length = 100, unique = true, nullable = false)
     private String username;
 
@@ -32,9 +33,9 @@ public class PublicProfile extends Auditable {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name="public_profile_languages",
-            joinColumns = @JoinColumn(name="profile_id"),
-            inverseJoinColumns=@JoinColumn(name="language_id")
+            name = "public_profile_languages",
+            joinColumns = @JoinColumn(name = "profile_id"),
+            inverseJoinColumns = @JoinColumn(name = "language_id")
     )
     private Set<Language> languages = new HashSet<>();
 
