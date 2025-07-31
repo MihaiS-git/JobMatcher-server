@@ -25,6 +25,7 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
     private final JobSubcategoryRepository subcategoryRepository;
     private final SkillRepository skillRepository;
     private final LanguageRepository languageRepository;
+    private final ISkillService skillService;
 
     public FreelancerProfileServiceImpl(
             FreelancerProfileRepository profileRepository,
@@ -32,7 +33,7 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
             UserRepository userRepository,
             JobSubcategoryRepository subcategoryRepository,
             SkillRepository skillRepository,
-            LanguageRepository languageRepository
+            LanguageRepository languageRepository, ISkillService skillService
     ) {
         this.profileRepository = profileRepository;
         this.profileMapper = profileMapper;
@@ -40,6 +41,7 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         this.subcategoryRepository = subcategoryRepository;
         this.skillRepository = skillRepository;
         this.languageRepository = languageRepository;
+        this.skillService = skillService;
     }
 
 
@@ -67,7 +69,6 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         Set<JobSubcategory> subcategories = fetchJobSubcategories(dto.getJobSubcategoryIds());
         Set<Language> languages = fetchLanguages(dto.getLanguageIds());
         Set<Skill> skills = resolveSkillsFromNames(dto.getSkills());
-
 
         FreelancerProfile profile = profileMapper.toEntity(dto, user, skills, subcategories, languages);
         FreelancerProfile savedProfile = profileRepository.save(profile);
@@ -100,13 +101,7 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
     }
 
     private Set<Skill> resolveSkillsFromNames(Set<String> skillNames) {
-        return skillNames.stream()
-                .map(name -> {
-                    String normalized = name.trim().toLowerCase();
-                    return skillRepository.findByNameIgnoreCase(normalized)
-                            .orElseGet(() -> skillRepository.save(new Skill(normalized)));
-                })
-                .collect(Collectors.toSet());
+        return skillNames.stream().map(skillService::findOrCreateByName).collect(Collectors.toSet());
     }
 
     private Set<JobSubcategory> fetchJobSubcategories(Set<Long> ids) {

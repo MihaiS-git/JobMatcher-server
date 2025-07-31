@@ -33,12 +33,10 @@ class SkillServiceImplTest {
     @Test
     void findOrCreateByName_existingSkill() {
         Skill skill = new Skill("ReactJS");
-        SkillDTO dto = SkillDTO.builder().name("ReactJS").build();
 
         when(skillRepository.findByNameIgnoreCase("ReactJS")).thenReturn(Optional.of(skill));
-        when(skillMapper.toDto(skill)).thenReturn(dto);
 
-        SkillDTO result = skillService.findOrCreateByName("ReactJS");
+        Skill result = skillService.findOrCreateByName("ReactJS");
 
         assertThat(result.getName()).isEqualTo("ReactJS");
     }
@@ -47,13 +45,11 @@ class SkillServiceImplTest {
     void findOrCreateByName_newSkill() {
         String input = "  ReactJS  ";
         Skill newSkill = new Skill("ReactJS");
-        SkillDTO dto = SkillDTO.builder().name("ReactJS").build();
 
         when(skillRepository.findByNameIgnoreCase("ReactJS")).thenReturn(Optional.empty());
         when(skillRepository.save(any(Skill.class))).thenReturn(newSkill);
-        when(skillMapper.toDto(newSkill)).thenReturn(dto);
 
-        SkillDTO result = skillService.findOrCreateByName(input);
+        Skill result = skillService.findOrCreateByName(input);
 
         assertThat(result.getName()).isEqualTo("ReactJS");
     }

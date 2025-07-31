@@ -25,7 +25,7 @@ public class SkillServiceImpl implements ISkillService {
     }
 
     @Override
-    public SkillDTO findOrCreateByName(String name) {
+    public Skill findOrCreateByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Skill name is empty or invalid.");
         }
@@ -33,8 +33,8 @@ public class SkillServiceImpl implements ISkillService {
             throw new IllegalArgumentException("Skill name contains invalid characters.");
         }
         String sanitized = name.trim();
-        return skillMapper.toDto(skillRepository.findByNameIgnoreCase(sanitized)
-                .orElseGet(() -> skillRepository.save(new Skill(sanitized))));
+        return skillRepository.findByNameIgnoreCase(sanitized)
+                .orElseGet(() -> skillRepository.save(new Skill(sanitized)));
     }
 
     @Override

@@ -40,6 +40,9 @@ class FreelancerProfileServiceImplTest {
     private SkillRepository skillRepository;
 
     @Mock
+    private SkillServiceImpl skillService;
+
+    @Mock
     private LanguageRepository languageRepository;
 
     @InjectMocks
@@ -128,9 +131,10 @@ class FreelancerProfileServiceImplTest {
 
         when(languageRepository.findAllById(Set.of(1))).thenReturn(List.of(new Language(1, "English")));
 
-        when(skillRepository.findByNameIgnoreCase("java")).thenReturn(Optional.empty());
-        when(skillRepository.findByNameIgnoreCase("spring")).thenReturn(Optional.empty());
-        when(skillRepository.save(any(Skill.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Skill javaSkill = new Skill("Java");
+        Skill springSkill = new Skill("Spring");
+        when(skillService.findOrCreateByName("Java")).thenReturn(javaSkill);
+        when(skillService.findOrCreateByName("Spring")).thenReturn(springSkill);
 
         when(profileMapper.toEntity(any(), eq(user), any(), any(), any())).thenReturn(profile);
         when(profileRepository.save(profile)).thenReturn(profile);
@@ -154,9 +158,10 @@ class FreelancerProfileServiceImplTest {
         when(subcategoryRepository.findAllById(Set.of(1L))).thenReturn(List.of(new JobSubcategory("test", "test", new JobCategory("test", "test"))));
         when(languageRepository.findAllById(Set.of(1))).thenReturn(List.of(new Language(1, "English")));
 
-        when(skillRepository.findByNameIgnoreCase("java")).thenReturn(Optional.empty());
-        when(skillRepository.findByNameIgnoreCase("spring")).thenReturn(Optional.empty());
-        when(skillRepository.save(any(Skill.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Skill javaSkill = new Skill("Java");
+        Skill springSkill = new Skill("Spring");
+        when(skillService.findOrCreateByName("Java")).thenReturn(javaSkill);
+        when(skillService.findOrCreateByName("Spring")).thenReturn(springSkill);
 
         when(profileRepository.save(profile)).thenReturn(profile);
         when(profileMapper.toFreelancerDetailDto(profile)).thenReturn(detailDTO);
@@ -193,9 +198,10 @@ class FreelancerProfileServiceImplTest {
 
         // Skills: one exists, one doesn't
         Skill existingSkill = new Skill("java");
-        when(skillRepository.findByNameIgnoreCase("java")).thenReturn(Optional.of(existingSkill));
-        when(skillRepository.findByNameIgnoreCase("spring")).thenReturn(Optional.empty());
-        when(skillRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(skillService.findOrCreateByName("java")).thenReturn(existingSkill);
+        when(skillService.findOrCreateByName("spring"))
+                .thenAnswer(invocation -> new Skill("spring"));
+
 
         // Languages
         Language lang = new Language();
@@ -212,16 +218,15 @@ class FreelancerProfileServiceImplTest {
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(userId)
                 .jobSubcategoryIds(Set.of(1L))
-                .skills(Set.of("Java", "Spring"))
+                .skills(Set.of("java", "spring"))
                 .languageIds(Set.of(1))
                 .build();
 
         FreelancerDetailDTO result = service.saveFreelancerProfile(dto);
 
         assertNotNull(result);
-        verify(skillRepository).findByNameIgnoreCase("java");
-        verify(skillRepository).findByNameIgnoreCase("spring");
-        verify(skillRepository).save(argThat(skill -> skill.getName().equals("spring")));
+        verify(skillService).findOrCreateByName("java");
+        verify(skillService).findOrCreateByName("spring");
     }
 
     @Test
@@ -250,8 +255,8 @@ class FreelancerProfileServiceImplTest {
         when(subcategoryRepository.findAllById(any())).thenReturn(List.of(new JobSubcategory()));
 
         // Mark this stubbing as lenient because it's not hit before the exception
-        lenient().when(skillRepository.findByNameIgnoreCase(any()))
-                .thenReturn(Optional.of(new Skill("java")));
+        lenient().when(skillService.findOrCreateByName("java")).thenReturn(new Skill("java"));
+
 
         // Simulate missing languages
         when(languageRepository.findAllById(any())).thenReturn(List.of());
@@ -271,7 +276,8 @@ class FreelancerProfileServiceImplTest {
         // Setup minimal required valid user and subcategory
         when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
         when(subcategoryRepository.findAllById(any())).thenReturn(List.of(new JobSubcategory()));
-        when(skillRepository.findByNameIgnoreCase(any())).thenReturn(Optional.of(new Skill("java")));
+//        when(skillRepository.findByNameIgnoreCase(any())).thenReturn(Optional.of(new Skill("java")));
+        when(skillService.findOrCreateByName("java")).thenReturn(new Skill("java"));
 
         // Make languageIds null
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
@@ -288,7 +294,8 @@ class FreelancerProfileServiceImplTest {
     void saveFreelancerProfile_emptyLanguageIds_returnsEmptySet() {
         when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
         when(subcategoryRepository.findAllById(any())).thenReturn(List.of(new JobSubcategory()));
-        when(skillRepository.findByNameIgnoreCase(any())).thenReturn(Optional.of(new Skill("java")));
+//        when(skillRepository.findByNameIgnoreCase(any())).thenReturn(Optional.of(new Skill("java")));
+        when(skillService.findOrCreateByName("java")).thenReturn(new Skill("java"));
 
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(UUID.randomUUID())
@@ -303,7 +310,8 @@ class FreelancerProfileServiceImplTest {
     @Test
     void saveFreelancerProfile_nullSubcategoryIds_returnsEmptySet() {
         when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
-        when(skillRepository.findByNameIgnoreCase(any())).thenReturn(Optional.of(new Skill("Java")));
+        when(skillService.findOrCreateByName("Java")).thenReturn(new Skill("Java"));
+//        when(skillRepository.findByNameIgnoreCase(any())).thenReturn(Optional.of(new Skill("Java")));
         when(languageRepository.findAllById(any())).thenReturn(List.of(new Language("English")));
 
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
@@ -319,7 +327,8 @@ class FreelancerProfileServiceImplTest {
     @Test
     void saveFreelancerProfile_emptySubcategoryIds_returnsEmptySet() {
         when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
-        when(skillRepository.findByNameIgnoreCase(any())).thenReturn(Optional.of(new Skill("Java")));
+        when(skillService.findOrCreateByName("Java")).thenReturn(new Skill("Java"));
+//        when(skillRepository.findByNameIgnoreCase(any())).thenReturn(Optional.of(new Skill("Java")));
         when(languageRepository.findAllById(any())).thenReturn(List.of(new Language("English")));
 
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
