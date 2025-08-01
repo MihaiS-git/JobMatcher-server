@@ -2,6 +2,7 @@ package com.jobmatcher.server.mapper;
 
 import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.model.*;
+import com.jobmatcher.server.util.SanitizationUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -55,26 +56,31 @@ public class FreelancerProfileMapper {
                 .build();
     }
 
-
     public FreelancerProfile toEntity(
             FreelancerProfileRequestDTO dto,
-            User user, Set<Skill> skills,
-            Set<JobSubcategory> jobSubcategories,
-            Set<Language> languages
+            User user,
+            String username,
+            String headline,
+            String about,
+            String websiteUrl,
+            Set<Skill> skills,
+            Set<JobSubcategory> subcategories,
+            Set<Language> languages,
+            Set<String> socialMedia
     ){
         FreelancerProfile freelancerProfile = new FreelancerProfile();
         freelancerProfile.setUser(user);
-        freelancerProfile.setUsername(dto.getUsername());
+        freelancerProfile.setUsername(username);
         freelancerProfile.setExperienceLevel(dto.getExperienceLevel());
-        freelancerProfile.setHeadline(dto.getHeadline());
-        freelancerProfile.setJobSubcategories(jobSubcategories);
+        freelancerProfile.setHeadline(headline);
+        freelancerProfile.setJobSubcategories(subcategories);
         freelancerProfile.setHourlyRate(dto.getHourlyRate());
         freelancerProfile.setAvailableForHire(dto.getAvailableForHire());
         freelancerProfile.setSkills(skills);
         freelancerProfile.setLanguages(languages);
-        freelancerProfile.setAbout(dto.getAbout());
-        freelancerProfile.setSocialMedia(dto.getSocialMedia());
-        freelancerProfile.setWebsiteUrl(dto.getWebsiteUrl());
+        freelancerProfile.setAbout(about);
+        freelancerProfile.setSocialMedia(socialMedia);
+        freelancerProfile.setWebsiteUrl(websiteUrl);
 
         return freelancerProfile;
     }

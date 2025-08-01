@@ -28,4 +28,8 @@ public class JobSubcategory extends Auditable{
         this.description = description;
         this.category=category;
     }
+
+    public JobSubcategory(long l, String webDev) {
+        super();
+    }
 }

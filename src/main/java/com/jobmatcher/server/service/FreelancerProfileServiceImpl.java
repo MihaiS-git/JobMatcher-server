@@ -7,11 +7,13 @@ import com.jobmatcher.server.model.FreelancerDetailDTO;
 import com.jobmatcher.server.model.FreelancerProfileRequestDTO;
 import com.jobmatcher.server.model.FreelancerSummaryDTO;
 import com.jobmatcher.server.repository.*;
+import com.jobmatcher.server.util.SanitizationUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -19,11 +21,12 @@ import java.util.stream.Collectors;
 @Service
 public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
 
+    private static final Pattern SKILL_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9 +#.-]{1,50}$");
+
     private final FreelancerProfileRepository profileRepository;
     private final FreelancerProfileMapper profileMapper;
     private final UserRepository userRepository;
     private final JobSubcategoryRepository subcategoryRepository;
-    private final SkillRepository skillRepository;
     private final LanguageRepository languageRepository;
     private final ISkillService skillService;
 
@@ -32,18 +35,16 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
             FreelancerProfileMapper profileMapper,
             UserRepository userRepository,
             JobSubcategoryRepository subcategoryRepository,
-            SkillRepository skillRepository,
-            LanguageRepository languageRepository, ISkillService skillService
+            LanguageRepository languageRepository,
+            ISkillService skillService
     ) {
         this.profileRepository = profileRepository;
         this.profileMapper = profileMapper;
         this.userRepository = userRepository;
         this.subcategoryRepository = subcategoryRepository;
-        this.skillRepository = skillRepository;
         this.languageRepository = languageRepository;
         this.skillService = skillService;
     }
-
 
     @Transactional(readOnly = true)
     @Override
@@ -70,7 +71,22 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         Set<Language> languages = fetchLanguages(dto.getLanguageIds());
         Set<Skill> skills = resolveSkillsFromNames(dto.getSkills());
 
-        FreelancerProfile profile = profileMapper.toEntity(dto, user, skills, subcategories, languages);
+        String username = SanitizationUtil.sanitizeText(dto.getUsername());
+        String headline = SanitizationUtil.sanitizeText(dto.getHeadline());
+        String about = SanitizationUtil.sanitizeText(dto.getAbout());
+        String websiteUrl = SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl());
+        Set<String> sanitizedSocialMedia = Optional.ofNullable(dto.getSocialMedia())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(SanitizationUtil::sanitizeUrl)
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
+
+
+        FreelancerProfile profile = profileMapper.toEntity(
+                dto, user, username, headline, about, websiteUrl,
+                skills, subcategories, languages, sanitizedSocialMedia);
         FreelancerProfile savedProfile = profileRepository.save(profile);
         return profileMapper.toFreelancerDetailDto(savedProfile);
     }
@@ -83,25 +99,37 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         Set<JobSubcategory> subcategories = fetchJobSubcategories(dto.getJobSubcategoryIds());
         Set<Language> languages = fetchLanguages(dto.getLanguageIds());
         Set<Skill> skills = resolveSkillsFromNames(dto.getSkills());
+        Set<String> sanitizedSocialMedia = Optional.ofNullable(dto.getSocialMedia())
+                .orElse(Collections.emptySet())
+                .stream()
+                .map(SanitizationUtil::sanitizeUrl) // your existing logic
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
 
-        existentProfile.setUsername(dto.getUsername());
+        existentProfile.setUsername(SanitizationUtil.sanitizeText(dto.getUsername()));
         existentProfile.setExperienceLevel(dto.getExperienceLevel());
-        existentProfile.setHeadline(dto.getHeadline());
+        existentProfile.setHeadline(SanitizationUtil.sanitizeText(dto.getHeadline()));
         existentProfile.setJobSubcategories(subcategories);
         existentProfile.setHourlyRate(dto.getHourlyRate());
         existentProfile.setAvailableForHire(dto.getAvailableForHire());
         existentProfile.setSkills(skills);
         existentProfile.setLanguages(languages);
-        existentProfile.setAbout(dto.getAbout());
-        existentProfile.setSocialMedia(dto.getSocialMedia());
-        existentProfile.setWebsiteUrl(dto.getWebsiteUrl());
+        existentProfile.setAbout(SanitizationUtil.sanitizeText(dto.getAbout()));
+        existentProfile.setSocialMedia(sanitizedSocialMedia);
+        existentProfile.setWebsiteUrl(SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl()));
 
         FreelancerProfile savedProfile = profileRepository.save(existentProfile);
         return profileMapper.toFreelancerDetailDto(savedProfile);
     }
 
     private Set<Skill> resolveSkillsFromNames(Set<String> skillNames) {
-        return skillNames.stream().map(skillService::findOrCreateByName).collect(Collectors.toSet());
+        return skillNames.stream()
+                .map(SanitizationUtil::sanitizeText)
+                .filter(name -> name != null && !name.isBlank())
+                .filter(name -> SKILL_NAME_PATTERN.matcher(name).matches())
+                .map(skillService::findOrCreateByName)
+                .collect(Collectors.toSet());
     }
 
     private Set<JobSubcategory> fetchJobSubcategories(Set<Long> ids) {
@@ -127,6 +155,4 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         }
         return new HashSet<>(found);
     }
-
-
 }
