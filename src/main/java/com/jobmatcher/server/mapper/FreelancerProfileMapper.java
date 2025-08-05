@@ -2,7 +2,6 @@ package com.jobmatcher.server.mapper;
 
 import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.model.*;
-import com.jobmatcher.server.util.SanitizationUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -81,6 +80,7 @@ public class FreelancerProfileMapper {
         freelancerProfile.setAbout(about);
         freelancerProfile.setSocialMedia(socialMedia);
         freelancerProfile.setWebsiteUrl(websiteUrl);
+        freelancerProfile.setAvailableForHire(dto.getAvailableForHire());
 
         return freelancerProfile;
     }

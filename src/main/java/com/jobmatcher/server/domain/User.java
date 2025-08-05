@@ -64,4 +64,8 @@ public class User extends Auditable {
     @JsonIgnore
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private RefreshToken refreshToken;
+
+    public User(UUID userId) {
+        super();
+    }
 }

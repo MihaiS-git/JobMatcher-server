@@ -1,18 +1,18 @@
 package com.jobmatcher.server.service;
 
 import com.jobmatcher.server.domain.*;
+import com.jobmatcher.server.exception.InvalidProfileDataException;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.FreelancerProfileMapper;
 import com.jobmatcher.server.model.FreelancerDetailDTO;
 import com.jobmatcher.server.model.FreelancerProfileRequestDTO;
 import com.jobmatcher.server.model.FreelancerSummaryDTO;
 import com.jobmatcher.server.repository.*;
+import com.jobmatcher.server.util.SanitizationUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
@@ -46,6 +46,9 @@ class FreelancerProfileServiceImplTest {
     @InjectMocks
     private FreelancerProfileServiceImpl service;
 
+    @Captor
+    ArgumentCaptor<FreelancerProfile> profileCaptor;
+
     private FreelancerProfile profile;
     private FreelancerDetailDTO detailDTO;
     private FreelancerProfileRequestDTO requestDTO;
@@ -67,6 +70,7 @@ class FreelancerProfileServiceImplTest {
                 .skills(Set.of("Java", "Spring"))
                 .jobSubcategoryIds(Set.of(1L))
                 .languageIds(Set.of(1))
+                .socialMedia(Set.of())
                 .build();
     }
 
@@ -501,6 +505,430 @@ class FreelancerProfileServiceImplTest {
         );
         assertFalse(sanitized.contains(null));
         assertFalse(sanitized.contains("  "));
+    }
+
+    @Test
+    void getFreelancerProfileByUserId_whenProfileExists_returnsDto() {
+        UUID userId = UUID.randomUUID();
+        FreelancerProfile profile = new FreelancerProfile();
+        profile.setUser(new User(userId));
+        profile.setSocialMedia(Set.of("https://linkedin.com/in/test"));
+
+        when(profileRepository.findByUserId(userId)).thenReturn(Optional.of(profile));
+        when(profileMapper.toFreelancerDetailDto(profile)).thenReturn(FreelancerDetailDTO.builder().build());
+
+        FreelancerDetailDTO result = service.getFreelancerProfileByUserId(userId);
+
+        assertNotNull(result);
+        verify(profileRepository).findByUserId(userId);
+        verify(profileMapper).toFreelancerDetailDto(profile);
+    }
+
+    @Test
+    void getFreelancerProfileByUserId_whenProfileMissing_throwsNotFound() {
+        UUID userId = UUID.randomUUID();
+        when(profileRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.getFreelancerProfileByUserId(userId));
+    }
+
+    @Test
+    void saveFreelancerProfile_whenUsernameSanitizationFails_throwsException() {
+        UUID userId = UUID.randomUUID();
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("<script>alert('xss')</script>")
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveFreelancerProfile_whenHeadlineSanitizationFails_throwsException() {
+        UUID userId = UUID.randomUUID();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validusername")
+                .headline("<invalid headline>")
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn("validusername");
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getHeadline())).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveFreelancerProfile_whenAboutSanitizationFails_throwsException() {
+        UUID userId = UUID.randomUUID();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validusername")
+                .headline("Valid headline")
+                .about("<invalid about>")
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn("validusername");
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getHeadline())).thenReturn("Valid headline");
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getAbout())).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveFreelancerProfile_whenWebsiteUrlSanitizationFails_throwsException() {
+        UUID userId = UUID.randomUUID();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validusername")
+                .headline("Valid headline")
+                .about("Valid about")
+                .websiteUrl("http://invalid-url")
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn("validusername");
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getHeadline())).thenReturn("Valid headline");
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getAbout())).thenReturn("Valid about");
+            mocked.when(() -> SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl())).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveFreelancerProfile_whenSocialMediaUrlsAllInvalid_throwsException() {
+        UUID userId = UUID.randomUUID();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validusername")
+                .headline("Valid headline")
+                .about("Valid about")
+                .websiteUrl("http://valid-url.com")
+                .socialMedia(Set.of("http://invalid-social.com"))
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn("validusername");
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getHeadline())).thenReturn("Valid headline");
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getAbout())).thenReturn("Valid about");
+            mocked.when(() -> SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl())).thenReturn("http://valid-url.com");
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("http://invalid-social.com")).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
+        }
+    }
+
+    @Test
+    void updateProfile_throwsWhenUsernameInvalid() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(requestDTO.getUserId())
+                .skills(requestDTO.getSkills())
+                .jobSubcategoryIds(Collections.emptySet())
+                .languageIds(Collections.emptySet())
+                .socialMedia(requestDTO.getSocialMedia())
+                .username("<<<invalid>>>")
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn(null);
+            mocked.when(() -> SanitizationUtil.sanitizeText(anyString())).thenAnswer(invocation -> {
+                String arg = invocation.getArgument(0);
+                if (arg.equals(dto.getUsername())) return null;
+                return arg;
+            });
+            mocked.when(() -> SanitizationUtil.sanitizeUrl(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+
+            assertThrows(InvalidProfileDataException.class, () -> {
+                service.updateFreelancerProfile(id, dto);
+            });
+        }
+    }
+
+    @Test
+    void updateProfile_throwsWhenHeadlineInvalid() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO validDto = FreelancerProfileRequestDTO.builder()
+                .userId(requestDTO.getUserId())
+                .skills(requestDTO.getSkills())
+                .jobSubcategoryIds(Collections.emptySet())
+                .languageIds(Collections.emptySet())
+                .socialMedia(requestDTO.getSocialMedia())
+                .username("<<<invalid>>>")
+                .build();
+
+        // Build a new DTO with invalid headline
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(validDto.getUserId())
+                .username(validDto.getUsername())
+                .headline("<<<invalid>>>")
+                .about(validDto.getAbout())
+                .websiteUrl(validDto.getWebsiteUrl())
+                .socialMedia(validDto.getSocialMedia())
+                .jobSubcategoryIds(validDto.getJobSubcategoryIds())
+                .languageIds(validDto.getLanguageIds())
+                .skills(validDto.getSkills())
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn(dto.getUsername());
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getHeadline())).thenReturn(null); // simulate fail
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getAbout())).thenReturn(dto.getAbout());
+            mocked.when(() -> SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl())).thenReturn(dto.getWebsiteUrl());
+            dto.getSocialMedia().forEach(url ->
+                    mocked.when(() -> SanitizationUtil.sanitizeUrl(url)).thenReturn(url)
+            );
+
+            assertThrows(InvalidProfileDataException.class, () -> {
+                service.updateFreelancerProfile(id, dto);
+            });
+        }
+    }
+
+    @Test
+    void updateProfile_throwsWhenAboutInvalid() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO validDto = FreelancerProfileRequestDTO.builder()
+                .userId(requestDTO.getUserId())
+                .skills(requestDTO.getSkills())
+                .jobSubcategoryIds(Collections.emptySet())
+                .languageIds(Collections.emptySet())
+                .socialMedia(requestDTO.getSocialMedia())
+                .username("<<<invalid>>>")
+                .build();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(validDto.getUserId())
+                .username(validDto.getUsername())
+                .headline(validDto.getHeadline())
+                .about("<<<invalid>>>")
+                .websiteUrl(validDto.getWebsiteUrl())
+                .socialMedia(validDto.getSocialMedia())
+                .jobSubcategoryIds(validDto.getJobSubcategoryIds())
+                .languageIds(validDto.getLanguageIds())
+                .skills(validDto.getSkills())
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn(dto.getUsername());
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getHeadline())).thenReturn(dto.getHeadline());
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getAbout())).thenReturn(null); // fail here
+            mocked.when(() -> SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl())).thenReturn(dto.getWebsiteUrl());
+            dto.getSocialMedia().forEach(url ->
+                    mocked.when(() -> SanitizationUtil.sanitizeUrl(url)).thenReturn(url)
+            );
+
+            assertThrows(InvalidProfileDataException.class, () -> {
+                service.updateFreelancerProfile(id, dto);
+            });
+        }
+    }
+
+    @Test
+    void updateProfile_throwsWhenSocialMediaInvalid() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO validDto = FreelancerProfileRequestDTO.builder()
+                .userId(requestDTO.getUserId())
+                .skills(requestDTO.getSkills())
+                .jobSubcategoryIds(Collections.emptySet())
+                .languageIds(Collections.emptySet())
+                .socialMedia(requestDTO.getSocialMedia())
+                .username("<<<invalid>>>")
+                .build();
+
+        Set<String> invalidSocial = Set.of("invalid-url");
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(validDto.getUserId())
+                .username(validDto.getUsername())
+                .headline(validDto.getHeadline())
+                .about(validDto.getAbout())
+                .websiteUrl(validDto.getWebsiteUrl())
+                .socialMedia(invalidSocial)
+                .jobSubcategoryIds(validDto.getJobSubcategoryIds())
+                .languageIds(validDto.getLanguageIds())
+                .skills(validDto.getSkills())
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn(dto.getUsername());
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getHeadline())).thenReturn(dto.getHeadline());
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getAbout())).thenReturn(dto.getAbout());
+            mocked.when(() -> SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl())).thenReturn(dto.getWebsiteUrl());
+
+            // The social media URL sanitization returns null to simulate failure
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("invalid-url")).thenReturn(null);
+
+            assertThrows(InvalidProfileDataException.class, () -> {
+                service.updateFreelancerProfile(id, dto);
+            });
+        }
+    }
+
+    @Test
+    void updateProfile_throwsWhenWebsiteUrlInvalid() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO validDto = FreelancerProfileRequestDTO.builder()
+                .userId(requestDTO.getUserId())
+                .skills(requestDTO.getSkills())
+                .jobSubcategoryIds(Collections.emptySet())
+                .languageIds(Collections.emptySet())
+                .socialMedia(requestDTO.getSocialMedia())
+                .username("<<<invalid>>>")
+                .build();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(validDto.getUserId())
+                .username(validDto.getUsername())
+                .headline(validDto.getHeadline())
+                .about(validDto.getAbout())
+                .websiteUrl("invalid-url")
+                .socialMedia(validDto.getSocialMedia())
+                .jobSubcategoryIds(validDto.getJobSubcategoryIds())
+                .languageIds(validDto.getLanguageIds())
+                .skills(validDto.getSkills())
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getUsername())).thenReturn(dto.getUsername());
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getHeadline())).thenReturn(dto.getHeadline());
+            mocked.when(() -> SanitizationUtil.sanitizeText(dto.getAbout())).thenReturn(dto.getAbout());
+            mocked.when(() -> SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl())).thenReturn(null); // fail here
+            dto.getSocialMedia().forEach(url ->
+                    mocked.when(() -> SanitizationUtil.sanitizeUrl(url)).thenReturn(url)
+            );
+
+            assertThrows(InvalidProfileDataException.class, () -> {
+                service.updateFreelancerProfile(id, dto);
+            });
+        }
+    }
+
+    @Test
+    void updateProfile_setsExperienceLevelHeadlineHourlyRateAvailableForHireAndAbout() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(requestDTO.getUserId())
+                .experienceLevel(ExperienceLevel.SENIOR)
+                .headline("Valid headline")
+                .hourlyRate(50.00)
+                .availableForHire(true)
+                .about("Experienced developer")
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("Valid headline")).thenReturn("Valid headline");
+            mocked.when(() -> SanitizationUtil.sanitizeText("Experienced developer")).thenReturn("Experienced developer");
+
+            service.updateFreelancerProfile(id, dto);
+
+            verify(profileRepository).save(profileCaptor.capture());
+            FreelancerProfile savedProfile = profileCaptor.getValue();
+
+            assertEquals(ExperienceLevel.SENIOR, savedProfile.getExperienceLevel());
+            assertEquals("Valid headline", savedProfile.getHeadline());
+            assertEquals(50.00, savedProfile.getHourlyRate());
+            assertTrue(savedProfile.getAvailableForHire());
+            assertEquals("Experienced developer", savedProfile.getAbout());
+        }
+    }
+
+    @Test
+    void updateProfile_throwsWhenHeadlineSanitizationFails() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .headline("invalid headline")
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("invalid headline")).thenReturn(null);
+
+            assertThrows(InvalidProfileDataException.class, () -> {
+                service.updateFreelancerProfile(id, dto);
+            });
+        }
+    }
+
+    @Test
+    void updateProfile_throwsWhenAboutSanitizationFails() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .about("invalid about text")
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("invalid about text")).thenReturn(null);
+
+            assertThrows(InvalidProfileDataException.class, () -> {
+                service.updateFreelancerProfile(id, dto);
+            });
+        }
+    }
+
+    @Test
+    void updateProfile_setsWebsiteUrl_whenValidUrl() {
+        UUID id = profileId;
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(requestDTO.getUserId())
+                .websiteUrl("https://valid-url.com")
+                .build();
+
+        when(profileRepository.findById(id)).thenReturn(Optional.of(profile));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("https://valid-url.com"))
+                    .thenReturn("https://valid-url.com");
+
+            service.updateFreelancerProfile(id, dto);
+
+            verify(profileRepository).save(profileCaptor.capture());
+            FreelancerProfile savedProfile = profileCaptor.getValue();
+
+            assertEquals("https://valid-url.com", savedProfile.getWebsiteUrl());
+        }
     }
 
 }

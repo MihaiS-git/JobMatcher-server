@@ -36,6 +36,7 @@ public class LanguageController {
     @GetMapping
     public ResponseEntity<List<LanguageDTO>> getAllLanguages(){
         List<LanguageDTO> languages = languageService.getAllLanguages();
+        System.out.println("Languages: " + languages);
         return ResponseEntity.ok(languages);
     }
 

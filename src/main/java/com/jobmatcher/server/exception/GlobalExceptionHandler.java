@@ -86,10 +86,31 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("A database error occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI(), ErrorCode.DATABASE_ERROR);
     }
 
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
+//        log.error("Unexpected error.", ex);
+//        return buildErrorResponse("An unexpected error occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI(), ErrorCode.INTERNAL_ERROR);
+//    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
-        log.error("Unexpected error.", ex);
-        return buildErrorResponse("An unexpected error occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI(), ErrorCode.INTERNAL_ERROR);
+    public ResponseEntity<ErrorResponse> handleGenericException(
+            Exception ex, HttpServletRequest request) {
+        Throwable rootCause = getRootCause(ex);
+        log.error("Unhandled exception", ex);
+        return buildErrorResponse(
+                rootCause.getMessage() != null ? rootCause.getMessage() : "Unexpected error",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                request.getRequestURI(),
+                ErrorCode.INTERNAL_ERROR
+        );
+    }
+
+    private Throwable getRootCause(Throwable throwable) {
+        Throwable cause = throwable.getCause();
+        if (cause != null && cause != throwable) {
+            return getRootCause(cause);
+        }
+        return throwable;
     }
 
     @ExceptionHandler(InvalidAuthException.class)
@@ -184,6 +205,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnsupportedMediaTypeStatusException(UnsupportedMediaTypeStatusException ex, HttpServletRequest request) {
         log.warn("Unsupported media format. ", ex);
         return buildErrorResponse(ex.getMessage(), HttpStatus.UNSUPPORTED_MEDIA_TYPE, request.getRequestURI(), ErrorCode.UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    @ExceptionHandler(InvalidProfileDataException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidProfileData(
+            InvalidProfileDataException ex, HttpServletRequest request) {
+        log.warn("Invalid profile data: {}", ex.getMessage());
+        return buildErrorResponse(
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST,
+                request.getRequestURI(),
+                ErrorCode.VALIDATION_FAILED
+        );
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(Object message, HttpStatus status, String path, ErrorCode errorCode) {
