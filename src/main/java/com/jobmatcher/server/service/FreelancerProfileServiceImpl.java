@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -65,13 +66,12 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
 
     @Override
     public FreelancerDetailDTO getFreelancerProfileByUserId(UUID userId) {
-        FreelancerProfile profile = profileRepository.findByUserId(userId).orElseThrow(() ->
-                new ResourceNotFoundException("Profile not found for user with ID: " + userId));
-
-        profile.getSocialMedia().size(); // forces load
-
-        log.info("FETCHED PROFILE: " + profile);
-        return profileMapper.toFreelancerDetailDto(profile);
+        return profileRepository.findByUserId(userId)
+                .map(profile -> {
+                    profile.getSocialMedia().size(); // force lazy load
+                    return profileMapper.toFreelancerDetailDto(profile);
+                })
+                .orElse(null);
     }
 
     @Override

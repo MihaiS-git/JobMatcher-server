@@ -8,12 +8,14 @@ import com.jobmatcher.server.service.IRefreshTokenService;
 import com.jobmatcher.server.service.PasswordRecoveryService;
 import com.jobmatcher.server.service.RegistrationService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
 
+@Slf4j
 @RestController
 @RequestMapping(value = API_VERSION + "/auth")
 public class AuthController {

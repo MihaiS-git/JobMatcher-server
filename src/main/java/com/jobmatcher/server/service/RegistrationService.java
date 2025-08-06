@@ -1,6 +1,5 @@
 package com.jobmatcher.server.service;
 
-import com.jobmatcher.server.domain.Role;
 import com.jobmatcher.server.domain.User;
 import com.jobmatcher.server.exception.EmailAlreadyExistsException;
 import com.jobmatcher.server.model.RegisterRequest;

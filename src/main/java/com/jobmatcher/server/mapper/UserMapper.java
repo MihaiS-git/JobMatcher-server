@@ -24,10 +24,10 @@ public class UserMapper {
         return AuthUserDTO.builder()
                 .id(user.getId() != null ? user.getId() : null)
                 .email(user.getEmail())
-                .firstName(user.getFirstName() != null ? user.getFirstName() : "unknown")
-                .lastName(user.getLastName() != null ? user.getLastName() : "unknown")
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .role(user.getRole().name())
-                .pictureUrl(user.getPictureUrl() != null ? user.getPictureUrl() : "unknown")
+                .pictureUrl(user.getPictureUrl())
                 .build();
     }
 
