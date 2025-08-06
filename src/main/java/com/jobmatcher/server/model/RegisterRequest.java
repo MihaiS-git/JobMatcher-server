@@ -1,6 +1,8 @@
 package com.jobmatcher.server.model;
 
+import com.jobmatcher.server.domain.Role;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -28,4 +30,7 @@ public class RegisterRequest {
     @NotBlank
     @Size(min=2, message="Last name must be at least 2 characters")
     private String lastName;
+
+    @NotNull
+    private Role role;
 }
