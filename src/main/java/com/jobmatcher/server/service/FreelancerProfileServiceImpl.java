@@ -117,90 +117,6 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         return profileMapper.toFreelancerDetailDto(savedProfile);
     }
 
-//    @Override
-//    public FreelancerDetailDTO updateFreelancerProfile(UUID id, FreelancerProfileRequestDTO dto) {
-//        FreelancerProfile existentProfile = profileRepository.findById(id).orElseThrow(() ->
-//                new ResourceNotFoundException("Profile not found with ID: " + id));
-//
-//        String username = SanitizationUtil.sanitizeText(dto.getUsername());
-//        if (username == null && dto.getUsername() != null) {
-//            throw new InvalidProfileDataException("Invalid username provided");
-//        }
-//        existentProfile.setUsername(username);
-//
-//        if (dto.getExperienceLevel() != null) {
-//            existentProfile.setExperienceLevel(dto.getExperienceLevel());
-//        }
-//
-//        if (dto.getHeadline() != null) {
-//            String headline = dto.getHeadline().isBlank() ? null : SanitizationUtil.sanitizeText(dto.getHeadline());
-//            if (dto.getHeadline().length() > 0 && headline == null) {
-//                throw new InvalidProfileDataException("Invalid headline text provided");
-//            }
-//            existentProfile.setHeadline(headline);
-//        }
-//
-//        if (dto.getJobSubcategoryIds() != null) {
-//            Set<JobSubcategory> subcategories = dto.getJobSubcategoryIds().isEmpty()
-//                    ? Collections.emptySet()
-//                    : fetchJobSubcategories(dto.getJobSubcategoryIds());
-//            existentProfile.setJobSubcategories(subcategories);
-//        }
-//
-//        if (dto.getHourlyRate() != null) {
-//            existentProfile.setHourlyRate(dto.getHourlyRate());
-//        }
-//
-//        if (dto.getAvailableForHire() != null) {
-//            existentProfile.setAvailableForHire(dto.getAvailableForHire());
-//        }
-//
-//        if (dto.getSkills() != null) {
-//            Set<Skill> skills = dto.getSkills().isEmpty()
-//                    ? Collections.emptySet()
-//                    : resolveSkillsFromNames(dto.getSkills());
-//            existentProfile.setSkills(skills);
-//        }
-//
-//        if (dto.getLanguageIds() != null) {
-//            Set<Language> languages = dto.getLanguageIds().isEmpty()
-//                    ? Collections.emptySet()
-//                    : fetchLanguages(dto.getLanguageIds());
-//            existentProfile.setLanguages(languages);
-//        }
-//
-//        if (dto.getAbout() != null) {
-//            String about = dto.getAbout().isBlank() ? null : SanitizationUtil.sanitizeText(dto.getAbout());
-//            if (dto.getAbout().length() > 0 && about == null) {
-//                throw new InvalidProfileDataException("Invalid about text provided");
-//            }
-//            existentProfile.setAbout(about);
-//        }
-//
-//        if (dto.getSocialMedia() != null) {
-//            Set<String> sanitizedSocialMedia = dto.getSocialMedia().stream()
-//                    .map(SanitizationUtil::sanitizeUrl)
-//                    .filter(s -> s != null && !s.isBlank())
-//                    .collect(Collectors.toSet());
-//
-//            if (!dto.getSocialMedia().isEmpty() && sanitizedSocialMedia.isEmpty()) {
-//                throw new InvalidProfileDataException("Invalid social media URL provided");
-//            }
-//            existentProfile.setSocialMedia(sanitizedSocialMedia);
-//        }
-//
-//        if (dto.getWebsiteUrl() != null) {
-//            String websiteUrl = dto.getWebsiteUrl().isBlank() ? null : SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl());
-//            if (dto.getWebsiteUrl().length() > 0 && websiteUrl == null) {
-//                throw new InvalidProfileDataException("Invalid website URL provided");
-//            }
-//            existentProfile.setWebsiteUrl(websiteUrl);
-//        }
-//
-//        FreelancerProfile savedProfile = profileRepository.save(existentProfile);
-//        return profileMapper.toFreelancerDetailDto(savedProfile);
-//    }
-
     @Override
     public FreelancerDetailDTO updateFreelancerProfile(UUID id, FreelancerProfileRequestDTO dto) {
         FreelancerProfile existentProfile = profileRepository.findById(id).orElseThrow(() ->
@@ -291,7 +207,6 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         FreelancerProfile savedProfile = profileRepository.save(existentProfile);
         return profileMapper.toFreelancerDetailDto(savedProfile);
     }
-
 
     private Set<Skill> resolveSkillsFromNames(Set<String> skillNames) {
         if (skillNames == null || skillNames.isEmpty()) return Set.of();
