@@ -5,8 +5,6 @@ import com.jobmatcher.server.domain.ExperienceLevel;
 import com.jobmatcher.server.validator.ValidSkills;
 import com.jobmatcher.server.validator.ValidWebsiteUrl;
 import com.jobmatcher.server.validator.ValidWebsiteUrlCollection;
-import com.jobmatcher.server.validator.ValidWebsiteUrlCollectionValidator;
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
