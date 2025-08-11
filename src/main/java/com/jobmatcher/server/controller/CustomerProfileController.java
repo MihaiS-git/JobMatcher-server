@@ -2,6 +2,7 @@ package com.jobmatcher.server.controller;
 
 import com.jobmatcher.server.model.CustomerDetailDTO;
 import com.jobmatcher.server.model.CustomerProfileRequestDTO;
+import com.jobmatcher.server.model.FreelancerDetailDTO;
 import com.jobmatcher.server.service.ICustomerProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,12 @@ public class CustomerProfileController {
     public ResponseEntity<CustomerDetailDTO> getCustomerProfileById(@PathVariable UUID id){
         CustomerDetailDTO customerProfileDto =  customerProfileService.getCustomerProfileById(id);
         return ResponseEntity.ok(customerProfileDto);
+    }
+
+    @GetMapping(path = "/users/{userId}")
+    public ResponseEntity<CustomerDetailDTO> getFreelancerByUserId(@PathVariable UUID userId) {
+        CustomerDetailDTO profile = customerProfileService.getCustomerProfileByUserId(userId);
+        return ResponseEntity.ok(profile);
     }
 
     @PostMapping

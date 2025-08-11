@@ -55,6 +55,16 @@ public class CustomerProfileServiceImpl implements ICustomerProfileService{
     }
 
     @Override
+    public CustomerDetailDTO getCustomerProfileByUserId(UUID userId) {
+        return profileRepository.findByUserId(userId)
+                .map(profile -> {
+                    profile.getSocialMedia().size(); // force lazy load
+                    return profileMapper.toCustomerDetailDto(profile);
+                })
+                .orElse(null);
+    }
+
+    @Override
     public CustomerDetailDTO saveCustomerProfile(CustomerProfileRequestDTO dto) {
         Set<Integer> languageIds = dto.getLanguageIds();
         Set<Language> languages = new HashSet<>(languageRepository.findAllById(languageIds));
