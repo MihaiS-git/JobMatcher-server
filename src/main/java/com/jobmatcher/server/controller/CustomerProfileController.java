@@ -2,7 +2,6 @@ package com.jobmatcher.server.controller;
 
 import com.jobmatcher.server.model.CustomerDetailDTO;
 import com.jobmatcher.server.model.CustomerProfileRequestDTO;
-import com.jobmatcher.server.model.FreelancerDetailDTO;
 import com.jobmatcher.server.service.ICustomerProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

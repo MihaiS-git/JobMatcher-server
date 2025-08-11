@@ -1,7 +1,6 @@
 package com.jobmatcher.server.repository;
 
 import com.jobmatcher.server.domain.CustomerProfile;
-import com.jobmatcher.server.domain.PublicProfile;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
