@@ -23,7 +23,7 @@ public class ImageOptimizer {
         File tempPngFile = File.createTempFile("temp-", ".png");
 
         Thumbnails.of(originalImage)
-                .size(300, 300)
+                .size(640, 640)
                 .outputFormat("png")
                 .outputQuality(0.85)
                 .toFile(tempPngFile);
