@@ -3,6 +3,7 @@ package com.jobmatcher.server.controller;
 import com.jobmatcher.server.model.CustomerDetailDTO;
 import com.jobmatcher.server.model.CustomerProfileRequestDTO;
 import com.jobmatcher.server.service.ICustomerProfileService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,7 +11,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
-
+@Slf4j
 @RestController
 @RequestMapping(API_VERSION + "/profiles/customers")
 public class CustomerProfileController {

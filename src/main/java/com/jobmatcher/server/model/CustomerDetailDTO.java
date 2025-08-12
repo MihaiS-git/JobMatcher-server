@@ -2,12 +2,14 @@ package com.jobmatcher.server.model;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.Set;
 import java.util.UUID;
 
 @Getter
 @Builder
+@ToString
 public class CustomerDetailDTO {
     private UUID profileId;
     private UUID userId;

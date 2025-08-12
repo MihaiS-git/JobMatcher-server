@@ -20,7 +20,7 @@ public class FreelancerProfileRequestDTO {
     private UUID userId;
 
     @Size(min=2, max = 20, message = "Username must be 2-20 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers, and underscores")
+    @Pattern(regexp = "^[A-Za-zÀ-ÖØ-öø-ÿ0-9._'-]{2,}$", message = "Username contains invalid characters")
     private String username;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)

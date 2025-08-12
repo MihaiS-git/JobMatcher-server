@@ -40,7 +40,16 @@ public class PublicProfile extends Auditable {
     private Set<Language> languages = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "public_profile_social_media", joinColumns = @JoinColumn(name = "profile_id"))
+    @CollectionTable(
+            name = "public_profile_social_media",
+            joinColumns = @JoinColumn(
+                    name = "profile_id",
+                    foreignKey = @ForeignKey(
+                            name = "fk_public_profile_social_media_profile",
+                            foreignKeyDefinition = "FOREIGN KEY (profile_id) REFERENCES public_profile(id) ON DELETE CASCADE"
+                    )
+            )
+    )
     @Column(name = "social_media_url")
     private Set<String> socialMedia = new HashSet<>();
 

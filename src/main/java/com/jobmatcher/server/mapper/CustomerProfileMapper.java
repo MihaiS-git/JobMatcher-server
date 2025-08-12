@@ -56,15 +56,24 @@ public class CustomerProfileMapper {
                 .build();
     }
 
-    public CustomerProfile toEntity(CustomerProfileRequestDTO dto, User user, Set<Language> languages) {
+    public CustomerProfile toEntity(
+            CustomerProfileRequestDTO dto,
+            User user,
+            String username,
+            String company,
+            String about,
+            String websiteUrl,
+            Set<Language> languages,
+            Set<String> socialMedia
+    ) {
         CustomerProfile profile = new CustomerProfile();
         profile.setUser(user);
-        profile.setUsername(dto.getUsername());
-        profile.setCompany(dto.getCompany());
-        profile.setAbout(dto.getAbout());
+        profile.setUsername(username);
+        profile.setCompany(company);
+        profile.setAbout(about);
         profile.setLanguages(languages);
-        profile.setWebsiteUrl(dto.getWebsiteUrl());
-        profile.setSocialMedia(dto.getSocialMedia());
+        profile.setWebsiteUrl(websiteUrl);
+        profile.setSocialMedia(socialMedia);
 
         return profile;
     }
