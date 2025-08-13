@@ -16,4 +16,15 @@ public class JobSubcategoryMapper {
                 .build();
     }
 
+    public JobSubcategory toEntity(JobSubcategoryDTO dto) {
+        if (dto == null) return null;
+
+        JobSubcategory subcategory = new JobSubcategory();
+        subcategory.setId(dto.getId());
+        subcategory.setName(dto.getName());
+        subcategory.setDescription(dto.getDescription());
+
+        return subcategory;
+    }
+
 }

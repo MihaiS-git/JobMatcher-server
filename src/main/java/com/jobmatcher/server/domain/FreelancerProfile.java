@@ -18,7 +18,11 @@ import java.util.Set;
 public class FreelancerProfile extends PublicProfile{
 
     private String headline;
+
+    @Column(name = "hourly_rate")
     private Double hourlyRate;
+
+    @Column(name = "available_for_hire")
     private Boolean availableForHire;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -38,5 +42,10 @@ public class FreelancerProfile extends PublicProfile{
     private Set<Skill> skills = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "experience_level")
     private ExperienceLevel experienceLevel;
+
+    @OneToMany(mappedBy = "freelancerProfile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("createdAt DESC")
+    private Set<PortfolioItem> portfolioItems = new HashSet<>();
 }

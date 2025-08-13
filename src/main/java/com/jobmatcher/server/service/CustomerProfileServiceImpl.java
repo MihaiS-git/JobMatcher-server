@@ -60,25 +60,6 @@ public class CustomerProfileServiceImpl implements ICustomerProfileService {
                 .orElse(null);
     }
 
-//    @Override
-//    public CustomerDetailDTO saveCustomerProfile(CustomerProfileRequestDTO dto) {
-//        Set<Integer> languageIds = dto.getLanguageIds();
-//        Set<Language> languages = new HashSet<>(languageRepository.findAllById(languageIds));
-//        if (languages.size() != languageIds.size()) {
-//            Set<Integer> foundIds = languages.stream()
-//                    .map(Language::getId)
-//                    .collect(Collectors.toSet());
-//            Set<Integer> missingIds = new HashSet<>(languageIds);
-//            missingIds.remove(foundIds);
-//            throw new ResourceNotFoundException("Languages not found for IDs: " + missingIds);
-//        }
-//
-//        User user = userRepository.findById(dto.getUserId()).orElseThrow(() -> new ResourceNotFoundException("User not found."));
-//        CustomerProfile profile = profileMapper.toEntity(dto, user, languages);
-//        CustomerProfile savedProfile = profileRepository.save(profile);
-//        return profileMapper.toCustomerDetailDto(savedProfile);
-//    }
-
     @Override
     public CustomerDetailDTO saveCustomerProfile(CustomerProfileRequestDTO dto) {
         User user = userRepository.findById(dto.getUserId()).orElseThrow(() ->

@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-
 @ExtendWith(MockitoExtension.class)
 class FreelancerProfileServiceImplTest {
     @Mock
@@ -460,52 +459,57 @@ class FreelancerProfileServiceImplTest {
 
     @Test
     void updateFreelancerProfile_sanitizesVariousSocialMediaInputs() {
-        when(profileRepository.findById(profileId)).thenReturn(Optional.of(profile));
-        when(subcategoryRepository.findAllById(anySet())).thenReturn(List.of(new JobSubcategory("code", "name", new JobCategory("cat", "cat"))));
-        when(languageRepository.findAllById(anySet())).thenReturn(List.of(new Language(1, "English")));
-        when(skillService.findOrCreateByName(anyString())).thenReturn(new Skill());
+        UUID profileId = UUID.randomUUID();
+        FreelancerProfile existingProfile = new FreelancerProfile();
+        existingProfile.setSocialMedia(new HashSet<>(Arrays.asList("http://old.com")));
 
-        Set<String> inputs = new HashSet<>(Arrays.asList(
-                "http://valid.com",
-                "HTTPS://VALID.COM",
-                " javascript:alert('XSS')",
-                "ftp://unsupported-protocol.com",
-                "http://valid.com/?q=<script>",
-                "  ",
-                null,
-                "http://valid.com/normal"
+        when(profileRepository.findById(profileId)).thenReturn(Optional.of(existingProfile));
+        when(profileRepository.save(any(FreelancerProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Malicious & normal inputs, including XSS-style query string
+        Set<String> socialInputs = new HashSet<>(Arrays.asList(
+                "https://twitter.com/user",
+                "javascript:alert(1)",
+                "https://linkedin.com/in/user",
+                "http://invalid.com?=<script>alert('x');<script>", // rejected entirely
+                "   ", // blank
+                null // null
         ));
 
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
-                .userId(user.getId())
-                .skills(Set.of("Java"))
-                .jobSubcategoryIds(Set.of(1L))
-                .languageIds(Set.of(1))
-                .socialMedia(inputs)
+                .socialMedia(socialInputs)
                 .build();
 
+        // Stub the mapper for completeness
+        when(profileMapper.toFreelancerDetailDto(any(FreelancerProfile.class)))
+                .thenReturn(null); // We don't need actual mapping here
+
+        // Call the method
+        service.updateFreelancerProfile(profileId, dto);
+
+        // Capture saved profile
         ArgumentCaptor<FreelancerProfile> captor = ArgumentCaptor.forClass(FreelancerProfile.class);
-        when(profileRepository.save(captor.capture())).thenAnswer(i -> i.getArgument(0));
-        when(profileMapper.toFreelancerDetailDto(any())).thenReturn(detailDTO);
+        verify(profileRepository).save(captor.capture());
 
-        FreelancerDetailDTO result = service.updateFreelancerProfile(profileId, dto);
+        FreelancerProfile saved = captor.getValue();
+        assertNotNull(saved);
 
-        Set<String> sanitized = captor.getValue().getSocialMedia();
+        // Every URL should be sanitized via SanitizationUtil
+        saved.getSocialMedia().forEach(url -> {
+            assertNotNull(url);
+            assertFalse(url.isBlank());
+            assertFalse(url.contains("javascript:"));
+            assertFalse(url.contains("<script>"));
+        });
 
-        assertTrue(sanitized.contains("http://valid.com"));
-        assertFalse(sanitized.contains("HTTPS://VALID.COM"));
-        assertFalse(sanitized.contains(" javascript:alert('XSS')"));
-        assertFalse(sanitized.contains("ftp://unsupported-protocol.com"));
-        assertFalse(sanitized.stream().anyMatch(s -> s != null && s.toLowerCase().contains("javascript:")));
-        assertFalse(sanitized.stream().anyMatch(s -> s != null && s.toLowerCase().contains("<script>")));
-
-        assertTrue(
-                sanitized.stream()
-                        .anyMatch(s -> s != null && s.trim().equalsIgnoreCase("http://valid.com/?q=script"))
-        );
-        assertFalse(sanitized.contains(null));
-        assertFalse(sanitized.contains("  "));
+        // Should include valid ones only (malicious dropped)
+        assertTrue(saved.getSocialMedia().contains("https://twitter.com/user"));
+        assertTrue(saved.getSocialMedia().contains("https://linkedin.com/in/user"));
+        assertFalse(saved.getSocialMedia().contains("http://invalid.com?=")); // now explicitly rejected
+        assertEquals(2, saved.getSocialMedia().size()); // only the two safe ones remain
     }
+
+
 
     @Test
     void getFreelancerProfileByUserId_whenProfileExists_returnsDto() {

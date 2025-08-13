@@ -6,6 +6,7 @@ import com.jobmatcher.server.model.JobSubcategoryDTO;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JobCategoryMapper {
@@ -29,5 +30,19 @@ public class JobCategoryMapper {
                 .description(category.getDescription())
                 .subcategories(subcategoryDTOS)
                 .build();
+    }
+
+    public JobCategory toEntity(JobCategoryDTO dto) {
+        if (dto == null) return null;
+
+        JobCategory category = new JobCategory();
+        category.setId(dto.getId());
+        category.setName(dto.getName());
+        category.setDescription(dto.getDescription());
+        category.setSubcategories(dto.getSubcategories().stream()
+                .map(jobSubcategoryMapper::toEntity)
+                .collect(Collectors.toSet()));
+
+        return category;
     }
 }

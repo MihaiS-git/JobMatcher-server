@@ -138,7 +138,7 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         // Headline: null means no update, empty means clear (set to null)
         if (dto.getHeadline() != null) {
             String headline = dto.getHeadline().isBlank() ? null : SanitizationUtil.sanitizeText(dto.getHeadline());
-            if (dto.getHeadline().length() > 0 && headline == null) {
+            if (!dto.getHeadline().isEmpty() && headline == null) {
                 throw new InvalidProfileDataException("Invalid headline text provided");
             }
             existentProfile.setHeadline(headline);
@@ -175,7 +175,7 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         // About: null means no update, empty means clear
         if (dto.getAbout() != null) {
             String about = dto.getAbout().isBlank() ? null : SanitizationUtil.sanitizeText(dto.getAbout());
-            if (dto.getAbout().length() > 0 && about == null) {
+            if (!dto.getAbout().isEmpty() && about == null) {
                 throw new InvalidProfileDataException("Invalid about text provided");
             }
             existentProfile.setAbout(about);
@@ -197,7 +197,7 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         // Website URL: null means no update, empty means clear
         if (dto.getWebsiteUrl() != null) {
             String websiteUrl = dto.getWebsiteUrl().isBlank() ? null : SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl());
-            if (dto.getWebsiteUrl().length() > 0 && websiteUrl == null) {
+            if (!dto.getWebsiteUrl().isEmpty() && websiteUrl == null) {
                 throw new InvalidProfileDataException("Invalid website URL provided");
             }
             existentProfile.setWebsiteUrl(websiteUrl);
