@@ -87,31 +87,48 @@ public class PortfolioItemServiceImpl implements IPortfolioItemService {
         PortfolioItem existingItem = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio item not found."));
 
-        JobCategory category = null;
-        if (requestItem.getCategoryId() != null) {
-            category = jobCategoryRepository.findById(requestItem.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Job category not found."));
-        }
-
-        Set<JobSubcategory> subcategories = requestItem.getSubcategoryIds() != null
-                ? new HashSet<>(jobSubcategoryRepository.findAllById(requestItem.getSubcategoryIds()))
-                : new HashSet<>();
-
         PortfolioItemRequestDTO sanitizedRequestItem = sanitizePortfolioItemRequest(requestItem);
 
-        existingItem.setCategory(category);
-        existingItem.setSubcategories(subcategories);
-        existingItem.setTitle(sanitizedRequestItem.getTitle());
-        existingItem.setDescription(sanitizedRequestItem.getDescription());
-        existingItem.setClientName(sanitizedRequestItem.getClientName());
-        existingItem.setDemoUrl(sanitizedRequestItem.getDemoUrl());
-        existingItem.setSourceUrl(sanitizedRequestItem.getSourceUrl());
-        existingItem.setImageUrls(sanitizedRequestItem.getImageUrls());
+        // CATEGORY: null means delete, otherwise update
+        if (requestItem.getCategoryId() != null) {
+            JobCategory category = jobCategoryRepository.findById(requestItem.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Job category not found."));
+            existingItem.setCategory(category);
+        } else {
+            existingItem.setCategory(null);
+        }
+
+        // SUBCATEGORIES: empty list means delete all, otherwise update
+        if (requestItem.getSubcategoryIds() != null) {
+            Set<JobSubcategory> subcategories = new HashSet<>(jobSubcategoryRepository
+                    .findAllById(requestItem.getSubcategoryIds()));
+            existingItem.setSubcategories(subcategories);
+        } else {
+            existingItem.getSubcategories().clear();
+        }
+
+        // TEXT FIELDS: "__DELETE__" clears the field
+        existingItem.setTitle("__DELETE__".equals(sanitizedRequestItem.getTitle())
+                ? null : sanitizedRequestItem.getTitle());
+        existingItem.setDescription("__DELETE__".equals(sanitizedRequestItem.getDescription())
+                ? null : sanitizedRequestItem.getDescription());
+        existingItem.setClientName("__DELETE__".equals(sanitizedRequestItem.getClientName())
+                ? null : sanitizedRequestItem.getClientName());
+        existingItem.setDemoUrl("__DELETE__".equals(sanitizedRequestItem.getDemoUrl())
+                ? null : sanitizedRequestItem.getDemoUrl());
+        existingItem.setSourceUrl("__DELETE__".equals(sanitizedRequestItem.getSourceUrl())
+                ? null : sanitizedRequestItem.getSourceUrl());
+
+        // IMAGE URLS: overwrite if provided
+        if (sanitizedRequestItem.getImageUrls() != null) {
+            existingItem.setImageUrls(sanitizedRequestItem.getImageUrls());
+        }
 
         PortfolioItem updatedItem = repository.save(existingItem);
-
         return portfolioItemMapper.toDetailDto(updatedItem);
     }
+
+
 
     @Override
     public void deletePortfolioItem(UUID id) {
