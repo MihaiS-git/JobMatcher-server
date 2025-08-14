@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
 
 @RestController
@@ -20,7 +22,7 @@ public class FileUploadController {
 
     @PatchMapping("/{id}/profile_picture")
     public ResponseEntity<SuccessResponse> upload(@PathVariable String id, @RequestParam("file") MultipartFile file) {
-        cloudinaryService.uploadFile(id, file);
+        cloudinaryService.uploadFile(UUID.fromString(id), file);
         return ResponseEntity.ok().body(new SuccessResponse(true));
     }
 

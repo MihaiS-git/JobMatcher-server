@@ -48,8 +48,8 @@ public class UserServiceImpl implements IUserService {
 
     @Transactional
     @Override
-    public UserResponseDTO updateUserById(String id, UserRequestDTO userRequest) {
-        User existentUser = userRepository.findById(UUID.fromString(id)).orElseThrow(() ->
+    public UserResponseDTO updateUserById(UUID id, UserRequestDTO userRequest) {
+        User existentUser = userRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("User not found."));
 
         if(userRequest.getRole() != null) {

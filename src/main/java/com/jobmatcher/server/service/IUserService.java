@@ -14,7 +14,7 @@ public interface IUserService {
 
     UserResponseDTO getUserById(UUID id);
 
-    UserResponseDTO updateUserById(String userId, @Valid UserRequestDTO userRequest);
+    UserResponseDTO updateUserById(UUID userId, @Valid UserRequestDTO userRequest);
 
     UserResponseDTO updateAddressByUserId(UUID userId, @Valid AddressRequestDTO addressRequest);
 }

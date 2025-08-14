@@ -119,11 +119,6 @@ public class PortfolioItemServiceImpl implements IPortfolioItemService {
         existingItem.setSourceUrl("__DELETE__".equals(sanitizedRequestItem.getSourceUrl())
                 ? null : sanitizedRequestItem.getSourceUrl());
 
-        // IMAGE URLS: overwrite if provided
-        if (sanitizedRequestItem.getImageUrls() != null) {
-            existingItem.setImageUrls(sanitizedRequestItem.getImageUrls());
-        }
-
         PortfolioItem updatedItem = repository.save(existingItem);
         return portfolioItemMapper.toDetailDto(updatedItem);
     }
@@ -144,14 +139,6 @@ public class PortfolioItemServiceImpl implements IPortfolioItemService {
         String clientName = sanitizeOptionalText(requestItem.getClientName(), "Client name");
         String demoUrl = sanitizeOptionalUrl(requestItem.getDemoUrl(), "Demo URL");
         String sourceUrl = sanitizeOptionalUrl(requestItem.getSourceUrl(), "Source URL");
-        Set<String> imageUrls = (requestItem.getImageUrls() == null ? Collections.<String>emptyList() : requestItem.getImageUrls())
-                .stream()
-                .map(SanitizationUtil::sanitizeUrl)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        if (imageUrls.isEmpty() && requestItem.getImageUrls() != null && !requestItem.getImageUrls().isEmpty()) {
-            throw new IllegalArgumentException("Image URLs contain invalid characters.");
-        }
 
         return PortfolioItemRequestDTO.builder()
                 .title(title)
@@ -160,7 +147,6 @@ public class PortfolioItemServiceImpl implements IPortfolioItemService {
                 .subcategoryIds(requestItem.getSubcategoryIds())
                 .demoUrl(demoUrl)
                 .sourceUrl(sourceUrl)
-                .imageUrls(imageUrls)
                 .clientName(clientName)
                 .build();
     }

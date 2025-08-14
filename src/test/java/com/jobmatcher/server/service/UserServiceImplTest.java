@@ -129,7 +129,7 @@ class UserServiceImplTest {
         when(userRepository.save(any(User.class))).thenReturn(updatedUser);
         when(userMapper.toUserResponseDto(updatedUser)).thenReturn(responseDto);
 
-        UserResponseDTO result = userService.updateUserById(userId.toString(), request);
+        UserResponseDTO result = userService.updateUserById(userId, request);
 
         assertThat(result).isEqualTo(responseDto);
         assertThat(sampleUser.getRole()).isEqualTo(Role.ADMIN);
@@ -153,7 +153,7 @@ class UserServiceImplTest {
 
         UserRequestDTO request = UserRequestDTO.builder().build();
 
-        assertThatThrownBy(() -> userService.updateUserById(userId.toString(), request))
+        assertThatThrownBy(() -> userService.updateUserById(userId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("User not found");
 
@@ -168,7 +168,7 @@ class UserServiceImplTest {
         when(userRepository.save(sampleUser)).thenReturn(sampleUser);
         when(userMapper.toUserResponseDto(sampleUser)).thenReturn(UserResponseDTO.builder().build());
 
-        UserResponseDTO result = userService.updateUserById(userId.toString(), request);
+        UserResponseDTO result = userService.updateUserById(userId, request);
 
         assertThat(result).isNotNull();
         verify(userRepository).save(sampleUser);

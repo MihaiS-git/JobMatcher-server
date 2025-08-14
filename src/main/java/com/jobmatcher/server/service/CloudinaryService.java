@@ -29,7 +29,7 @@ public class CloudinaryService {
         this.imageOptimizer = imageOptimizer;
     }
 
-    public void uploadFile(String id, MultipartFile file) {
+    public void uploadFile(UUID id, MultipartFile file) {
         log.info("Uploading file for user {} to Cloudinary", id);
 
         String contentType = file.getContentType();
@@ -51,7 +51,7 @@ public class CloudinaryService {
         }
         File optimizedFile = null;
         try {
-            String oldPictureUrl = userService.getUserById(UUID.fromString(id)).getPictureUrl();
+            String oldPictureUrl = userService.getUserById(id).getPictureUrl();
             if (oldPictureUrl != null && !oldPictureUrl.isBlank()) {
                 String oldPublicId = extractPublicId(oldPictureUrl);
                 if (oldPublicId != null) {
@@ -59,10 +59,10 @@ public class CloudinaryService {
                 }
             }
 
-            if (id == null || id.length() < 8) {
+            if (id == null || id.toString().length() < 8) {
                 throw new UploadFileException("Invalid user ID");
             }
-            String shortId = id.substring(0, 8);
+            String shortId = id.toString().substring(0, 8);
             String publicId = "jobmatcher/users/" + id + "/profile_" + shortId;
 
             optimizedFile = imageOptimizer.compressAndConvertToWebP(file);

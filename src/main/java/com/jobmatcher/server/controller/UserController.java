@@ -33,7 +33,7 @@ public class UserController {
             @PathVariable String id,
             @RequestBody @Valid UserRequestDTO userRequest
     ){
-        UserResponseDTO userResponseDTO = userService.updateUserById(id, userRequest);
+        UserResponseDTO userResponseDTO = userService.updateUserById(UUID.fromString(id), userRequest);
         return ResponseEntity.ok(userResponseDTO);
     }
 

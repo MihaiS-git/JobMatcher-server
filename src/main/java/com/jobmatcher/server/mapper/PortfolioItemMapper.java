@@ -74,7 +74,6 @@ public class PortfolioItemMapper {
         entity.setSubcategories(subcategories);
         entity.setDemoUrl(dto.getDemoUrl());
         entity.setSourceUrl(dto.getSourceUrl());
-        entity.setImageUrls(new HashSet<>(dto.getImageUrls()));
         entity.setClientName(dto.getClientName());
 
         return entity;
