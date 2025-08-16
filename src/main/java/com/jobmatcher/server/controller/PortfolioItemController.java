@@ -3,12 +3,16 @@ package com.jobmatcher.server.controller;
 import com.jobmatcher.server.model.PortfolioItemDetailDTO;
 import com.jobmatcher.server.model.PortfolioItemRequestDTO;
 import com.jobmatcher.server.model.PortfolioItemSummaryDTO;
+import com.jobmatcher.server.model.SuccessResponse;
+import com.jobmatcher.server.service.CloudinaryService;
 import com.jobmatcher.server.service.IPortfolioItemService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,9 +23,11 @@ import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
 public class PortfolioItemController {
 
     private final IPortfolioItemService portfolioItemService;
+    private final CloudinaryService cloudinaryService;
 
-    public PortfolioItemController(IPortfolioItemService portfolioItemService) {
+    public PortfolioItemController(IPortfolioItemService portfolioItemService, CloudinaryService cloudinaryService) {
         this.portfolioItemService = portfolioItemService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @GetMapping("/{id}")
@@ -56,4 +62,25 @@ public class PortfolioItemController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/images/upload/{id}")
+    public ResponseEntity<SuccessResponse> uploadPortfolioItemPhotos(
+            @PathVariable String id,
+            @RequestParam("userId") String userIdString,
+            @RequestParam("files") MultipartFile[] files
+    ){
+        UUID userId = UUID.fromString(userIdString);
+        cloudinaryService.uploadMultipleImages(UUID.fromString(id), userId, Arrays.asList(files));
+        return ResponseEntity.ok().body(new SuccessResponse(true));
+    }
+
+    @PatchMapping("/images/remove/{portfolioItemId}")
+    public ResponseEntity<SuccessResponse> deletePortfolioItemPhoto(
+            @PathVariable String portfolioItemId,
+            @RequestBody String imageUrl) {
+
+        System.out.println("Deleting image: " + imageUrl + " from portfolio item: " + portfolioItemId);
+
+        cloudinaryService.deletePortfolioItemImage(UUID.fromString(portfolioItemId), imageUrl);
+        return ResponseEntity.ok().body(new SuccessResponse(true));
+    }
 }

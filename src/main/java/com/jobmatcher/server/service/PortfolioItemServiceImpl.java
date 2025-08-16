@@ -5,6 +5,7 @@ import com.jobmatcher.server.domain.JobCategory;
 import com.jobmatcher.server.domain.JobSubcategory;
 import com.jobmatcher.server.domain.PortfolioItem;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
+import com.jobmatcher.server.exception.UploadFileException;
 import com.jobmatcher.server.mapper.PortfolioItemMapper;
 import com.jobmatcher.server.model.PortfolioItemDetailDTO;
 import com.jobmatcher.server.model.PortfolioItemRequestDTO;
@@ -123,13 +124,44 @@ public class PortfolioItemServiceImpl implements IPortfolioItemService {
         return portfolioItemMapper.toDetailDto(updatedItem);
     }
 
-
-
     @Override
     public void deletePortfolioItem(UUID id) {
         PortfolioItem existingItem = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio item not found."));
         repository.delete(existingItem);
+    }
+
+    @Override
+    public void uploadPortfolioItemImages(UUID portfolioItemId, List<String> imageUrls) {
+        PortfolioItem item = repository.findById(portfolioItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Portfolio item not found."));
+
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            throw new UploadFileException("Image URLs cannot be null or empty.");
+        }
+
+        Set<String> sanitizedUrls = imageUrls.stream()
+                .map(SanitizationUtil::sanitizeUrl)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (sanitizedUrls.isEmpty()) {
+            throw new UploadFileException("All provided image URLs are invalid.");
+        }
+
+        item.getImageUrls().addAll(sanitizedUrls);
+        repository.save(item);
+    }
+
+    @Override
+    public void deletePortfolioItemImage(UUID portfolioItemId, String imageUrl) {
+        PortfolioItem item = repository.findById(portfolioItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Portfolio item not found"));
+
+        boolean removed = item.getImageUrls().remove(imageUrl);
+        if (!removed) return;
+
+        repository.save(item);
     }
 
 
