@@ -73,7 +73,7 @@ class CustomerProfileServiceImplTest {
     void getAllCustomerProfiles_shouldReturnProfiles() {
         when(profileRepository.findAll()).thenReturn(List.of(profile));
         CustomerSummaryDTO dto = CustomerSummaryDTO.builder().build();
-        when(profileMapper.toCustomerSummaryDto(profile)).thenReturn(dto);
+        when(profileMapper.toCustomerSummaryDto(profile, true)).thenReturn(dto);
 
         Set<CustomerSummaryDTO> result = service.getAllCustomerProfiles();
 

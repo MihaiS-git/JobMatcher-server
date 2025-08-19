@@ -1,10 +1,10 @@
 package com.jobmatcher.server.util;
 
 import org.apache.commons.validator.routines.UrlValidator;
-import org.owasp.encoder.Encode;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
+import java.text.Normalizer;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -17,18 +17,32 @@ public class SanitizationUtil {
 
     private static final UrlValidator URL_VALIDATOR = new UrlValidator(new String[]{"http", "https"});
 
+    private static final int MAX_TEXT_LENGTH = 2000;
+
     public static String sanitizeUrl(String url) {
         if (url == null || url.isBlank()) return null;
 
-        String trimmed = url.trim();
+        String trimmed = Normalizer.normalize(url.trim(), Normalizer.Form.NFKC);
+
         if (!URL_VALIDATOR.isValid(trimmed)) return null;
 
-        return Encode.forHtml(trimmed); // encode special chars for safe HTML
+        // Store clean raw value, don't encode yet
+        return trimmed;
     }
 
     public static String sanitizeText(String text) {
         if (text == null || text.isBlank()) return null;
-        return HTML_POLICY.sanitize(text);
+
+        // Normalize unicode (avoids invisible homoglyph tricks)
+        String normalized = Normalizer.normalize(text.trim(), Normalizer.Form.NFKC);
+
+        // Enforce length cap (business rule – 2000 chars for descriptions)
+        if (normalized.length() > 2000) {
+            normalized = normalized.substring(0, 2000);
+        }
+
+        // Apply strict HTML policy (strip or allow only safe inline tags)
+        return HTML_POLICY.sanitize(normalized);
     }
 
     public static Set<String> sanitizeUrls(Set<String> urls) {

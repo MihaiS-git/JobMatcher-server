@@ -21,17 +21,15 @@ public class CustomerProfileMapper {
         this.languageMapper = languageMapper;
     }
 
-    public CustomerSummaryDTO toCustomerSummaryDto(CustomerProfile entity) {
+    public CustomerSummaryDTO toCustomerSummaryDto(CustomerProfile entity, boolean includeLanguages) {
         if (entity == null) return null;
-
-        Set<LanguageDTO> languages = mapLanguagesToDtos(entity);
 
         return CustomerSummaryDTO.builder()
                 .profileId(entity.getId())
                 .userId(entity.getUser().getId())
                 .username(entity.getUsername())
                 .company(entity.getCompany())
-                .languages(languages)
+                .languages(includeLanguages ? mapLanguagesToDtos(entity) : Set.of())
                 .rating(entity.getRating())
                 .pictureUrl(entity.getUser().getPictureUrl())
                 .build();

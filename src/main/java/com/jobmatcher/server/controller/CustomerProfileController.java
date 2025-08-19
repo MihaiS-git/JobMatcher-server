@@ -29,7 +29,7 @@ public class CustomerProfileController {
     }
 
     @GetMapping(path = "/users/{userId}")
-    public ResponseEntity<CustomerDetailDTO> getFreelancerByUserId(@PathVariable UUID userId) {
+    public ResponseEntity<CustomerDetailDTO> getCustomerByUserId(@PathVariable UUID userId) {
         CustomerDetailDTO profile = customerProfileService.getCustomerProfileByUserId(userId);
         return ResponseEntity.ok(profile);
     }

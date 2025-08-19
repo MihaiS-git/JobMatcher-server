@@ -38,7 +38,7 @@ public class CustomerProfileServiceImpl implements ICustomerProfileService {
     @Override
     public Set<CustomerSummaryDTO> getAllCustomerProfiles() {
         return profileRepository.findAll().stream()
-                .map(profileMapper::toCustomerSummaryDto)
+                .map(profile -> profileMapper.toCustomerSummaryDto(profile, true))
                 .collect(Collectors.toSet());
     }
 

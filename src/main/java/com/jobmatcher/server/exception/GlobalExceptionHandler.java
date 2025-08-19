@@ -1,16 +1,20 @@
 package com.jobmatcher.server.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.jobmatcher.server.model.ErrorCode;
 import com.jobmatcher.server.model.ErrorResponse;
+import jakarta.persistence.PersistenceException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,9 +23,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,9 +56,63 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(errors, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
     }
 
+    @ExceptionHandler(TransactionSystemException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionSystemException(TransactionSystemException ex, HttpServletRequest request) {
+        log.warn("Transaction system exception", ex);
+        Map<String, String> errors = new HashMap<>();
+
+        Throwable cause = ex.getCause();
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException validationEx) {
+                errors = validationEx.getConstraintViolations().stream()
+                        .collect(Collectors.toMap(
+                                v -> v.getPropertyPath().toString(),
+                                ConstraintViolation::getMessage,
+                                (msg1, msg2) -> msg1
+                        ));
+                break;
+            }
+            cause = cause.getCause();
+        }
+
+        if (errors.isEmpty()) {
+            errors.put("error", ex.getMessage());
+        }
+
+        return buildErrorResponse(errors, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
+    }
+
+    @ExceptionHandler(PersistenceException.class)
+    public ResponseEntity<ErrorResponse> handlePersistenceException(PersistenceException ex, HttpServletRequest request) {
+        log.warn("Persistence exception", ex);
+
+        Map<String, String> errors = new HashMap<>();
+
+        Throwable cause = ex.getCause();
+        while (cause != null) {
+            if (cause instanceof jakarta.validation.ConstraintViolationException validationEx) {
+                errors = validationEx.getConstraintViolations().stream()
+                        .collect(Collectors.toMap(
+                                v -> v.getPropertyPath().toString(),
+                                ConstraintViolation::getMessage,
+                                (msg1, msg2) -> msg1
+                        ));
+                break;
+            }
+            cause = cause.getCause();
+        }
+
+        if (errors.isEmpty()) {
+            errors.put("error", ex.getMessage());
+        }
+
+        return buildErrorResponse(errors, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
+    }
+
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        log.error("Validation error. ", ex);
+        log.warn("Validation error. ", ex);
         Map<String, String> errors = new HashMap<>();
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
             errors.put(fieldError.getField(), fieldError.getDefaultMessage());
@@ -67,11 +131,23 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler({HttpMessageNotReadableException.class})
-    public ResponseEntity<ErrorResponse> handleInvalidEnumException(HttpMessageNotReadableException ex, HttpServletRequest request) {
-        log.warn("Invalid enum or input type. ", ex);
-        String message = "Invalid input: " + ex.getMostSpecificCause().getMessage();
-        return buildErrorResponse(message, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.warn("Invalid input received.", ex);
+
+        Throwable rootCause = ex.getMostSpecificCause();
+        String friendlyMessage;
+
+        if (rootCause instanceof DateTimeParseException) {
+            friendlyMessage = "Invalid date format. Please use yyyy-MM-dd.";
+        } else if (rootCause instanceof InvalidFormatException) {
+            // handles enum or type mismatch
+            friendlyMessage = "Invalid input value. Please check the data types and allowed values.";
+        } else {
+            friendlyMessage = "Malformed request body.";
+        }
+
+        return buildErrorResponse(friendlyMessage, HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.VALIDATION_FAILED);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -82,21 +158,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ErrorResponse> handleDataAccessException(DataAccessException ex, HttpServletRequest request) {
-        log.error("Database error occurred. ", ex);
+        log.warn("Database error occurred. ", ex);
         return buildErrorResponse("A database error occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI(), ErrorCode.DATABASE_ERROR);
     }
-
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
-//        log.error("Unexpected error.", ex);
-//        return buildErrorResponse("An unexpected error occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI(), ErrorCode.INTERNAL_ERROR);
-//    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, HttpServletRequest request) {
         Throwable rootCause = getRootCause(ex);
-        log.error("Unhandled exception", ex);
+        log.warn("Unhandled exception: {}", ex.getMessage());
         return buildErrorResponse(
                 rootCause.getMessage() != null ? rootCause.getMessage() : "Unexpected error",
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -115,19 +185,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidAuthException.class)
     public ResponseEntity<ErrorResponse> handleInvalidAuthException(InvalidAuthException ex, HttpServletRequest request) {
-        log.error("Invalid authentication.", ex);
+        log.warn("Invalid authentication.", ex);
         return buildErrorResponse("Authentication failed. Please check your credentials and try again.", HttpStatus.UNAUTHORIZED, request.getRequestURI(), ErrorCode.AUTH_INVALID);
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(EmailAlreadyExistsException ex, HttpServletRequest request) {
-        log.error("Email conflict. ", ex);
+        log.warn("Email conflict. ", ex);
         return buildErrorResponse("Email address already in use.", HttpStatus.CONFLICT, request.getRequestURI(), ErrorCode.EMAIL_EXISTS);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
-        log.error("Resource not found. ", ex);
+        log.warn("Resource not found. ", ex);
         return buildErrorResponse("Resource not found.", HttpStatus.NOT_FOUND, request.getRequestURI(), ErrorCode.RESOURCE_NOT_FOUND);
     }
 
@@ -157,7 +227,7 @@ public class GlobalExceptionHandler {
             case 400 -> HttpStatus.BAD_REQUEST;
             case 401, 403 -> HttpStatus.UNAUTHORIZED;
             case 429 -> HttpStatus.TOO_MANY_REQUESTS;
-            default -> HttpStatus.BAD_GATEWAY;
+            default -> HttpStatus.valueOf(ex.getStatusCode());
         };
 
         return buildErrorResponse("Gmail API error: " + ex.getMessage(), status, request.getRequestURI(), ErrorCode.GMAIL_API_ERROR);
@@ -165,7 +235,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenCreationException.class)
     public ResponseEntity<ErrorResponse> handleTokenCreationException(TokenCreationException ex, HttpServletRequest request) {
-        log.error("Failed to create reset token after multiple attempts.", ex);
+        log.warn("Failed to create reset token after multiple attempts.", ex);
         return buildErrorResponse(
                 "Failed to create reset token. Please try again later.",
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -178,7 +248,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMultipartException(MultipartException ex, HttpServletRequest request) {
         Throwable cause = ex.getCause();
         if (cause instanceof MaxUploadSizeExceededException) {
-            log.error("Failed to upload file. File size exceeds the maximum allowed size of 10MB.");
+            log.warn("Failed to upload file. File size exceeds the maximum allowed size of 10MB.");
             return buildErrorResponse(
                     "File size exceeds the maximum allowed size of 10MB.",
                     HttpStatus.PAYLOAD_TOO_LARGE,
@@ -186,7 +256,7 @@ public class GlobalExceptionHandler {
                     ErrorCode.FILE_UPLOAD_FAILED
             );
         }
-        log.error("Multipart error: ", ex);
+        log.warn("Multipart error: ", ex);
         return buildErrorResponse(
                 "File upload failed. Please try again.",
                 HttpStatus.BAD_REQUEST,
@@ -218,6 +288,51 @@ public class GlobalExceptionHandler {
                 ErrorCode.VALIDATION_FAILED
         );
     }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
+        log.warn("Database constraint violation", ex);
+        return buildErrorResponse(
+                "Database constraint violated: " + ex.getMostSpecificCause().getMessage(),
+                HttpStatus.BAD_REQUEST,
+                request.getRequestURI(),
+                ErrorCode.VALIDATION_FAILED
+        );
+    }
+
+    @ExceptionHandler(ProjectAccessException.class)
+    public ResponseEntity<ErrorResponse> handleProjectAccess(ProjectAccessException ex,
+                                                             HttpServletRequest request) {
+        return buildErrorResponse(
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN,
+                request.getRequestURI(),
+                ErrorCode.ACCESS_DENIED
+        );
+    }
+
+    @ExceptionHandler(RoleAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleRoleAccess(RoleAccessDeniedException ex,
+                                                          HttpServletRequest request) {
+        return buildErrorResponse(
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN,
+                request.getRequestURI(),
+                ErrorCode.ACCESS_DENIED
+        );
+    }
+
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<ErrorResponse> handleDateTimeParse(DateTimeParseException ex, HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return buildErrorResponse(
+                "Invalid date format. Please use yyyy-MM-dd.",
+                HttpStatus.BAD_REQUEST,
+                path,
+                ErrorCode.INVALID_DATE_FORMAT
+        );
+    }
+
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(Object message, HttpStatus status, String path, ErrorCode errorCode) {
         return ResponseEntity.status(status).body(ErrorResponse.of(status, message, path, errorCode));
