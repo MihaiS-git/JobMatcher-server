@@ -11,9 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
 
@@ -79,7 +77,7 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<ProjectResponseDTO> updateProject(
             @PathVariable String id,
             @RequestBody @Valid ProjectRequestDTO requestDto
