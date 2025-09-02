@@ -29,8 +29,6 @@ public class ProjectController {
     public ResponseEntity<Page<ProjectResponseDTO>> getAllProjects(
             @RequestHeader("Authorization") String authHeader,
             Pageable pageable,
-            @RequestParam(required = false) UUID customerId,
-            @RequestParam(required = false) UUID freelancerId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long subcategoryId,
@@ -51,8 +49,6 @@ public class ProjectController {
                 projectService.getAllProjects(
                         token,
                         pageable,
-                        customerId,
-                        freelancerId,
                         projectStatus,
                         categoryId,
                         subcategoryId,

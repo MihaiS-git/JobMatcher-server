@@ -28,12 +28,12 @@ import java.util.function.Consumer;
 @Service
 public class ProjectServiceImpl implements IProjectService {
 
-    private static final Set<ProjectStatus> STAFF_GLOBAL_STATUSES = EnumSet.of(
-            ProjectStatus.OPEN, ProjectStatus.PROPOSALS_RECEIVED
-    );
-    private static final Set<ProjectStatus> STAFF_RESTRICTED_STATUSES = EnumSet.of(
-            ProjectStatus.IN_PROGRESS, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED
-    );
+//    private static final Set<ProjectStatus> STAFF_GLOBAL_STATUSES = EnumSet.of(
+//            ProjectStatus.OPEN, ProjectStatus.PROPOSALS_RECEIVED
+//    );
+//    private static final Set<ProjectStatus> STAFF_RESTRICTED_STATUSES = EnumSet.of(
+//            ProjectStatus.IN_PROGRESS, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED
+//    );
 
     private final ProjectRepository projectRepository;
     private final ProjectMapper projectMapper;
@@ -69,32 +69,36 @@ public class ProjectServiceImpl implements IProjectService {
     public Page<ProjectResponseDTO> getAllProjects(
             String token,
             Pageable pageable,
-            UUID customerId,
-            UUID freelancerId,
             ProjectStatus status,
             Long categoryId,
             Long subcategoryId,
             String searchTerm
     ) {
-        Role role = getRole(token);
+        User user = getUser(token);
+        Role role = user.getRole();
+
+        if (role == null) {
+            throw new RoleAccessDeniedException("User role is not defined for user: " + user.getId());
+        }
 
         switch (role) {
             case CUSTOMER -> {
-                customerId = getCustomerId(token, customerId);
+                UUID profileId = getCustomerId(user.getId());
                 Specification<Project> spec = ProjectSpecifications.filterProjects(
-                        customerId, freelancerId, status, categoryId, subcategoryId, searchTerm
+                        profileId, status, categoryId, subcategoryId, searchTerm
                 );
                 return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
             }
             case STAFF -> {
+                UUID profileId = getFreelancerId(user.getId());
                 Specification<Project> spec = buildStaffSpecification(
-                        freelancerId, status, categoryId, subcategoryId, searchTerm
+                        profileId, status, categoryId, subcategoryId, searchTerm
                 );
                 return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
             }
             case ADMIN -> {
                 Specification<Project> spec = ProjectSpecifications.filterProjects(
-                        customerId, freelancerId, status, categoryId, subcategoryId, searchTerm
+                        null, status, categoryId, subcategoryId, searchTerm
                 );
                 return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
             }
@@ -211,78 +215,41 @@ public class ProjectServiceImpl implements IProjectService {
         return sanitized;
     }
 
-    private UUID getFreelancerId(String token, UUID freelancerId) {
-        if (freelancerId == null) {
-            String email = jwtService.extractUsername(token);
-            User user = userService.getUserByEmail(email);
-            freelancerId = freelancerProfileRepository.findByUserId(user.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Freelancer profile not found for user: " + user.getId()))
-                    .getId();
+    private UUID getFreelancerId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
         }
-        return freelancerId;
+        return freelancerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Freelancer profile not found for user: " + userId))
+                .getId();
     }
 
-    private UUID getCustomerId(String token, UUID customerId) {
-        if (customerId == null) {
-            String email = jwtService.extractUsername(token);
-            User user = userService.getUserByEmail(email);
-            customerId = customerProfileRepository.findByUserId(user.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Customer profile not found for user: " + user.getId()))
-                    .getId();
+    private UUID getCustomerId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
         }
-        return customerId;
+        CustomerProfile customer = customerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer profile not found for user: " + userId));
+        return customer.getId();
     }
 
-    private Role getRole(String token) {
-        String roleString = jwtService.extractClaim(token, claims -> claims.get("role", String.class));
-
-        if (roleString == null || roleString.isBlank())
-            throw new RoleAccessDeniedException("Role claim is missing in token");
-
-        try {
-            return Role.valueOf(roleString.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new RoleAccessDeniedException("Invalid role in token: " + roleString);
-        }
+    private User getUser(String token){
+        String email = jwtService.extractUsername(token);
+        return userService.getUserByEmail(email);
     }
 
-    private Specification<Project> buildStaffSpecification(UUID freelancerId,
+    private Specification<Project> buildStaffSpecification(UUID profileId,
                                                            ProjectStatus requestedStatus,
                                                            Long categoryId,
                                                            Long subcategoryId,
                                                            String searchTerm) {
 
-        if (requestedStatus == null) {
             return ProjectSpecifications.filterProjects(
-                    null,
-                    freelancerId,
-                    null,
-                    categoryId,
-                    subcategoryId,
-                    searchTerm
-            );
-        }
-
-        if (STAFF_GLOBAL_STATUSES.contains(requestedStatus)) {
-            return ProjectSpecifications.filterProjects(
-                    null,
-                    null,
+                    profileId,
                     requestedStatus,
                     categoryId,
                     subcategoryId,
                     searchTerm
             );
-        } else if (STAFF_RESTRICTED_STATUSES.contains(requestedStatus)) {
-            return ProjectSpecifications.filterProjects(
-                    null,
-                    freelancerId,
-                    requestedStatus,
-                    categoryId,
-                    subcategoryId,
-                    searchTerm
-            );
-        }
-
-        return null;
     }
 }

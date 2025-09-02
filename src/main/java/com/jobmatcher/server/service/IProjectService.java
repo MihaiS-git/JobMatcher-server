@@ -14,8 +14,6 @@ public interface IProjectService {
     Page<ProjectResponseDTO> getAllProjects(
             String token,
             Pageable pageable,
-            UUID customerId,
-            UUID freelancerId,
             ProjectStatus status,
             Long categoryId,
             Long subcategoryId,

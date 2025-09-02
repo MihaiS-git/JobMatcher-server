@@ -9,8 +9,7 @@ import java.util.UUID;
 
 public class ProjectSpecifications {
     public static Specification<Project> filterProjects(
-            UUID customerId,
-            UUID freelancerId,
+            UUID profileId,
             ProjectStatus status,
             Long categoryId,
             Long subcategoryId,
@@ -18,11 +17,11 @@ public class ProjectSpecifications {
     ) {
         return (root, query, cb) -> {
             var predicates = cb.conjunction();
-            if (customerId != null) {
-                predicates = cb.and(predicates, cb.equal(root.get("customer").get("id"), customerId));
-            }
-            if (freelancerId != null) {
-                predicates = cb.and(predicates, cb.equal(root.get("freelancer").get("id"), freelancerId));
+            if (profileId != null) {
+                predicates = cb.and(predicates, cb.or(
+                        cb.equal(root.get("customer").get("id"), profileId),
+                        cb.equal(root.get("freelancer").get("id"), profileId)
+                ));
             }
             if (status != null) {
                 predicates = cb.and(predicates, root.get("status").in(status));
