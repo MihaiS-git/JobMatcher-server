@@ -5,16 +5,15 @@ import com.jobmatcher.server.domain.ProjectStatus;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.Set;
 import java.util.UUID;
 
 public class ProjectSpecifications {
     public static Specification<Project> filterProjects(
             UUID customerId,
             UUID freelancerId,
-            Set<ProjectStatus> statuses,
-            UUID categoryId,
-            Set<UUID> subcategoryIds,
+            ProjectStatus status,
+            Long categoryId,
+            Long subcategoryId,
             String searchTerm
     ) {
         return (root, query, cb) -> {
@@ -25,15 +24,15 @@ public class ProjectSpecifications {
             if (freelancerId != null) {
                 predicates = cb.and(predicates, cb.equal(root.get("freelancer").get("id"), freelancerId));
             }
-            if (statuses != null && !statuses.isEmpty()) {
-                predicates = cb.and(predicates, root.get("status").in(statuses));
+            if (status != null) {
+                predicates = cb.and(predicates, root.get("status").in(status));
             }
             if (categoryId != null) {
                 predicates = cb.and(predicates, cb.equal(root.get("category").get("id"), categoryId));
             }
-            if (subcategoryIds != null && !subcategoryIds.isEmpty()) {
+            if (subcategoryId != null) {
                 var subjoin = root.joinSet("subcategories", JoinType.LEFT);
-                predicates = cb.and(predicates, subjoin.get("id").in(subcategoryIds));
+                predicates = cb.and(predicates, subjoin.get("id").in(subcategoryId));
                 assert query != null;
                 query.distinct(true);
             }

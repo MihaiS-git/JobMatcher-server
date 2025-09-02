@@ -32,6 +32,16 @@ public class JobCategoryMapper {
                 .build();
     }
 
+    public JobCategoryDTO toSummaryDto(JobCategory category){
+        if(category == null) return null;
+
+        return JobCategoryDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .build();
+    }
+
     public JobCategory toEntity(JobCategoryDTO dto) {
         if (dto == null) return null;
 

@@ -33,25 +33,31 @@ public class ProjectController {
             Pageable pageable,
             @RequestParam(required = false) UUID customerId,
             @RequestParam(required = false) UUID freelancerId,
-            @RequestParam(required = false) Set<String> statuses,
-            @RequestParam(required = false) UUID categoryId,
-            @RequestParam(required = false) Set<UUID> subcategoryIds,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long subcategoryId,
             @RequestParam(required = false) String searchTerm
     ) {
         String token = authHeader.replace("Bearer ", "").trim();
+
+        ProjectStatus projectStatus = null;
+        if (status != null && !status.isBlank()) {
+            try {
+                projectStatus = ProjectStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid project status: " + status);
+            }
+        }
+
         return ResponseEntity.ok(
                 projectService.getAllProjects(
                         token,
                         pageable,
                         customerId,
                         freelancerId,
-                        statuses == null
-                                ? null
-                                : statuses.stream()
-                                .map(status -> ProjectStatus.valueOf(status.toUpperCase()))
-                                .collect(Collectors.toSet()),
+                        projectStatus,
                         categoryId,
-                        subcategoryIds,
+                        subcategoryId,
                         searchTerm
                 ));
     }

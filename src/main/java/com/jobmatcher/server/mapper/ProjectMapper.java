@@ -49,6 +49,25 @@ public class ProjectMapper {
                 .build();
     }
 
+    public ProjectResponseDTO toSummaryDto(Project entity){
+        if (entity == null) {
+            return null;
+        }
+
+        return ProjectResponseDTO.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .status(entity.getStatus())
+                .budget(entity.getBudget())
+                .paymentType(entity.getPaymentType())
+                .deadline(entity.getDeadline())
+                .category(entity.getCategory() != null ? jobCategoryMapper.toSummaryDto(entity.getCategory()) : null)
+                .subcategories(entity.getSubcategories() != null ? entity.getSubcategories().stream()
+                        .map(jobSubcategoryMapper::toDto).collect(Collectors.toSet()) : Set.of())
+                .build();
+    }
+
     public Project toEntity(
             ProjectRequestDTO dto,
             CustomerProfile customer,

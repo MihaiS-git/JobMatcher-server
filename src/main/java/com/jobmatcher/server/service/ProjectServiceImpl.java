@@ -9,6 +9,8 @@ import com.jobmatcher.server.model.ProjectResponseDTO;
 import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.specification.ProjectSpecifications;
 import com.jobmatcher.server.util.SanitizationUtil;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -21,6 +23,8 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Consumer;
 
+@Slf4j
+@Transactional(rollbackFor = Exception.class)
 @Service
 public class ProjectServiceImpl implements IProjectService {
 
@@ -60,15 +64,16 @@ public class ProjectServiceImpl implements IProjectService {
         this.userService = userService;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Page<ProjectResponseDTO> getAllProjects(
             String token,
             Pageable pageable,
             UUID customerId,
             UUID freelancerId,
-            Set<ProjectStatus> statuses,
-            UUID categoryId,
-            Set<UUID> subcategoryIds,
+            ProjectStatus status,
+            Long categoryId,
+            Long subcategoryId,
             String searchTerm
     ) {
         Role role = getRole(token);
@@ -77,21 +82,21 @@ public class ProjectServiceImpl implements IProjectService {
             case CUSTOMER -> {
                 customerId = getCustomerId(token, customerId);
                 Specification<Project> spec = ProjectSpecifications.filterProjects(
-                        customerId, freelancerId, statuses, categoryId, subcategoryIds, searchTerm
+                        customerId, freelancerId, status, categoryId, subcategoryId, searchTerm
                 );
-                return projectRepository.findAll(spec, pageable).map(projectMapper::toDto);
+                return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
             }
             case STAFF -> {
                 Specification<Project> spec = buildStaffSpecification(
-                        freelancerId, statuses, categoryId, subcategoryIds, searchTerm
+                        freelancerId, status, categoryId, subcategoryId, searchTerm
                 );
-                return projectRepository.findAll(spec, pageable).map(projectMapper::toDto);
+                return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
             }
             case ADMIN -> {
                 Specification<Project> spec = ProjectSpecifications.filterProjects(
-                        customerId, freelancerId, statuses, categoryId, subcategoryIds, searchTerm
+                        customerId, freelancerId, status, categoryId, subcategoryId, searchTerm
                 );
-                return projectRepository.findAll(spec, pageable).map(projectMapper::toDto);
+                return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
             }
             default -> throw new RoleAccessDeniedException("Unsupported role: " + role);
         }
@@ -242,33 +247,42 @@ public class ProjectServiceImpl implements IProjectService {
     }
 
     private Specification<Project> buildStaffSpecification(UUID freelancerId,
-                                                           Set<ProjectStatus> requestedStatuses,
-                                                           UUID categoryId,
-                                                           Set<UUID> subcategoryIds,
+                                                           ProjectStatus requestedStatus,
+                                                           Long categoryId,
+                                                           Long subcategoryId,
                                                            String searchTerm) {
 
-        Set<ProjectStatus> globalFilter = new HashSet<>();
-        Set<ProjectStatus> restrictedFilter = new HashSet<>();
-
-        if (requestedStatuses == null || requestedStatuses.isEmpty()) {
-            globalFilter.addAll(STAFF_GLOBAL_STATUSES);
-            restrictedFilter.addAll(STAFF_RESTRICTED_STATUSES);
-        } else {
-            requestedStatuses.forEach(s -> {
-                if (STAFF_GLOBAL_STATUSES.contains(s)) globalFilter.add(s);
-                if (STAFF_RESTRICTED_STATUSES.contains(s)) restrictedFilter.add(s);
-            });
+        if (requestedStatus == null) {
+            return ProjectSpecifications.filterProjects(
+                    null,
+                    freelancerId,
+                    null,
+                    categoryId,
+                    subcategoryId,
+                    searchTerm
+            );
         }
 
-        Specification<Project> globalSpec = globalFilter.isEmpty()
-                ? null
-                : ProjectSpecifications.filterProjects(null, null, globalFilter, categoryId, subcategoryIds, searchTerm);
+        if (STAFF_GLOBAL_STATUSES.contains(requestedStatus)) {
+            return ProjectSpecifications.filterProjects(
+                    null,
+                    null,
+                    requestedStatus,
+                    categoryId,
+                    subcategoryId,
+                    searchTerm
+            );
+        } else if (STAFF_RESTRICTED_STATUSES.contains(requestedStatus)) {
+            return ProjectSpecifications.filterProjects(
+                    null,
+                    freelancerId,
+                    requestedStatus,
+                    categoryId,
+                    subcategoryId,
+                    searchTerm
+            );
+        }
 
-        Specification<Project> restrictedSpec = restrictedFilter.isEmpty()
-                ? null
-                : ProjectSpecifications.filterProjects(null, freelancerId, restrictedFilter, categoryId, subcategoryIds, searchTerm);
-
-        if (globalSpec != null && restrictedSpec != null) return globalSpec.or(restrictedSpec);
-        return globalSpec != null ? globalSpec : restrictedSpec;
+        return null;
     }
 }

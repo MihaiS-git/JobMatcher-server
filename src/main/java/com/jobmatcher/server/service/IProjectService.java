@@ -16,9 +16,9 @@ public interface IProjectService {
             Pageable pageable,
             UUID customerId,
             UUID freelancerId,
-            Set<ProjectStatus> statuses,
-            UUID categoryId,
-            Set<UUID> subcategoryIds,
+            ProjectStatus status,
+            Long categoryId,
+            Long subcategoryId,
             String searchTerm
     );
 
