@@ -1,11 +1,11 @@
 package com.jobmatcher.server.controller;
 
 import com.jobmatcher.server.domain.ProjectStatus;
+import com.jobmatcher.server.model.PagedResponseDTO;
 import com.jobmatcher.server.model.ProjectRequestDTO;
 import com.jobmatcher.server.model.ProjectResponseDTO;
 import com.jobmatcher.server.service.IProjectService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +26,7 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProjectResponseDTO>> getAllProjects(
+    public ResponseEntity<PagedResponseDTO<ProjectResponseDTO>> getAllProjects(
             @RequestHeader("Authorization") String authHeader,
             Pageable pageable,
             @RequestParam(required = false) String status,
@@ -45,15 +45,16 @@ public class ProjectController {
             }
         }
 
-        return ResponseEntity.ok(
-                projectService.getAllProjects(
-                        token,
-                        pageable,
-                        projectStatus,
-                        categoryId,
-                        subcategoryId,
-                        searchTerm
-                ));
+        PagedResponseDTO<ProjectResponseDTO> response = projectService.getAllProjects(
+                token,
+                pageable,
+                projectStatus,
+                categoryId,
+                subcategoryId,
+                searchTerm
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

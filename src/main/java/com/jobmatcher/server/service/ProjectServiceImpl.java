@@ -2,18 +2,16 @@ package com.jobmatcher.server.service;
 
 import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
-import com.jobmatcher.server.exception.RoleAccessDeniedException;
 import com.jobmatcher.server.mapper.ProjectMapper;
+import com.jobmatcher.server.model.PagedResponseDTO;
 import com.jobmatcher.server.model.ProjectRequestDTO;
 import com.jobmatcher.server.model.ProjectResponseDTO;
 import com.jobmatcher.server.repository.*;
-import com.jobmatcher.server.specification.ProjectSpecifications;
 import com.jobmatcher.server.util.SanitizationUtil;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
@@ -22,18 +20,12 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service
 public class ProjectServiceImpl implements IProjectService {
-
-//    private static final Set<ProjectStatus> STAFF_GLOBAL_STATUSES = EnumSet.of(
-//            ProjectStatus.OPEN, ProjectStatus.PROPOSALS_RECEIVED
-//    );
-//    private static final Set<ProjectStatus> STAFF_RESTRICTED_STATUSES = EnumSet.of(
-//            ProjectStatus.IN_PROGRESS, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED
-//    );
 
     private final ProjectRepository projectRepository;
     private final ProjectMapper projectMapper;
@@ -66,7 +58,7 @@ public class ProjectServiceImpl implements IProjectService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<ProjectResponseDTO> getAllProjects(
+    public PagedResponseDTO<ProjectResponseDTO> getAllProjects(
             String token,
             Pageable pageable,
             ProjectStatus status,
@@ -77,34 +69,43 @@ public class ProjectServiceImpl implements IProjectService {
         User user = getUser(token);
         Role role = user.getRole();
 
-        if (role == null) {
-            throw new RoleAccessDeniedException("User role is not defined for user: " + user.getId());
+        UUID profileId = switch (role) {
+            case CUSTOMER -> getCustomerId(user.getId());
+            case STAFF -> getFreelancerId(user.getId());
+            default -> null;
+        };
+
+        // Step 1: IDs
+        Page<UUID> idPage = projectRepository.findFilteredProjectIds(
+                profileId, status, categoryId, subcategoryId, searchTerm, pageable
+        );
+
+        if (idPage.isEmpty()) {
+            return new PagedResponseDTO<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(),
+                    0, 0, true, true);
         }
 
-        switch (role) {
-            case CUSTOMER -> {
-                UUID profileId = getCustomerId(user.getId());
-                Specification<Project> spec = ProjectSpecifications.filterProjects(
-                        profileId, status, categoryId, subcategoryId, searchTerm
-                );
-                return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
-            }
-            case STAFF -> {
-                UUID profileId = getFreelancerId(user.getId());
-                Specification<Project> spec = buildStaffSpecification(
-                        profileId, status, categoryId, subcategoryId, searchTerm
-                );
-                return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
-            }
-            case ADMIN -> {
-                Specification<Project> spec = ProjectSpecifications.filterProjects(
-                        null, status, categoryId, subcategoryId, searchTerm
-                );
-                return projectRepository.findAll(spec, pageable).map(projectMapper::toSummaryDto);
-            }
-            default -> throw new RoleAccessDeniedException("Unsupported role: " + role);
-        }
+        // Step 2: full entities
+        List<Project> projects = projectRepository.findByIdIn(idPage.getContent());
+
+        // Preserve order from Step 1
+        Map<UUID, Project> byId = projects.stream().collect(Collectors.toMap(Project::getId, p -> p));
+        List<ProjectResponseDTO> content = idPage.getContent().stream()
+                .map(byId::get)
+                .map(projectMapper::toSummaryDto)
+                .toList();
+
+        return new PagedResponseDTO<>(
+                content,
+                idPage.getNumber(),
+                idPage.getSize(),
+                idPage.getTotalElements(),
+                idPage.getTotalPages(),
+                idPage.isFirst(),
+                idPage.isLast()
+        );
     }
+
 
     @Override
     public ProjectResponseDTO getProjectById(UUID id) {
@@ -236,20 +237,5 @@ public class ProjectServiceImpl implements IProjectService {
     private User getUser(String token){
         String email = jwtService.extractUsername(token);
         return userService.getUserByEmail(email);
-    }
-
-    private Specification<Project> buildStaffSpecification(UUID profileId,
-                                                           ProjectStatus requestedStatus,
-                                                           Long categoryId,
-                                                           Long subcategoryId,
-                                                           String searchTerm) {
-
-            return ProjectSpecifications.filterProjects(
-                    profileId,
-                    requestedStatus,
-                    categoryId,
-                    subcategoryId,
-                    searchTerm
-            );
     }
 }
