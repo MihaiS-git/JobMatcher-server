@@ -75,34 +75,55 @@ public class ProjectServiceImpl implements IProjectService {
             default -> null;
         };
 
-        // Step 1: IDs
-        Page<UUID> idPage = projectRepository.findFilteredProjectIds(
-                profileId, status, categoryId, subcategoryId, searchTerm, pageable
+        // Step 1: fetch all matching IDs (no Pageable, no Sort)
+        List<UUID> filteredIds = projectRepository.findFilteredProjectIds(
+                profileId, status, categoryId, subcategoryId, searchTerm
         );
 
-        if (idPage.isEmpty()) {
+        if (filteredIds.isEmpty()) {
             return new PagedResponseDTO<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(),
                     0, 0, true, true);
         }
 
-        // Step 2: full entities
-        List<Project> projects = projectRepository.findByIdIn(idPage.getContent());
+        // Step 2: fetch full entities
+        List<Project> projects = projectRepository.findByIdIn(filteredIds);
 
-        // Preserve order from Step 1
-        Map<UUID, Project> byId = projects.stream().collect(Collectors.toMap(Project::getId, p -> p));
-        List<ProjectResponseDTO> content = idPage.getContent().stream()
-                .map(byId::get)
+        // Step 3: apply sorting from Pageable
+        Comparator<Project> comparator = pageable.getSort().stream()
+                .map(order -> {
+                    Comparator<Project> c = switch (order.getProperty()) {
+                        case "title" -> Comparator.comparing(Project::getTitle, String.CASE_INSENSITIVE_ORDER);
+                        case "status" -> Comparator.comparing(Project::getStatus);
+                        case "category" -> Comparator.comparing(p -> p.getCategory().getName(), String.CASE_INSENSITIVE_ORDER);
+                        case "deadline" -> Comparator.comparing(Project::getDeadline, Comparator.nullsLast(Comparator.naturalOrder()));
+                        case "paymentType" -> Comparator.comparing(Project::getPaymentType, Comparator.nullsLast(Comparator.naturalOrder()));
+                        case "budget" -> Comparator.comparing(Project::getBudget, Comparator.nullsLast(Comparator.naturalOrder()));
+                        default -> null;
+                    };
+                    if (c != null && order.isDescending()) c = c.reversed();
+                    return c;
+                })
+                .filter(Objects::nonNull)
+                .reduce(Comparator::thenComparing)
+                .orElse(Comparator.comparing(Project::getId));
+
+        projects.sort(comparator);
+
+        // Step 4: apply pagination manually
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), projects.size());
+        List<ProjectResponseDTO> content = projects.subList(start, end).stream()
                 .map(projectMapper::toSummaryDto)
                 .toList();
 
         return new PagedResponseDTO<>(
                 content,
-                idPage.getNumber(),
-                idPage.getSize(),
-                idPage.getTotalElements(),
-                idPage.getTotalPages(),
-                idPage.isFirst(),
-                idPage.isLast()
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                projects.size(),
+                (int) Math.ceil((double) projects.size() / pageable.getPageSize()),
+                start == 0,
+                end == projects.size()
         );
     }
 
