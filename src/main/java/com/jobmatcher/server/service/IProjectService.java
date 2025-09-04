@@ -4,13 +4,14 @@ import com.jobmatcher.server.domain.ProjectStatus;
 import com.jobmatcher.server.model.PagedResponseDTO;
 import com.jobmatcher.server.model.ProjectRequestDTO;
 import com.jobmatcher.server.model.ProjectResponseDTO;
+import com.jobmatcher.server.model.ProjectSummaryDTO;
 import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
 public interface IProjectService {
 
-    PagedResponseDTO<ProjectResponseDTO> getAllProjects(
+    PagedResponseDTO<ProjectSummaryDTO> getAllProjects(
             String token,
             Pageable pageable,
             ProjectStatus status,

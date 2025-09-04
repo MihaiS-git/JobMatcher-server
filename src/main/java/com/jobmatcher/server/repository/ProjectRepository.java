@@ -2,17 +2,14 @@ package com.jobmatcher.server.repository;
 
 import com.jobmatcher.server.domain.Project;
 import com.jobmatcher.server.domain.ProjectStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpecificationExecutor<Project> {
+public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
     @Query("""
                 SELECT p.id

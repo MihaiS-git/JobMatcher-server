@@ -4,6 +4,7 @@ import com.jobmatcher.server.domain.ProjectStatus;
 import com.jobmatcher.server.model.PagedResponseDTO;
 import com.jobmatcher.server.model.ProjectRequestDTO;
 import com.jobmatcher.server.model.ProjectResponseDTO;
+import com.jobmatcher.server.model.ProjectSummaryDTO;
 import com.jobmatcher.server.service.IProjectService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +27,7 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ResponseEntity<PagedResponseDTO<ProjectResponseDTO>> getAllProjects(
+    public ResponseEntity<PagedResponseDTO<ProjectSummaryDTO>> getAllProjects(
             @RequestHeader("Authorization") String authHeader,
             Pageable pageable,
             @RequestParam(required = false) String status,
@@ -45,7 +46,7 @@ public class ProjectController {
             }
         }
 
-        PagedResponseDTO<ProjectResponseDTO> response = projectService.getAllProjects(
+        PagedResponseDTO<ProjectSummaryDTO> response = projectService.getAllProjects(
                 token,
                 pageable,
                 projectStatus,

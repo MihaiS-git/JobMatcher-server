@@ -3,6 +3,7 @@ package com.jobmatcher.server.mapper;
 import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.model.ProjectRequestDTO;
 import com.jobmatcher.server.model.ProjectResponseDTO;
+import com.jobmatcher.server.model.ProjectSummaryDTO;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -49,12 +50,12 @@ public class ProjectMapper {
                 .build();
     }
 
-    public ProjectResponseDTO toSummaryDto(Project entity){
+    public ProjectSummaryDTO toSummaryDto(Project entity){
         if (entity == null) {
             return null;
         }
 
-        return ProjectResponseDTO.builder()
+        return ProjectSummaryDTO.builder()
                 .id(entity.getId())
                 .title(entity.getTitle())
                 .description(entity.getDescription())

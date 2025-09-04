@@ -6,11 +6,11 @@ import com.jobmatcher.server.mapper.ProjectMapper;
 import com.jobmatcher.server.model.PagedResponseDTO;
 import com.jobmatcher.server.model.ProjectRequestDTO;
 import com.jobmatcher.server.model.ProjectResponseDTO;
+import com.jobmatcher.server.model.ProjectSummaryDTO;
 import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.util.SanitizationUtil;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
@@ -20,7 +20,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
@@ -58,7 +57,7 @@ public class ProjectServiceImpl implements IProjectService {
 
     @Transactional(readOnly = true)
     @Override
-    public PagedResponseDTO<ProjectResponseDTO> getAllProjects(
+    public PagedResponseDTO<ProjectSummaryDTO> getAllProjects(
             String token,
             Pageable pageable,
             ProjectStatus status,
@@ -112,7 +111,7 @@ public class ProjectServiceImpl implements IProjectService {
         // Step 4: apply pagination manually
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), projects.size());
-        List<ProjectResponseDTO> content = projects.subList(start, end).stream()
+        List<ProjectSummaryDTO> content = projects.subList(start, end).stream()
                 .map(projectMapper::toSummaryDto)
                 .toList();
 
