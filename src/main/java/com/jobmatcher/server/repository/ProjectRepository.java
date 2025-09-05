@@ -34,4 +34,23 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     @EntityGraph(attributePaths = {"customer.user", "freelancer.user", "category", "subcategories"})
     List<Project> findByIdIn(List<UUID> ids);
 
+    @Query("""
+                SELECT p.id
+                FROM Project p
+                LEFT JOIN p.subcategories s
+                WHERE (:statuses IS NULL OR p.status IN :statuses)
+                  AND (:categoryId IS NULL OR p.category.id = :categoryId)
+                  AND (:subcategoryId IS NULL OR s.id = :subcategoryId)
+                  AND (:searchTerm IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+                       OR LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+                GROUP BY p.id
+            """)
+    List<UUID> findFilteredJobFeedProjectIds(
+            List<ProjectStatus> statuses,
+            Long categoryId,
+            Long subcategoryId,
+            String searchTerm
+    );
+
+
 }

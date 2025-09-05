@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
@@ -50,6 +51,49 @@ public class ProjectController {
                 token,
                 pageable,
                 projectStatus,
+                categoryId,
+                subcategoryId,
+                searchTerm
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/job-feed")
+    public ResponseEntity<PagedResponseDTO<ProjectSummaryDTO>> getAllJobFeedProjects(
+            Pageable pageable,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long subcategoryId,
+            @RequestParam(required = false) String searchTerm
+    ) {
+        List<ProjectStatus> allowedStatuses = List.of(
+                ProjectStatus.OPEN,
+                ProjectStatus.PROPOSALS_RECEIVED,
+                ProjectStatus.NONE,
+                ProjectStatus.CANCELLED
+        );
+
+        List<ProjectStatus> statusesToFetch;
+
+        if (status != null && !status.isBlank()) {
+            try {
+                ProjectStatus parsed = ProjectStatus.valueOf(status.toUpperCase());
+                if (allowedStatuses.contains(parsed)) {
+                    statusesToFetch = List.of(parsed);
+                } else {
+                    statusesToFetch = allowedStatuses;
+                }
+            } catch (IllegalArgumentException e) {
+                statusesToFetch = allowedStatuses;
+            }
+        } else {
+            statusesToFetch = allowedStatuses;
+        }
+
+        PagedResponseDTO<ProjectSummaryDTO> response = projectService.getAllJobFeedProjects(
+                pageable,
+                statusesToFetch,
                 categoryId,
                 subcategoryId,
                 searchTerm
