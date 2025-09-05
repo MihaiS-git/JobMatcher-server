@@ -4,19 +4,14 @@ import com.jobmatcher.server.model.ProposalDetailDTO;
 import com.jobmatcher.server.model.ProposalRequestDTO;
 import com.jobmatcher.server.model.ProposalSummaryDTO;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.awt.print.Pageable;
-import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface IProposalService {
-    Page<ProposalSummaryDTO> getProposalsByProjectId(
-            UUID projectId,
-            Pageable pageable,
-            BigDecimal amount,
-            Integer estimatedDuration);
+    Page<ProposalSummaryDTO> getProposalsByProjectId(UUID projectId, Pageable pageable);
     ProposalDetailDTO getProposalById(UUID id);
     ProposalDetailDTO createProposal(ProposalRequestDTO requestDTO);
-    ProposalDetailDTO updateProposal(UUID id, ProposalRequestDTO requestDTO);
-    void deleteProposal(UUID id);
+    ProposalDetailDTO updateProposalById(UUID id, ProposalRequestDTO requestDTO);
+    void deleteProposalById(UUID id);
 }

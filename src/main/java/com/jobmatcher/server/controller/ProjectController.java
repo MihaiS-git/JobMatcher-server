@@ -70,7 +70,6 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<ProjectResponseDTO> createProject(@RequestBody @Valid ProjectRequestDTO requestDto) {
-        System.out.println("Creating project with request: " + requestDto.toString());
         ProjectResponseDTO created = projectService.createProject(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
