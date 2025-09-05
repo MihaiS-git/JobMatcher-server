@@ -3,7 +3,6 @@ package com.jobmatcher.server.model;
 import com.jobmatcher.server.domain.MilestoneStatus;
 import com.jobmatcher.server.domain.PaymentStatus;
 import com.jobmatcher.server.domain.Priority;
-import com.jobmatcher.server.domain.Proposal;
 import lombok.Builder;
 import lombok.Getter;
 

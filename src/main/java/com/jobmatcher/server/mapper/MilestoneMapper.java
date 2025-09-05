@@ -1,5 +1,6 @@
 package com.jobmatcher.server.mapper;
 
+import com.jobmatcher.server.domain.FreelancerProfile;
 import com.jobmatcher.server.domain.Milestone;
 import com.jobmatcher.server.domain.Proposal;
 import com.jobmatcher.server.model.MilestoneRequestDTO;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class MilestoneMapper {
 
-    public MilestoneResponseDTO toDetailDto(Milestone entity) {
+    public MilestoneResponseDTO toDto(Milestone entity) {
         if (entity == null) {
             return null;
         }

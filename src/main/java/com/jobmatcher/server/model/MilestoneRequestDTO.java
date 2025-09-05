@@ -19,9 +19,6 @@ public class MilestoneRequestDTO {
     @NotNull
     private UUID proposalId;
 
-    @NotNull
-    private UUID freelancerId;
-
     @Size(max=255, message = "Title cannot exceed 255 characters.")
     private String title;
 

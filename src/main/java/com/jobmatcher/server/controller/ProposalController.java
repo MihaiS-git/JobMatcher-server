@@ -43,7 +43,7 @@ public class ProposalController {
     public ResponseEntity<ProposalDetailDTO> createProposal(@RequestBody ProposalRequestDTO requestDTO) {
         ProposalDetailDTO createdProposal = proposalService.createProposal(requestDTO);
         URI location = URI.create(String.format(API_VERSION + "/proposals/%s", createdProposal.getId()));
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdProposal);
+        return ResponseEntity.status(HttpStatus.CREATED).location(location).body(createdProposal);
     }
 
     @PatchMapping("/{id}")

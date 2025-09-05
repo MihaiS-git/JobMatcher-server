@@ -1,39 +1,85 @@
 package com.jobmatcher.server.service;
 
 import com.jobmatcher.server.domain.Milestone;
-import com.jobmatcher.server.domain.MilestoneStatus;
-import com.jobmatcher.server.domain.PaymentStatus;
+import com.jobmatcher.server.domain.Proposal;
+import com.jobmatcher.server.exception.ResourceNotFoundException;
+import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.MilestoneRequestDTO;
 import com.jobmatcher.server.model.MilestoneResponseDTO;
+import com.jobmatcher.server.repository.MilestoneRepository;
+import com.jobmatcher.server.repository.ProposalRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
-public class MilestoneService implements IMilestoneService{
-    @Override
-    public Page<MilestoneResponseDTO> getMilestonesByProjectId(UUID projectId, Pageable pageable, MilestoneStatus status, PaymentStatus paymentStatus, LocalDate plannedStartDate, LocalDate plannedEndDate, LocalDate actualStartDate, LocalDate actualEndDate) {
-        return null;
+@Service
+public class MilestoneService implements IMilestoneService {
+
+    private final MilestoneRepository milestoneRepository;
+    private final ProposalRepository proposalRepository;
+    private final MilestoneMapper milestoneMapper;
+
+
+    public MilestoneService(
+            MilestoneRepository milestoneRepository,
+            ProposalRepository proposalRepository,
+            MilestoneMapper milestoneMapper
+    ) {
+        this.milestoneRepository = milestoneRepository;
+        this.proposalRepository = proposalRepository;
+        this.milestoneMapper = milestoneMapper;
     }
 
     @Override
-    public Milestone getMilestoneById(UUID id) {
-        return null;
+    public Page<MilestoneResponseDTO> getMilestonesByProposalId(UUID projectId, Pageable pageable) {
+        return milestoneRepository.findByProposalId(projectId, pageable).map(milestoneMapper::toDto);
     }
 
     @Override
-    public Milestone createMilestone(MilestoneRequestDTO requestDTO) {
-        return null;
+    public MilestoneResponseDTO getMilestoneById(UUID id) {
+        Milestone milestone = milestoneRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Milestone not found"));
+        return milestoneMapper.toDto(milestone);
     }
 
     @Override
-    public Milestone updateMilestone(UUID id, MilestoneRequestDTO requestDTO) {
-        return null;
+    public MilestoneResponseDTO createMilestone(MilestoneRequestDTO requestDTO) {
+        Proposal proposal = proposalRepository.findById(requestDTO.getProposalId()).orElseThrow(() -> new ResourceNotFoundException("Proposal not found"));
+        Milestone milestone = milestoneMapper.toEntity(requestDTO, proposal);
+        Milestone savedMilestone = milestoneRepository.save(milestone);
+        return milestoneMapper.toDto(savedMilestone);
+    }
+
+    @Override
+    public MilestoneResponseDTO updateMilestone(UUID id, MilestoneRequestDTO requestDTO) {
+        Milestone existentMilestone = milestoneRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Milestone not found"));
+
+        if(requestDTO.getTitle() != null) existentMilestone.setTitle(requestDTO.getTitle());
+        if(requestDTO.getDescription() != null) existentMilestone.setDescription(requestDTO.getDescription());
+        if(requestDTO.getAmount() != null) existentMilestone.setAmount(requestDTO.getAmount());
+        if(requestDTO.getPenaltyAmount() != null) existentMilestone.setPenaltyAmount(requestDTO.getPenaltyAmount());
+        if(requestDTO.getBonusAmount() != null) existentMilestone.setBonusAmount(requestDTO.getBonusAmount());
+        if(requestDTO.getEstimatedDuration() != null) existentMilestone.setEstimatedDuration(requestDTO.getEstimatedDuration());
+        if(requestDTO.getStatus() != null) existentMilestone.setStatus(requestDTO.getStatus());
+        if(requestDTO.getPaymentStatus() != null) existentMilestone.setPaymentStatus(requestDTO.getPaymentStatus());
+        if(requestDTO.getNotes() != null) existentMilestone.setNotes(requestDTO.getNotes());
+        if(requestDTO.getPlannedStartDate() != null) existentMilestone.setPlannedStartDate(requestDTO.getPlannedStartDate());
+        if(requestDTO.getPlannedEndDate() != null) existentMilestone.setPlannedEndDate(requestDTO.getPlannedEndDate());
+        if(requestDTO.getActualStartDate() != null) existentMilestone.setActualStartDate(requestDTO.getActualStartDate());
+        if(requestDTO.getActualEndDate() != null) existentMilestone.setActualEndDate(requestDTO.getActualEndDate());
+        if(requestDTO.getPriority() != null) existentMilestone.setPriority(requestDTO.getPriority());
+
+        Milestone updatedMilestone = milestoneRepository.save(existentMilestone);
+
+        return milestoneMapper.toDto(updatedMilestone);
     }
 
     @Override
     public void deleteMilestone(UUID id) {
-
+        Milestone existentMilestone = milestoneRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Milestone not found"));
+        milestoneRepository.delete(existentMilestone);
     }
 }
