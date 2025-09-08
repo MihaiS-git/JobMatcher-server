@@ -13,4 +13,11 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
             "socialMedia"
     })
     Optional<CustomerProfile> findByUserId(UUID userId);
+
+    @EntityGraph(attributePaths = {
+            "user",
+            "languages",
+            "socialMedia",
+    })
+    Optional<CustomerProfile> findById(UUID id);
 }

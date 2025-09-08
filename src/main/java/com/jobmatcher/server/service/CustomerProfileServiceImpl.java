@@ -45,9 +45,12 @@ public class CustomerProfileServiceImpl implements ICustomerProfileService {
     @Transactional(readOnly = true)
     @Override
     public CustomerDetailDTO getCustomerProfileById(UUID id) {
-        CustomerProfile profile = profileRepository.findById(id).orElseThrow(() ->
-                new ResourceNotFoundException("Profile not found."));
-        return profileMapper.toCustomerDetailDto(profile);
+        return profileRepository.findById(id)
+                .map(profile -> {
+                    profile.getSocialMedia().size(); // force lazy load
+                    return profileMapper.toCustomerDetailDto(profile);
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Profile not found."));
     }
 
     @Override
