@@ -15,11 +15,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-@Service
 @Slf4j
+@Transactional(rollbackFor = Exception.class)
+@Service
 public class ProposalService implements IProposalService{
 
     private final ProposalRepository proposalRepository;
@@ -27,19 +29,26 @@ public class ProposalService implements IProposalService{
     private final FreelancerProfileRepository freelancerRepository;
     private final ProposalMapper proposalMapper;
 
-    public ProposalService(ProposalRepository proposalRepository, ProjectRepository projectRepository, FreelancerProfileRepository freelancerRepository, ProposalMapper proposalMapper) {
+    public ProposalService(
+            ProposalRepository proposalRepository,
+            ProjectRepository projectRepository,
+            FreelancerProfileRepository freelancerRepository,
+            ProposalMapper proposalMapper
+    ) {
         this.proposalRepository = proposalRepository;
         this.projectRepository = projectRepository;
         this.freelancerRepository = freelancerRepository;
         this.proposalMapper = proposalMapper;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public Page<ProposalSummaryDTO> getProposalsByProjectId(UUID projectId, Pageable pageable) {
         Page<Proposal> proposals = proposalRepository.findByProjectId(projectId, pageable);
         return proposals.map(proposalMapper::toSummaryDto);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public ProposalDetailDTO getProposalById(UUID id) {
         return proposalRepository.findById(id)
@@ -48,15 +57,18 @@ public class ProposalService implements IProposalService{
     }
 
     @Override
-    public ProposalDetailDTO createProposal(ProposalRequestDTO requestDTO) {
-        log.info("Creating proposal for Project ID: {} by Freelancer ID: {}", requestDTO.getProjectId(), requestDTO.getFreelancerId());
-        Project project = projectRepository.findById(requestDTO.getProjectId()).orElseThrow(() -> new ResourceNotFoundException("Project not found"));
-        FreelancerProfile freelancer = freelancerRepository.findById(requestDTO.getFreelancerId()).orElseThrow(() -> new ResourceNotFoundException("Freelancer not found"));
+    public ProposalSummaryDTO createProposal(ProposalRequestDTO requestDTO) {
+        log.info("Creating proposal for Project ID: {} by Freelancer ID: {}",
+                requestDTO.getProjectId(), requestDTO.getFreelancerId());
+        Project project = projectRepository.findById(requestDTO.getProjectId()).orElseThrow(() ->
+                new ResourceNotFoundException("Project not found"));
+        FreelancerProfile freelancer = freelancerRepository.findById(requestDTO.getFreelancerId()).orElseThrow(() ->
+                new ResourceNotFoundException("Freelancer not found"));
         Proposal proposalRequest = proposalMapper.toEntity(requestDTO, project, freelancer);
         Proposal savedProposal = proposalRepository.save(proposalRequest);
         log.info("Created proposal with ID: {}", savedProposal.getId());
 
-        return proposalMapper.toDetailDto(savedProposal);
+        return proposalMapper.toSummaryDto(savedProposal);
     }
 
     @Override

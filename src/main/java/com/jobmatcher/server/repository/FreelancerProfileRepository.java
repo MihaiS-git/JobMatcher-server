@@ -20,4 +20,13 @@ public interface FreelancerProfileRepository extends JpaRepository<FreelancerPro
     })
     Optional<FreelancerProfile> findByUserId(UUID userId);
 
+    @EntityGraph(attributePaths = {
+            "user",
+            "jobSubcategories",
+            "skills",
+            "languages",
+            "socialMedia"
+    })
+    Optional<FreelancerProfile> findById(UUID userId);
+
 }

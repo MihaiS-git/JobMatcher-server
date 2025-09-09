@@ -40,8 +40,8 @@ public class ProposalController {
     }
 
     @PostMapping
-    public ResponseEntity<ProposalDetailDTO> createProposal(@RequestBody ProposalRequestDTO requestDTO) {
-        ProposalDetailDTO createdProposal = proposalService.createProposal(requestDTO);
+    public ResponseEntity<ProposalSummaryDTO> createProposal(@RequestBody ProposalRequestDTO requestDTO) {
+        ProposalSummaryDTO createdProposal = proposalService.createProposal(requestDTO);
         URI location = URI.create(String.format(API_VERSION + "/proposals/%s", createdProposal.getId()));
         return ResponseEntity.status(HttpStatus.CREATED).location(location).body(createdProposal);
     }
