@@ -42,6 +42,8 @@ public class ProposalMapper {
                 .actualStartDate(entity.getActualStartDate() != null ? entity.getActualStartDate().toString() : null)
                 .actualEndDate(entity.getActualEndDate() != null ? entity.getActualEndDate().toString() : null)
                 .priority(entity.getPriority())
+                .createdAt(entity.getCreatedAt())
+                .lastUpdate(entity.getLastUpdate())
                 .build();
     }
 
@@ -67,6 +69,8 @@ public class ProposalMapper {
                 .actualStartDate(entity.getActualStartDate() != null ? entity.getActualStartDate().toString() : null)
                 .actualEndDate(entity.getActualEndDate() != null ? entity.getActualEndDate().toString() : null)
                 .priority(entity.getPriority())
+                .createdAt(entity.getCreatedAt())
+                .lastUpdate(entity.getLastUpdate())
                 .build();
     }
 

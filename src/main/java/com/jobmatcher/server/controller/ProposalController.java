@@ -1,5 +1,6 @@
 package com.jobmatcher.server.controller;
 
+import com.jobmatcher.server.domain.ProposalStatus;
 import com.jobmatcher.server.model.ProposalDetailDTO;
 import com.jobmatcher.server.model.ProposalRequestDTO;
 import com.jobmatcher.server.model.ProposalSummaryDTO;
@@ -27,9 +28,11 @@ public class ProposalController {
 
     @GetMapping
     public ResponseEntity<Page<ProposalSummaryDTO>> getProposalsByProjectId(
+            Pageable pageable,
             @RequestParam("projectId") UUID projectId,
-            Pageable pageable) {
-        Page<ProposalSummaryDTO> proposals = proposalService.getProposalsByProjectId(projectId, pageable);
+            @RequestParam(value = "status", required = false) ProposalStatus status
+    ) {
+        Page<ProposalSummaryDTO> proposals = proposalService.getProposalsByProjectId(projectId,pageable, status);
         return ResponseEntity.ok(proposals);
     }
 

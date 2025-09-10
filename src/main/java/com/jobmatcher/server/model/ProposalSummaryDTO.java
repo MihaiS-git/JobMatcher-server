@@ -5,8 +5,10 @@ import com.jobmatcher.server.domain.Priority;
 import com.jobmatcher.server.domain.ProposalStatus;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -29,6 +31,7 @@ public class ProposalSummaryDTO {
     private String actualStartDate;
     private String actualEndDate;
     private Priority priority;
-
+    private OffsetDateTime createdAt;
+    private OffsetDateTime lastUpdate;
 
 }

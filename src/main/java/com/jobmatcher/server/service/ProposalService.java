@@ -3,6 +3,7 @@ package com.jobmatcher.server.service;
 import com.jobmatcher.server.domain.FreelancerProfile;
 import com.jobmatcher.server.domain.Project;
 import com.jobmatcher.server.domain.Proposal;
+import com.jobmatcher.server.domain.ProposalStatus;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ProposalMapper;
 import com.jobmatcher.server.model.ProposalDetailDTO;
@@ -43,8 +44,14 @@ public class ProposalService implements IProposalService{
 
     @Transactional(readOnly = true)
     @Override
-    public Page<ProposalSummaryDTO> getProposalsByProjectId(UUID projectId, Pageable pageable) {
-        Page<Proposal> proposals = proposalRepository.findByProjectId(projectId, pageable);
+    public Page<ProposalSummaryDTO> getProposalsByProjectId(UUID projectId, Pageable pageable, ProposalStatus status) {
+        Page<Proposal> proposals;
+        if (status != null) {
+            proposals = proposalRepository.findByProjectIdAndStatus(projectId, pageable, status);
+        } else {
+            proposals = proposalRepository.findByProjectId(projectId, pageable);
+        }
+        Page<ProposalSummaryDTO> response = proposals.map(proposalMapper::toSummaryDto);
         return proposals.map(proposalMapper::toSummaryDto);
     }
 
