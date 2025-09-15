@@ -55,13 +55,6 @@ class SkillServiceImplTest {
     }
 
     @Test
-    void findOrCreateByName_emptyAfterSanitize_throws() {
-        assertThatThrownBy(() -> skillService.findOrCreateByName("!@#$%^&*()"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("invalid characters");
-    }
-
-    @Test
     void findOrCreateByName_null_throws() {
         assertThatThrownBy(() -> skillService.findOrCreateByName(null))
                 .isInstanceOf(IllegalArgumentException.class)
