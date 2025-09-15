@@ -109,19 +109,18 @@ public class PortfolioItemServiceImpl implements IPortfolioItemService {
         }
 
         // TEXT FIELDS: "__DELETE__" clears the field
-        existingItem.setTitle("__DELETE__".equals(sanitizedRequestItem.getTitle())
-                ? null : sanitizedRequestItem.getTitle());
-        existingItem.setDescription("__DELETE__".equals(sanitizedRequestItem.getDescription())
-                ? null : sanitizedRequestItem.getDescription());
-        existingItem.setClientName("__DELETE__".equals(sanitizedRequestItem.getClientName())
-                ? null : sanitizedRequestItem.getClientName());
-        existingItem.setDemoUrl("__DELETE__".equals(sanitizedRequestItem.getDemoUrl())
-                ? null : sanitizedRequestItem.getDemoUrl());
-        existingItem.setSourceUrl("__DELETE__".equals(sanitizedRequestItem.getSourceUrl())
-                ? null : sanitizedRequestItem.getSourceUrl());
+        existingItem.setTitle(blankToNull(sanitizedRequestItem.getTitle()));
+        existingItem.setDescription(blankToNull(sanitizedRequestItem.getDescription()));
+        existingItem.setClientName(blankToNull(sanitizedRequestItem.getClientName()));
+        existingItem.setDemoUrl(blankToNull(sanitizedRequestItem.getDemoUrl()));
+        existingItem.setSourceUrl(blankToNull(sanitizedRequestItem.getSourceUrl()));
 
         PortfolioItem updatedItem = repository.save(existingItem);
         return portfolioItemMapper.toDetailDto(updatedItem);
+    }
+
+    private String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 
     @Override
@@ -184,16 +183,26 @@ public class PortfolioItemServiceImpl implements IPortfolioItemService {
     }
 
     private static String sanitizeOptionalText(String input, String fieldName) {
-        if (input == null) return null;
+        if (input == null || input.isBlank()) {
+            return null;
+        }
         String sanitized = SanitizationUtil.sanitizeText(input);
-        if (sanitized == null) throw new IllegalArgumentException(fieldName + " contains invalid characters.");
+        if (sanitized == null) {
+            throw new IllegalArgumentException(fieldName + " contains invalid characters.");
+        }
         return sanitized;
     }
 
+
     private static String sanitizeOptionalUrl(String input, String fieldName) {
-        if (input == null) return null;
+        if (input == null || input.isBlank()) {
+            return null;
+        }
         String sanitized = SanitizationUtil.sanitizeUrl(input);
-        if (sanitized == null) throw new IllegalArgumentException(fieldName + " contains invalid characters.");
+        if (sanitized == null) {
+            throw new IllegalArgumentException(fieldName + " contains invalid characters.");
+        }
         return sanitized;
     }
+
 }

@@ -141,32 +141,27 @@ public class CustomerProfileServiceImpl implements ICustomerProfileService {
             existentProfile.setUsername(username);
         }
 
-
-        // Company: null means no update, empty means clear (set to null)
         if (dto.getCompany() != null) {
             String company = dto.getCompany().isBlank() ? null : SanitizationUtil.sanitizeText(dto.getCompany());
-            if (dto.getCompany().length() > 0 && company == null) {
+            if (!dto.getCompany().isEmpty() && company == null) {
                 throw new InvalidProfileDataException("Invalid headline text provided");
             }
             existentProfile.setCompany(company);
         }
 
-        // Languages: always update, empty means clear
         Set<Language> languages = (dto.getLanguageIds() == null || dto.getLanguageIds().isEmpty())
                 ? Collections.emptySet()
                 : fetchLanguages(dto.getLanguageIds());
         existentProfile.setLanguages(languages);
 
-        // About: null means no update, empty means clear
         if (dto.getAbout() != null) {
             String about = dto.getAbout().isBlank() ? null : SanitizationUtil.sanitizeText(dto.getAbout());
-            if (dto.getAbout().length() > 0 && about == null) {
+            if (!dto.getAbout().isEmpty() && about == null) {
                 throw new InvalidProfileDataException("Invalid about text provided");
             }
             existentProfile.setAbout(about);
         }
 
-        // Social media URLs: always update, empty means clear
         Set<String> sanitizedSocialMedia = (dto.getSocialMedia() == null)
                 ? Collections.emptySet()
                 : dto.getSocialMedia().stream()
@@ -179,10 +174,10 @@ public class CustomerProfileServiceImpl implements ICustomerProfileService {
         }
         existentProfile.setSocialMedia(sanitizedSocialMedia);
 
-        // Website URL: null means no update, empty means clear
         if (dto.getWebsiteUrl() != null) {
-            String websiteUrl = dto.getWebsiteUrl().isBlank() ? null : SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl());
-            if (dto.getWebsiteUrl().length() > 0 && websiteUrl == null) {
+            String trimmed = dto.getWebsiteUrl().trim();
+            String websiteUrl = trimmed.isEmpty() ? null : SanitizationUtil.sanitizeUrl(trimmed);
+            if (!trimmed.isEmpty() && websiteUrl == null) {
                 throw new InvalidProfileDataException("Invalid website URL provided");
             }
             existentProfile.setWebsiteUrl(websiteUrl);
