@@ -25,12 +25,15 @@ public class ProjectRequestDTO {
     private String freelancerId;
 
     @Size(max=255, message = "Title must be up to 255 characters")
-    @Pattern(regexp = "^[\\p{L}\\p{N} .,\\-']+$", message = "Title contains invalid characters")
+    @Pattern(
+            regexp = "^[\\p{L}\\p{N} /\\-_=+&*()%$#@]+$",
+            message = "Title contains invalid characters"
+    )
     @NotBlank(groups = CreateUpdateValidation.OnCreate.class, message = "Title cannot be blank")
     private String title;
 
     @Size(max=2000, message = "Description must be up to 2000 characters")
-    @Pattern(regexp = "^[A-Za-z0-9șȘțȚăĂâÂîÎéè.\\-+#_=*&%$@()!?:;, ]+$", message = "Description contains invalid characters")
+    @Pattern(regexp = "^[A-Za-z0-9șȘțȚăĂâÂîÎéè./\\-+#_=*&%$@()!?:;, ]+$", message = "Description contains invalid characters")
     @NotBlank(groups = CreateUpdateValidation.OnCreate.class, message = "Description cannot be blank")
     private String description;
 

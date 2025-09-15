@@ -22,8 +22,6 @@ import java.util.stream.Collectors;
 @Service
 public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
 
-    private static final Pattern SKILL_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9 +#.-]{1,50}$");
-
     private final FreelancerProfileRepository profileRepository;
     private final FreelancerProfileMapper profileMapper;
     private final UserRepository userRepository;
@@ -240,13 +238,13 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
 
     private Set<Skill> resolveSkillsFromNames(Set<String> skillNames) {
         if (skillNames == null || skillNames.isEmpty()) return Set.of();
+
         return skillNames.stream()
-                .map(SanitizationUtil::sanitizeText)
-                .filter(name -> name != null && !name.isBlank())
-                .filter(name -> SKILL_NAME_PATTERN.matcher(name).matches())
+                .filter(s -> s != null && !s.isBlank())
                 .map(skillService::findOrCreateByName)
                 .collect(Collectors.toSet());
     }
+
 
     private Set<JobSubcategory> fetchJobSubcategories(Set<Long> ids) {
         if (ids == null || ids.isEmpty()) return Collections.emptySet();

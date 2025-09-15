@@ -14,8 +14,6 @@ import java.util.regex.Pattern;
 @Service
 public class SkillServiceImpl implements ISkillService {
 
-    private static final Pattern ALLOWED_PATTERN = Pattern.compile("^[a-zA-Z0-9\\s]+$");
-
     private final SkillRepository skillRepository;
     private final SkillMapper skillMapper;
 
@@ -29,9 +27,7 @@ public class SkillServiceImpl implements ISkillService {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Skill name is empty or invalid.");
         }
-        if (!ALLOWED_PATTERN.matcher(name).matches()) {
-            throw new IllegalArgumentException("Skill name contains invalid characters.");
-        }
+
         String sanitized = name.trim();
         return skillRepository.findByNameIgnoreCase(sanitized)
                 .orElseGet(() -> skillRepository.save(new Skill(sanitized)));

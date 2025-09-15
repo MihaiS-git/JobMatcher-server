@@ -1,5 +1,6 @@
 package com.jobmatcher.server.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
@@ -8,6 +9,7 @@ import java.text.Normalizer;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class SanitizationUtil {
 
     private static final PolicyFactory HTML_POLICY = new HtmlPolicyBuilder()
@@ -43,14 +45,5 @@ public class SanitizationUtil {
 
         // Apply strict HTML policy (strip or allow only safe inline tags)
         return HTML_POLICY.sanitize(normalized);
-    }
-
-    public static Set<String> sanitizeUrls(Set<String> urls) {
-        if (urls == null) return Set.of();
-
-        return urls.stream()
-                .map(SanitizationUtil::sanitizeUrl)
-                .filter(s -> s != null && !s.isBlank())
-                .collect(Collectors.toSet());
     }
 }

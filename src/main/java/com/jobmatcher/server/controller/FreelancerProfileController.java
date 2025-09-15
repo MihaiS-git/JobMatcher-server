@@ -43,11 +43,14 @@ public class FreelancerProfileController {
     }
 
     @PostMapping
-    public ResponseEntity<FreelancerDetailDTO> saveFreelancerProfile(@RequestBody @Valid FreelancerProfileRequestDTO request) {
+    public ResponseEntity<FreelancerDetailDTO> saveFreelancerProfile(
+            @RequestBody @Valid FreelancerProfileRequestDTO request
+    ) {
         FreelancerDetailDTO savedProfile = freelancerProfileService.saveFreelancerProfile(request);
         URI location = URI.create(API_VERSION + "/profiles/freelancers/" + savedProfile.getProfileId());
         return ResponseEntity.created(location).body(savedProfile);
     }
+
 
     @PatchMapping(path = "/update/{id}")
     public ResponseEntity<FreelancerDetailDTO> updateFreelancerProfileById(
