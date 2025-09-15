@@ -65,6 +65,10 @@ public class CustomerProfileServiceImpl implements ICustomerProfileService {
 
     @Override
     public CustomerDetailDTO saveCustomerProfile(CustomerProfileRequestDTO dto) {
+        if (dto.getUsername() == null) {
+            throw new InvalidProfileDataException("Username is required");
+        }
+
         User user = userRepository.findById(dto.getUserId()).orElseThrow(() ->
                 new ResourceNotFoundException("User not found with ID: " + dto.getUserId()));
 
@@ -74,32 +78,52 @@ public class CustomerProfileServiceImpl implements ICustomerProfileService {
         if (username == null && dto.getUsername() != null) {
             throw new InvalidProfileDataException("Invalid username provided");
         }
-        String company = SanitizationUtil.sanitizeText(dto.getCompany());
-        if (company == null && dto.getCompany() != null) {
-            throw new InvalidProfileDataException("Invalid company provided");
+        String company = null;
+        if (dto.getCompany() != null && !dto.getCompany().isBlank()) {
+            company = dto.getCompany().isBlank()
+                    ? null
+                    : SanitizationUtil.sanitizeText(dto.getCompany());
+            if (dto.getCompany() != null && company == null) {
+                throw new InvalidProfileDataException("Invalid company provided");
+            }
         }
-        String about = SanitizationUtil.sanitizeText(dto.getAbout());
-        if (about == null && dto.getAbout() != null) {
-            throw new InvalidProfileDataException("Invalid about text provided");
+
+        String about = null;
+        if (dto.getAbout() != null && !dto.getAbout().isBlank()) {
+            about = dto.getAbout().isBlank()
+                    ? null
+                    : SanitizationUtil.sanitizeText(dto.getAbout());
+            if (dto.getAbout() != null && about == null) {
+                throw new InvalidProfileDataException("Invalid about text provided");
+            }
         }
-        String websiteUrl = SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl());
-        if (websiteUrl == null && dto.getWebsiteUrl() != null) {
-            throw new InvalidProfileDataException("Invalid website URL provided");
+        String websiteUrl = null;
+        if (dto.getWebsiteUrl() != null) {
+            websiteUrl = dto.getWebsiteUrl().isBlank()
+                    ? null
+                    : SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl());
+
+            if (!dto.getWebsiteUrl().isEmpty() && websiteUrl == null) {
+                throw new InvalidProfileDataException("Invalid website URL provided");
+            }
         }
-        Set<String> sanitizedSocialMedia = Optional.ofNullable(dto.getSocialMedia())
-                .orElse(Collections.emptySet())
-                .stream()
-                .map(SanitizationUtil::sanitizeUrl)
-                .filter(Objects::nonNull)
-                .filter(s -> !s.isBlank())
-                .collect(Collectors.toSet());
-        if (sanitizedSocialMedia.isEmpty() && dto.getSocialMedia() != null && !dto.getSocialMedia().isEmpty()) {
-            throw new InvalidProfileDataException("Invalid social media URL provided");
+        Set<String> socialMedia = null;
+        if (dto.getSocialMedia() != null) {
+            socialMedia = dto.getSocialMedia().isEmpty()
+                    ? Collections.emptySet()
+                    : dto.getSocialMedia().stream()
+                    .map(SanitizationUtil::sanitizeUrl)
+                    .filter(s -> s != null && !s.isBlank())
+                    .collect(Collectors.toSet());
+
+            if (!dto.getSocialMedia().isEmpty() && socialMedia.isEmpty()) {
+                throw new InvalidProfileDataException("Invalid social media URL provided");
+            }
         }
 
         CustomerProfile profile = profileMapper.toEntity(
                 dto, user, username, company, about, websiteUrl,
-                languages, sanitizedSocialMedia);
+                languages, socialMedia);
         CustomerProfile savedProfile = profileRepository.save(profile);
         return profileMapper.toCustomerDetailDto(savedProfile);
     }

@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
         log.warn("Invalid argument: {}", ex.getMessage());
@@ -289,7 +288,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
         log.warn("Database constraint violation", ex);
         return buildErrorResponse(
-                "Database constraint violated: " + ex.getMostSpecificCause().getMessage(),
+                ex.getMostSpecificCause().getMessage().contains("username")
+                        ? "Username already exists."
+                        : "Database constraint violated: " + ex.getMostSpecificCause().getMessage(),
                 HttpStatus.BAD_REQUEST,
                 request.getRequestURI(),
                 ErrorCode.VALIDATION_FAILED
@@ -328,7 +329,6 @@ public class GlobalExceptionHandler {
                 ErrorCode.INVALID_DATE_FORMAT
         );
     }
-
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(Object message, HttpStatus status, String path, ErrorCode errorCode) {
         return ResponseEntity.status(status).body(ErrorResponse.of(status, message, path, errorCode));

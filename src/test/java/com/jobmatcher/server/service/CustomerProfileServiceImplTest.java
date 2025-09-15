@@ -57,13 +57,16 @@ class CustomerProfileServiceImplTest {
         profile.setId(profileId);
 
         // DTOs
-        detailDTO = CustomerDetailDTO.builder().build();
+        detailDTO = CustomerDetailDTO.builder()
+                .username("testuser")
+                .build();
 
         user = new User();
         user.setId(UUID.randomUUID());
 
         requestDTO = CustomerProfileRequestDTO.builder()
                 .userId(user.getId())
+                .username("testuser")
                 .languageIds(Set.of(1))
                 .socialMedia(Set.of())
                 .build();

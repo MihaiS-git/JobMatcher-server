@@ -75,6 +75,10 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
 
     @Override
     public FreelancerDetailDTO saveFreelancerProfile(FreelancerProfileRequestDTO dto) {
+        if (dto.getUsername() == null) {
+            throw new InvalidProfileDataException("Username is required");
+        }
+
         User user = userRepository.findById(dto.getUserId()).orElseThrow(() ->
                 new ResourceNotFoundException("User not found with ID: " + dto.getUserId()));
 
@@ -86,34 +90,61 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
         if (username == null && dto.getUsername() != null) {
             throw new InvalidProfileDataException("Invalid username provided");
         }
-        String headline = SanitizationUtil.sanitizeText(dto.getHeadline());
-        if (headline == null && dto.getHeadline() != null) {
-            throw new InvalidProfileDataException("Invalid headline provided");
+        String headline = null;
+        if(dto.getHeadline() != null && !dto.getHeadline().isBlank()) {
+            headline = dto.getHeadline().isBlank()
+                    ? null
+                    : SanitizationUtil.sanitizeText(dto.getHeadline());
+            if (dto.getHeadline() != null && headline == null) {
+                throw new InvalidProfileDataException("Invalid headline provided");
+            }
         }
-        String about = SanitizationUtil.sanitizeText(dto.getAbout());
-        if (about == null && dto.getAbout() != null) {
-            throw new InvalidProfileDataException("Invalid about text provided");
+        Double hourlyRate;
+        if(dto.getHourlyRate() != null) {
+            hourlyRate = dto.getHourlyRate();
+            if(hourlyRate <= 0) {
+                throw new InvalidProfileDataException("Hourly rate must be positive");
+            }
         }
-        String websiteUrl = SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl());
-        if (websiteUrl == null && dto.getWebsiteUrl() != null) {
-            throw new InvalidProfileDataException("Invalid website URL provided");
+        String about = null;
+        if(dto.getAbout() != null && !dto.getAbout().isBlank()) {
+            about = dto.getAbout().isBlank()
+                    ? null
+                    : SanitizationUtil.sanitizeText(dto.getAbout());
+            if (dto.getAbout() != null && about == null) {
+                throw new InvalidProfileDataException("Invalid about text provided");
+            }
         }
-        Set<String> sanitizedSocialMedia = Optional.ofNullable(dto.getSocialMedia())
-                .orElse(Collections.emptySet())
-                .stream()
-                .map(SanitizationUtil::sanitizeUrl)
-                .filter(Objects::nonNull)
-                .filter(s -> !s.isBlank())
-                .collect(Collectors.toSet());
-        if (sanitizedSocialMedia.isEmpty() && dto.getSocialMedia() != null && !dto.getSocialMedia().isEmpty()) {
-            throw new InvalidProfileDataException("Invalid social media URL provided");
+        String websiteUrl = null;
+        if(dto.getWebsiteUrl() != null) {
+            websiteUrl = dto.getWebsiteUrl().isBlank()
+                    ? null
+                    : SanitizationUtil.sanitizeUrl(dto.getWebsiteUrl());
+
+            if(!dto.getWebsiteUrl().isEmpty() && websiteUrl == null) {
+                throw new InvalidProfileDataException("Invalid website URL provided");
+            }
+        }
+        Set<String> socialMedia = null;
+        if(dto.getSocialMedia() != null) {
+            socialMedia = dto.getSocialMedia().isEmpty()
+                    ? Collections.emptySet()
+                    : dto.getSocialMedia().stream()
+                    .map(SanitizationUtil::sanitizeUrl)
+                    .filter(s -> s != null && !s.isBlank())
+                    .collect(Collectors.toSet());
+
+            if(!dto.getSocialMedia().isEmpty() && socialMedia.isEmpty()) {
+                throw new InvalidProfileDataException("Invalid social media URL provided");
+            }
         }
 
         FreelancerProfile profile = profileMapper.toEntity(
                 dto, user, username, headline, about, websiteUrl,
-                skills, subcategories, languages, sanitizedSocialMedia);
+                skills, subcategories, languages, socialMedia);
         FreelancerProfile savedProfile = profileRepository.save(profile);
         return profileMapper.toFreelancerDetailDto(savedProfile);
+
     }
 
     @Override

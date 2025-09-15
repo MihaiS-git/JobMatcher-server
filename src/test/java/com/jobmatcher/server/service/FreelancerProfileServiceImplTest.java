@@ -66,6 +66,7 @@ class FreelancerProfileServiceImplTest {
 
         requestDTO = FreelancerProfileRequestDTO.builder()
                 .userId(user.getId())
+                .username("testuser")
                 .skills(Set.of("Java", "Spring"))
                 .jobSubcategoryIds(Set.of(1L))
                 .languageIds(Set.of(1))
@@ -216,6 +217,7 @@ class FreelancerProfileServiceImplTest {
         // DTO
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(userId)
+                .username("testuser")
                 .jobSubcategoryIds(Set.of(1L))
                 .skills(Set.of("java", "spring"))
                 .languageIds(Set.of(1))
@@ -230,13 +232,6 @@ class FreelancerProfileServiceImplTest {
 
     @Test
     void saveFreelancerProfile_missingSubcategories_throws() {
-        // Mock user
-        when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
-
-        // Mock empty subcategory list to simulate missing IDs
-        when(subcategoryRepository.findAllById(any())).thenReturn(List.of());
-
-        // Build DTO with bogus subcategory ID
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(UUID.randomUUID())
                 .jobSubcategoryIds(Set.of(999L)) // missing
@@ -244,20 +239,13 @@ class FreelancerProfileServiceImplTest {
                 .languageIds(Set.of(1))
                 .build();
 
-        assertThrows(ResourceNotFoundException.class, () -> service.saveFreelancerProfile(dto));
+        assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
     }
 
     @Test
     void saveFreelancerProfile_missingLanguages_throws() {
-        // Setup user and subcategories correctly
-        when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
-        when(subcategoryRepository.findAllById(any())).thenReturn(List.of(new JobSubcategory()));
-
         // Mark this stubbing as lenient because it's not hit before the exception
         lenient().when(skillService.findOrCreateByName("java")).thenReturn(new Skill("java"));
-
-        // Simulate missing languages
-        when(languageRepository.findAllById(any())).thenReturn(List.of());
 
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(UUID.randomUUID())
@@ -266,17 +254,11 @@ class FreelancerProfileServiceImplTest {
                 .languageIds(Set.of(42)) // nonexistent
                 .build();
 
-        assertThrows(ResourceNotFoundException.class, () -> service.saveFreelancerProfile(dto));
+        assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
     }
 
     @Test
-    void saveFreelancerProfile_nullLanguageIds_returnsEmptySet() {
-        // Setup minimal required valid user and subcategory
-        when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
-        when(subcategoryRepository.findAllById(any())).thenReturn(List.of(new JobSubcategory()));
-        when(skillService.findOrCreateByName("java")).thenReturn(new Skill("java"));
-
-        // Make languageIds null
+    void saveFreelancerProfile_nullLanguageIds_throws() {
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(UUID.randomUUID())
                 .jobSubcategoryIds(Set.of(1L))
@@ -284,15 +266,11 @@ class FreelancerProfileServiceImplTest {
                 .languageIds(null)
                 .build();
 
-        assertDoesNotThrow(() -> service.saveFreelancerProfile(dto));
+        assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
     }
 
     @Test
-    void saveFreelancerProfile_emptyLanguageIds_returnsEmptySet() {
-        when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
-        when(subcategoryRepository.findAllById(any())).thenReturn(List.of(new JobSubcategory()));
-        when(skillService.findOrCreateByName("java")).thenReturn(new Skill("java"));
-
+    void saveFreelancerProfile_emptyLanguageIds_throws() {
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(UUID.randomUUID())
                 .jobSubcategoryIds(Set.of(1L))
@@ -300,15 +278,11 @@ class FreelancerProfileServiceImplTest {
                 .languageIds(Collections.emptySet())
                 .build();
 
-        assertDoesNotThrow(() -> service.saveFreelancerProfile(dto));
+        assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
     }
 
     @Test
-    void saveFreelancerProfile_nullSubcategoryIds_returnsEmptySet() {
-        when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
-        when(skillService.findOrCreateByName("Java")).thenReturn(new Skill("Java"));
-        when(languageRepository.findAllById(any())).thenReturn(List.of(new Language("English")));
-
+    void saveFreelancerProfile_nullSubcategoryIds_throws() {
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(UUID.randomUUID())
                 .jobSubcategoryIds(null)
@@ -316,15 +290,11 @@ class FreelancerProfileServiceImplTest {
                 .languageIds(Set.of(1))
                 .build();
 
-        assertDoesNotThrow(() -> service.saveFreelancerProfile(dto));
+        assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
     }
 
     @Test
-    void saveFreelancerProfile_emptySubcategoryIds_returnsEmptySet() {
-        when(userRepository.findById(any())).thenReturn(Optional.of(new User()));
-        when(skillService.findOrCreateByName("Java")).thenReturn(new Skill("Java"));
-        when(languageRepository.findAllById(any())).thenReturn(List.of(new Language("English")));
-
+    void saveFreelancerProfile_emptySubcategoryIds_throws() {
         FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
                 .userId(UUID.randomUUID())
                 .jobSubcategoryIds(Collections.emptySet())
@@ -332,7 +302,7 @@ class FreelancerProfileServiceImplTest {
                 .languageIds(Set.of(1))
                 .build();
 
-        assertDoesNotThrow(() -> service.saveFreelancerProfile(dto));
+        assertThrows(InvalidProfileDataException.class, () -> service.saveFreelancerProfile(dto));
     }
 
     @Test
