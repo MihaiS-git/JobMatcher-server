@@ -196,6 +196,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("Resource not found.", HttpStatus.NOT_FOUND, request.getRequestURI(), ErrorCode.RESOURCE_NOT_FOUND);
     }
 
+    @ExceptionHandler(InvalidProjectOperationException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidProjectOperationException(InvalidProjectOperationException ex, HttpServletRequest request) {
+        log.warn("Invalid project operation. ", ex);
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.INVALID_PROJECT_OPERATION);
+    }
+
     @ExceptionHandler(PasswordRecoveryException.class)
     public ResponseEntity<ErrorResponse> handlePasswordRecoveryException(PasswordRecoveryException ex, HttpServletRequest request) {
         log.warn("Invalid email. ", ex);

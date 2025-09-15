@@ -1,6 +1,7 @@
 package com.jobmatcher.server.service;
 
 import com.jobmatcher.server.domain.*;
+import com.jobmatcher.server.exception.InvalidProjectOperationException;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ProjectMapper;
 import com.jobmatcher.server.model.PagedResponseDTO;
@@ -91,10 +92,25 @@ public class ProjectServiceImpl implements IProjectService {
 
     @Override
     public ProjectResponseDTO createProject(ProjectRequestDTO requestDto) {
+        if(requestDto.getCustomerId() == null || requestDto.getCustomerId().isBlank()) {
+            throw new InvalidProjectOperationException("Please create a profile before creating a project.");
+        }
         CustomerProfile customer = customerProfileRepository.findById(UUID.fromString(requestDto.getCustomerId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + requestDto.getCustomerId()));
+        if(customer.getUser().getRole() != Role.CUSTOMER) {
+            throw new InvalidProjectOperationException("Only users with CUSTOMER role can create projects.");
+        }
+
+
+        if(requestDto.getCategoryId() == null) {
+            throw new IllegalArgumentException("Category must be provided.");
+        }
         JobCategory category = jobCategoryRepository.findById(requestDto.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + requestDto.getCategoryId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found."));
+
+        if(requestDto.getSubcategoryIds() == null || requestDto.getSubcategoryIds().isEmpty()) {
+            throw new IllegalArgumentException("At least one subcategory must be selected");
+        }
         Set<JobSubcategory> subcategories = new HashSet<>(jobSubcategoryRepository.findAllById(requestDto.getSubcategoryIds()));
 
         if (requestDto.getDeadline().isBefore(LocalDate.now()))
