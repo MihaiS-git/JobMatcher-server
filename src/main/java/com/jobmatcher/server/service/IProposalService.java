@@ -11,8 +11,12 @@ import java.util.UUID;
 
 public interface IProposalService {
     Page<ProposalSummaryDTO> getProposalsByProjectId(UUID projectId, Pageable pageable, ProposalStatus status);
+    Page<ProposalSummaryDTO> getProposalsByFreelancerId(UUID freelancerId, Pageable pageable, ProposalStatus status);
     ProposalDetailDTO getProposalById(UUID id);
+    ProposalDetailDTO getProposalByFreelancerIdAndProjectId(UUID freelancerId, UUID projectId);
     ProposalSummaryDTO createProposal(ProposalRequestDTO requestDTO);
     ProposalDetailDTO updateProposalById(UUID id, ProposalRequestDTO requestDTO);
     void deleteProposalById(UUID id);
+
+
 }

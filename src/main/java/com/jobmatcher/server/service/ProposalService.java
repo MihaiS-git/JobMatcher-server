@@ -51,7 +51,18 @@ public class ProposalService implements IProposalService{
         } else {
             proposals = proposalRepository.findByProjectId(projectId, pageable);
         }
-        Page<ProposalSummaryDTO> response = proposals.map(proposalMapper::toSummaryDto);
+        return proposals.map(proposalMapper::toSummaryDto);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<ProposalSummaryDTO> getProposalsByFreelancerId(UUID freelancerId, Pageable pageable, ProposalStatus status) {
+        Page<Proposal> proposals;
+        if (status != null) {
+            proposals = proposalRepository.findByFreelancerIdAndStatus(freelancerId, pageable, status);
+        } else {
+            proposals = proposalRepository.findByFreelancerId(freelancerId, pageable);
+        }
         return proposals.map(proposalMapper::toSummaryDto);
     }
 
@@ -61,6 +72,13 @@ public class ProposalService implements IProposalService{
         return proposalRepository.findById(id)
                 .map(proposalMapper::toDetailDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Proposal not found"));
+    }
+
+    @Override
+    public ProposalDetailDTO getProposalByFreelancerIdAndProjectId(UUID freelancerId, UUID projectId) {
+        return proposalRepository.findByFreelancerIdAndProjectId(freelancerId, projectId)
+                .map(proposalMapper::toDetailDto)
+                .orElse(null);
     }
 
     @Override

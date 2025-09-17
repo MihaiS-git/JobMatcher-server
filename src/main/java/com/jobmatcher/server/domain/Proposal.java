@@ -57,7 +57,7 @@ public class Proposal extends Auditable{
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private ProposalStatus status = ProposalStatus.NONE;
+    private ProposalStatus status = ProposalStatus.PENDING;
 
     @NotNull
     @Enumerated(EnumType.STRING)

@@ -29,16 +29,35 @@ public class ProposalController {
     @GetMapping
     public ResponseEntity<Page<ProposalSummaryDTO>> getProposalsByProjectId(
             Pageable pageable,
-            @RequestParam("projectId") UUID projectId,
+            @RequestParam("projectId") String projectId,
             @RequestParam(value = "status", required = false) ProposalStatus status
     ) {
-        Page<ProposalSummaryDTO> proposals = proposalService.getProposalsByProjectId(projectId,pageable, status);
+        Page<ProposalSummaryDTO> proposals = proposalService.getProposalsByProjectId(UUID.fromString(projectId),pageable, status);
+        return ResponseEntity.ok(proposals);
+    }
+
+    @GetMapping(path = "/freelancer/{freelancerId}")
+    public ResponseEntity<Page<ProposalSummaryDTO>> getProposalsByFreelancerId(
+            @PathVariable("freelancerId") String freelancerId,
+            Pageable pageable,
+            @RequestParam(value = "status", required = false) ProposalStatus status
+    ) {
+        Page<ProposalSummaryDTO> proposals = proposalService.getProposalsByFreelancerId(UUID.fromString(freelancerId), pageable, status);
         return ResponseEntity.ok(proposals);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProposalDetailDTO> getProposalById(@PathVariable("id") UUID id) {
-        ProposalDetailDTO proposal = proposalService.getProposalById(id);
+    public ResponseEntity<ProposalDetailDTO> getProposalById(@PathVariable("id") String id) {
+        ProposalDetailDTO proposal = proposalService.getProposalById(UUID.fromString(id));
+        return ResponseEntity.ok(proposal);
+    }
+
+    @GetMapping("/by-freelancer-and-project")
+    public ResponseEntity<ProposalDetailDTO> getProposalByFreelancerAndProject(
+            @RequestParam("freelancerId") String freelancerId,
+            @RequestParam("projectId") String projectId
+    ){
+        ProposalDetailDTO proposal = proposalService.getProposalByFreelancerIdAndProjectId(UUID.fromString(freelancerId), UUID.fromString(projectId));
         return ResponseEntity.ok(proposal);
     }
 
@@ -50,14 +69,14 @@ public class ProposalController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ProposalDetailDTO> updateProposalById(@PathVariable("id") UUID id, @RequestBody ProposalRequestDTO requestDTO) {
-        ProposalDetailDTO updatedProposal = proposalService.updateProposalById(id, requestDTO);
+    public ResponseEntity<ProposalDetailDTO> updateProposalById(@PathVariable("id") String id, @RequestBody ProposalRequestDTO requestDTO) {
+        ProposalDetailDTO updatedProposal = proposalService.updateProposalById(UUID.fromString(id), requestDTO);
         return ResponseEntity.ok(updatedProposal);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProposalById(@PathVariable("id") UUID id) {
-        proposalService.deleteProposalById(id);
+    public ResponseEntity<Void> deleteProposalById(@PathVariable("id") String id) {
+        proposalService.deleteProposalById(UUID.fromString(id));
         return ResponseEntity.noContent().build();
     }
 }
