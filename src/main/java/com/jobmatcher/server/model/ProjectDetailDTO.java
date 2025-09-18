@@ -6,12 +6,13 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.UUID;
 
 @Getter
 @Builder
-public class ProjectResponseDTO {
+public class ProjectDetailDTO {
     private UUID id;
     private CustomerSummaryDTO customer;
     private FreelancerSummaryDTO freelancer;
@@ -23,4 +24,7 @@ public class ProjectResponseDTO {
     private LocalDate deadline;
     private JobCategoryDTO category;
     private Set<JobSubcategoryDTO> subcategories;
+    private Set<ProposalSummaryDTO> proposals;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime lastUpdate;
 }

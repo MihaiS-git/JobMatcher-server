@@ -3,7 +3,7 @@ package com.jobmatcher.server.controller;
 import com.jobmatcher.server.domain.ProjectStatus;
 import com.jobmatcher.server.model.PagedResponseDTO;
 import com.jobmatcher.server.model.ProjectRequestDTO;
-import com.jobmatcher.server.model.ProjectResponseDTO;
+import com.jobmatcher.server.model.ProjectDetailDTO;
 import com.jobmatcher.server.model.ProjectSummaryDTO;
 import com.jobmatcher.server.service.IProjectService;
 import jakarta.validation.Valid;
@@ -103,27 +103,27 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponseDTO> getProjectById(
+    public ResponseEntity<ProjectDetailDTO> getProjectById(
             @RequestHeader("Authorization") String authHeader,
             @PathVariable String id
     ) {
         String token = authHeader.replace("Bearer ", "").trim();
-        ProjectResponseDTO project = projectService.getProjectById(UUID.fromString(id));
+        ProjectDetailDTO project = projectService.getProjectById(UUID.fromString(id));
         return ResponseEntity.ok(project);
     }
 
     @PostMapping
-    public ResponseEntity<ProjectResponseDTO> createProject(@RequestBody @Valid ProjectRequestDTO requestDto) {
-        ProjectResponseDTO created = projectService.createProject(requestDto);
+    public ResponseEntity<ProjectDetailDTO> createProject(@RequestBody @Valid ProjectRequestDTO requestDto) {
+        ProjectDetailDTO created = projectService.createProject(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ProjectResponseDTO> updateProject(
+    public ResponseEntity<ProjectDetailDTO> updateProject(
             @PathVariable String id,
             @RequestBody @Valid ProjectRequestDTO requestDto
     ) {
-        ProjectResponseDTO updated = projectService.updateProject(UUID.fromString(id), requestDto);
+        ProjectDetailDTO updated = projectService.updateProject(UUID.fromString(id), requestDto);
         return ResponseEntity.ok(updated);
     }
 

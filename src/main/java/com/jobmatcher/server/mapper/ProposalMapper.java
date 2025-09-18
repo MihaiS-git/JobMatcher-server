@@ -12,11 +12,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProposalMapper {
 
-    private final ProjectMapper projectMapper;
     private final FreelancerProfileMapper freelancerMapper;
 
-    public ProposalMapper(ProjectMapper projectMapper, FreelancerProfileMapper freelancerMapper) {
-        this.projectMapper = projectMapper;
+    public ProposalMapper(FreelancerProfileMapper freelancerMapper) {
         this.freelancerMapper = freelancerMapper;
     }
 
@@ -27,8 +25,10 @@ public class ProposalMapper {
 
         return ProposalDetailDTO.builder()
                 .id(entity.getId())
-                .project(entity.getProject() != null ? projectMapper.toSummaryDto(entity.getProject()) : null)
-                .freelancer(entity.getFreelancer() != null ? freelancerMapper.toFreelancerSummaryDto(entity.getFreelancer()) : null)
+                .projectId(entity.getProject().getId())
+                .freelancer(entity.getFreelancer() != null
+                        ? freelancerMapper.toFreelancerSummaryDto(entity.getFreelancer())
+                        : null)
                 .coverLetter(entity.getCoverLetter())
                 .amount(entity.getAmount())
                 .penaltyAmount(entity.getPenaltyAmount())

@@ -1,9 +1,6 @@
 package com.jobmatcher.server.service;
 
-import com.jobmatcher.server.domain.FreelancerProfile;
-import com.jobmatcher.server.domain.Project;
-import com.jobmatcher.server.domain.Proposal;
-import com.jobmatcher.server.domain.ProposalStatus;
+import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ProposalMapper;
 import com.jobmatcher.server.model.ProposalDetailDTO;
@@ -18,7 +15,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
@@ -142,8 +143,21 @@ public class ProposalService implements IProposalService{
         }
         Proposal updatedProposal = proposalRepository.save(existentProposal);
 
+        if(requestDTO.getStatus() == ProposalStatus.ACCEPTED){
+            Project project = projectRepository.findById(existentProposal.getProject().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+            Set<Proposal> otherProposals = project.getProposals().stream()
+                    .filter((p) -> !p.getId().equals(id))
+                    .collect(Collectors.toSet());
+            otherProposals.forEach((p -> p.setStatus(ProposalStatus.REJECTED)));
+            proposalRepository.saveAll(otherProposals);
+            project.setStatus(ProjectStatus.IN_PROGRESS);
+            projectRepository.save(project);
+        }
+
         return proposalMapper.toDetailDto(updatedProposal);
     }
+
 
     @Override
     public void deleteProposalById(UUID id) {

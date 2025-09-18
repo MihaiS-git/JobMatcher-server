@@ -6,7 +6,7 @@ import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ProjectMapper;
 import com.jobmatcher.server.model.PagedResponseDTO;
 import com.jobmatcher.server.model.ProjectRequestDTO;
-import com.jobmatcher.server.model.ProjectResponseDTO;
+import com.jobmatcher.server.model.ProjectDetailDTO;
 import com.jobmatcher.server.model.ProjectSummaryDTO;
 import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.util.SanitizationUtil;
@@ -84,14 +84,14 @@ public class ProjectServiceImpl implements IProjectService {
     }
 
     @Override
-    public ProjectResponseDTO getProjectById(UUID id) {
+    public ProjectDetailDTO getProjectById(UUID id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
         return projectMapper.toDto(project);
     }
 
     @Override
-    public ProjectResponseDTO createProject(ProjectRequestDTO requestDto) {
+    public ProjectDetailDTO createProject(ProjectRequestDTO requestDto) {
         if(requestDto.getCustomerId() == null || requestDto.getCustomerId().isBlank()) {
             throw new InvalidProjectOperationException("Please create a profile before creating a project.");
         }
@@ -124,7 +124,7 @@ public class ProjectServiceImpl implements IProjectService {
     }
 
     @Override
-    public ProjectResponseDTO updateProject(UUID id, ProjectRequestDTO requestDto) {
+    public ProjectDetailDTO updateProject(UUID id, ProjectRequestDTO requestDto) {
         Project existingProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
         FreelancerProfile freelancer = requestDto.getFreelancerId() != null

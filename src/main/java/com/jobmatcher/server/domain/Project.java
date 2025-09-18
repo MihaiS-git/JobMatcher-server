@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -77,5 +78,8 @@ public class Project extends Auditable{
     )
     @OrderBy("name ASC")
     private Set<JobSubcategory> subcategories;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Proposal> proposals = new HashSet<>();
 
 }

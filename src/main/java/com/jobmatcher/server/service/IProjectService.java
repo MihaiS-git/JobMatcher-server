@@ -3,7 +3,7 @@ package com.jobmatcher.server.service;
 import com.jobmatcher.server.domain.ProjectStatus;
 import com.jobmatcher.server.model.PagedResponseDTO;
 import com.jobmatcher.server.model.ProjectRequestDTO;
-import com.jobmatcher.server.model.ProjectResponseDTO;
+import com.jobmatcher.server.model.ProjectDetailDTO;
 import com.jobmatcher.server.model.ProjectSummaryDTO;
 import org.springframework.data.domain.Pageable;
 
@@ -21,10 +21,10 @@ public interface IProjectService {
             String searchTerm
     );
 
-    ProjectResponseDTO getProjectById(UUID id);
+    ProjectDetailDTO getProjectById(UUID id);
 
-    ProjectResponseDTO createProject(ProjectRequestDTO project);
-    ProjectResponseDTO updateProject(UUID id, ProjectRequestDTO requestDto);
+    ProjectDetailDTO createProject(ProjectRequestDTO project);
+    ProjectDetailDTO updateProject(UUID id, ProjectRequestDTO requestDto);
     void deleteProject(UUID id);
 
     PagedResponseDTO<ProjectSummaryDTO> getAllJobFeedProjects(

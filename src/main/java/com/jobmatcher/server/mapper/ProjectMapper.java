@@ -2,7 +2,7 @@ package com.jobmatcher.server.mapper;
 
 import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.model.ProjectRequestDTO;
-import com.jobmatcher.server.model.ProjectResponseDTO;
+import com.jobmatcher.server.model.ProjectDetailDTO;
 import com.jobmatcher.server.model.ProjectSummaryDTO;
 import org.springframework.stereotype.Component;
 
@@ -16,25 +16,27 @@ public class ProjectMapper {
     private final FreelancerProfileMapper freelancerProfileMapper;
     private final JobCategoryMapper jobCategoryMapper;
     private final JobSubcategoryMapper jobSubcategoryMapper;
+    private final ProposalMapper proposalMapper;
 
     public ProjectMapper(
             CustomerProfileMapper customerProfileMapper,
             FreelancerProfileMapper freelancerProfileMapper,
             JobCategoryMapper jobCategoryMapper,
-            JobSubcategoryMapper jobSubcategoryMapper
+            JobSubcategoryMapper jobSubcategoryMapper, ProposalMapper proposalMapper
     ) {
         this.customerProfileMapper = customerProfileMapper;
         this.freelancerProfileMapper = freelancerProfileMapper;
         this.jobCategoryMapper = jobCategoryMapper;
         this.jobSubcategoryMapper = jobSubcategoryMapper;
+        this.proposalMapper = proposalMapper;
     }
 
-    public ProjectResponseDTO toDto(Project entity){
+    public ProjectDetailDTO toDto(Project entity) {
         if (entity == null) {
             return null;
         }
 
-        return ProjectResponseDTO.builder()
+        return ProjectDetailDTO.builder()
                 .id(entity.getId())
                 .customer(entity.getCustomer() != null ? customerProfileMapper.toCustomerSummaryDto(entity.getCustomer(), false) : null)
                 .freelancer(entity.getFreelancer() != null ? freelancerProfileMapper.toFreelancerSummaryDto(entity.getFreelancer()) : null)
@@ -45,12 +47,20 @@ public class ProjectMapper {
                 .paymentType(entity.getPaymentType())
                 .deadline(entity.getDeadline())
                 .category(entity.getCategory() != null ? jobCategoryMapper.toDto(entity.getCategory()) : null)
-                .subcategories(entity.getSubcategories() != null ? entity.getSubcategories().stream()
-                        .map(jobSubcategoryMapper::toDto).collect(Collectors.toSet()) : Set.of())
+                .subcategories(entity.getSubcategories() != null
+                        ? entity.getSubcategories().stream()
+                        .map(jobSubcategoryMapper::toDto).collect(Collectors.toSet())
+                        : Set.of())
+                .proposals(entity.getProposals() != null
+                        ? entity.getProposals().stream()
+                        .map(proposalMapper::toSummaryDto).collect(Collectors.toSet())
+                        : Set.of())
+                .createdAt(entity.getCreatedAt())
+                .lastUpdate(entity.getLastUpdate())
                 .build();
     }
 
-    public ProjectSummaryDTO toSummaryDto(Project entity){
+    public ProjectSummaryDTO toSummaryDto(Project entity) {
         if (entity == null) {
             return null;
         }

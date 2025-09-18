@@ -15,7 +15,7 @@ import java.util.UUID;
 public class ProposalDetailDTO {
 
     private UUID id;
-    private ProjectSummaryDTO project;
+    private UUID projectId;
     private FreelancerSummaryDTO freelancer;
     private String coverLetter;
     private BigDecimal amount;

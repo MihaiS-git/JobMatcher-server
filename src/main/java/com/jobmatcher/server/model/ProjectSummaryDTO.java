@@ -7,6 +7,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,4 +25,6 @@ public class ProjectSummaryDTO {
     private LocalDate deadline;
     private JobCategoryDTO category;
     private Set<JobSubcategoryDTO> subcategories;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime lastUpdate;
 }
