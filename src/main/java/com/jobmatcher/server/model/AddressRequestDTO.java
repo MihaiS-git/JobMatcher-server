@@ -10,17 +10,9 @@ import lombok.Getter;
 public class AddressRequestDTO {
 
     @Size(min = 3, message = "Street must be at least 3 characters long.")
-    @Pattern(
-            regexp = "^[A-Za-z0-9șȘțȚăĂâÂîÎéè.,\\- ]+$",
-            message = "Street contains invalid characters."
-    )
     private String street;
 
     @Size(min = 2, message = "City must be at least 2 characters.")
-    @Pattern(
-            regexp = "^[\\p{L} .'-]{2,50}$",
-            message = "Invalid city format."
-    )
     private String city;
 
     @Size(min = 2, message = "State must be at least 2 characters.")

@@ -22,7 +22,6 @@ public class ProposalRequestDTO {
     private UUID freelancerId;
 
     @Size(max=2000, message = "Cover letter cannot exceed 2000 characters.")
-    @Pattern(regexp = "^[A-Za-z0-9șȘțȚăĂâÂîÎéè.\\-+#_=*&%$@()!?:;, ]+$", message = "Cover letter contains invalid characters.")
     private String coverLetter;
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Proposed amount must be greater than zero.")
@@ -43,7 +42,6 @@ public class ProposalRequestDTO {
     private PaymentStatus paymentStatus;
 
     @Size(max=2000, message = "Notes cannot exceed 2000 characters.")
-    @Pattern(regexp = "^[A-Za-z0-9șȘțȚăĂâÂîÎéè.\\-+#_=*&%$@()!?:;, ]+$", message = "Notes contain invalid characters.")
     private String notes;
 
     private LocalDate plannedStartDate;

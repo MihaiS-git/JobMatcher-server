@@ -13,11 +13,10 @@ import java.util.UUID;
 public class PortfolioItemRequestDTO {
 
     @Size(min = 2, max = 100, message = "Title must be between 2 and 100 characters")
-    @Pattern(regexp = "^[\\p{L}\\p{N} .,\\-']+$", message = "Title contains invalid characters")@NotBlank(message = "Title cannot be blank")
+    @NotBlank(message = "Title cannot be blank")
     private String title;
 
     @Size(max = 1000, message = "Description must be up to 1000 characters")
-    @Pattern(regexp = "^[A-Za-z0-9șȘțȚăĂâÂîÎéè.\\-+#_=*&%$@()!?:;, ]+$", message = "Description contains invalid characters")
     @NotBlank(message = "Description cannot be blank")
     private String description;
 
@@ -34,7 +33,6 @@ public class PortfolioItemRequestDTO {
     private String sourceUrl;
 
     @Size(max = 100, message = "Client name must be up to 100 characters")
-    @Pattern(regexp = "^[A-Za-zÀ-ÖØ-öø-ÿ0-9._'\\-\\s]{2,}$", message = "Client name contains invalid characters")
     @NotBlank(message = "Client name cannot be blank")
     private String clientName;
 
