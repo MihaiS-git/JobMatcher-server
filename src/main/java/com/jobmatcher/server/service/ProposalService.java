@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service
-public class ProposalService implements IProposalService{
+public class ProposalService implements IProposalService {
 
     private final ProposalRepository proposalRepository;
     private final ProjectRepository projectRepository;
@@ -86,13 +86,34 @@ public class ProposalService implements IProposalService{
     public ProposalSummaryDTO createProposal(ProposalRequestDTO requestDTO) {
         log.info("Creating proposal for Project ID: {} by Freelancer ID: {}",
                 requestDTO.getProjectId(), requestDTO.getFreelancerId());
+
         Project project = projectRepository.findById(requestDTO.getProjectId()).orElseThrow(() ->
                 new ResourceNotFoundException("Project not found"));
+        if (project.getStatus() == ProjectStatus.IN_PROGRESS ||
+                project.getStatus() == ProjectStatus.COMPLETED ||
+                project.getStatus() == ProjectStatus.CANCELLED ||
+                project.getStatus() == ProjectStatus.NONE
+        ) {
+            throw new IllegalStateException("Cannot submit proposal to a project that is not open for proposals.");
+        }
+
         FreelancerProfile freelancer = freelancerRepository.findById(requestDTO.getFreelancerId()).orElseThrow(() ->
                 new ResourceNotFoundException("Freelancer not found"));
+
+        boolean exists = proposalRepository.existsByFreelancerIdAndProjectId(
+                requestDTO.getFreelancerId(), requestDTO.getProjectId());
+        if (exists) {
+            throw new IllegalStateException("You have already submitted a proposal for this project.");
+        }
+
         Proposal proposalRequest = proposalMapper.toEntity(requestDTO, project, freelancer);
         Proposal savedProposal = proposalRepository.save(proposalRequest);
         log.info("Created proposal with ID: {}", savedProposal.getId());
+
+        if (project.getStatus() == ProjectStatus.OPEN) {
+            project.setStatus(ProjectStatus.PROPOSALS_RECEIVED);
+            projectRepository.save(project);
+        }
 
         return proposalMapper.toSummaryDto(savedProposal);
     }
@@ -117,9 +138,37 @@ public class ProposalService implements IProposalService{
         if (requestDTO.getEstimatedDuration() != null) {
             existentProposal.setEstimatedDuration(requestDTO.getEstimatedDuration());
         }
+
         if (requestDTO.getStatus() != null) {
+            if (existentProposal.getStatus() != requestDTO.getStatus()) {
+                Project project = projectRepository.findById(existentProposal.getProject().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+                if(project.getStatus() == ProjectStatus.COMPLETED ||
+                        project.getStatus() == ProjectStatus.CANCELLED ||
+                        project.getStatus() == ProjectStatus.NONE) {
+                    throw new IllegalStateException("Cannot change proposal status for a project that is completed, cancelled, or none.");
+                }
+
+                if (requestDTO.getStatus() == ProposalStatus.ACCEPTED) {
+                    FreelancerProfile freelancer = freelancerRepository.findById(existentProposal.getFreelancer().getId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Freelancer not found"));
+                    project.setFreelancer(freelancer);
+                    proposalRepository.rejectOtherPendingProposals(project.getId(), existentProposal.getId(), ProposalStatus.REJECTED);
+
+                    project.setStatus(ProjectStatus.IN_PROGRESS);
+                } else if (requestDTO.getStatus() == ProposalStatus.WITHDRAWN) {
+                    if (project.getFreelancer() != null &&
+                            project.getFreelancer().getId().equals(existentProposal.getFreelancer().getId())) {
+                        project.setFreelancer(null);
+                    }
+                    project.setStatus(ProjectStatus.PROPOSALS_RECEIVED);
+                }
+                projectRepository.save(project);
+            }
+
             existentProposal.setStatus(requestDTO.getStatus());
         }
+
         if (requestDTO.getPaymentStatus() != null) {
             existentProposal.setPaymentStatus(requestDTO.getPaymentStatus());
         }
@@ -142,18 +191,6 @@ public class ProposalService implements IProposalService{
             existentProposal.setPriority(requestDTO.getPriority());
         }
         Proposal updatedProposal = proposalRepository.save(existentProposal);
-
-        if(requestDTO.getStatus() == ProposalStatus.ACCEPTED){
-            Project project = projectRepository.findById(existentProposal.getProject().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
-            Set<Proposal> otherProposals = project.getProposals().stream()
-                    .filter((p) -> !p.getId().equals(id))
-                    .collect(Collectors.toSet());
-            otherProposals.forEach((p -> p.setStatus(ProposalStatus.REJECTED)));
-            proposalRepository.saveAll(otherProposals);
-            project.setStatus(ProjectStatus.IN_PROGRESS);
-            projectRepository.save(project);
-        }
 
         return proposalMapper.toDetailDto(updatedProposal);
     }
