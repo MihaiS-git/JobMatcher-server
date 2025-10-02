@@ -55,6 +55,8 @@ public class ProjectMapper {
                         ? entity.getProposals().stream()
                         .map(proposalMapper::toSummaryDto).collect(Collectors.toSet())
                         : Set.of())
+                .acceptedProposalId(entity.getAcceptedProposal() != null ? entity.getAcceptedProposal().getId() : null)
+                .contractId(entity.getContract() != null ? entity.getContract().getId() : null)
                 .createdAt(entity.getCreatedAt())
                 .lastUpdate(entity.getLastUpdate())
                 .build();

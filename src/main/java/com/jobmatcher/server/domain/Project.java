@@ -82,4 +82,11 @@ public class Project extends Auditable{
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Proposal> proposals = new HashSet<>();
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "accepted_proposal_id", unique = true, nullable = true)
+    private Proposal acceptedProposal;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "contract_id", unique = true)
+    private Contract contract;
 }

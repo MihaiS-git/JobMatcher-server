@@ -28,4 +28,6 @@ public class FreelancerDetailDTO {
     private Set<String> socialMedia;
     private String websiteUrl;
 
+    private Set<UUID> contractIds;
+
 }

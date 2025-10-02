@@ -8,6 +8,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -30,6 +31,8 @@ public class ProposalDetailDTO {
     private String actualStartDate;
     private String actualEndDate;
     private Priority priority;
+    private Set<UUID> milestonesIds;
+    private UUID contractId;
     private OffsetDateTime createdAt;
     private OffsetDateTime lastUpdate;
 }

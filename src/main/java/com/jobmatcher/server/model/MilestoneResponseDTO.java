@@ -30,5 +30,8 @@ public class MilestoneResponseDTO {
     private LocalDate actualStartDate;
     private LocalDate actualEndDate;
     private Priority priority;
+    private UUID contractId;
+    private UUID invoiceId;
+    private UUID paymentId;
 
 }

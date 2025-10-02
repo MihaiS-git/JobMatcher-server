@@ -1,6 +1,5 @@
 package com.jobmatcher.server.mapper;
 
-import com.jobmatcher.server.domain.FreelancerProfile;
 import com.jobmatcher.server.domain.Milestone;
 import com.jobmatcher.server.domain.Proposal;
 import com.jobmatcher.server.model.MilestoneRequestDTO;
@@ -32,6 +31,9 @@ public class MilestoneMapper {
                 .actualStartDate(entity.getActualStartDate())
                 .actualEndDate(entity.getActualEndDate())
                 .priority(entity.getPriority())
+                .contractId(entity.getContract().getId())
+                .invoiceId(entity.getInvoice().getId())
+                .paymentId(entity.getPayment().getId())
                 .build();
     }
 

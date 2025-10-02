@@ -22,4 +22,6 @@ public class CustomerDetailDTO {
     private String websiteUrl;
     private Set<String> socialMedia;
     private String about;
+
+    private Set<UUID> contractsIds;
 }

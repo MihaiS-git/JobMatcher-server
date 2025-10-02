@@ -15,23 +15,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service
-public class ProposalService implements IProposalService {
+public class ProposalServiceImpl implements IProposalService {
 
     private final ProposalRepository proposalRepository;
     private final ProjectRepository projectRepository;
     private final FreelancerProfileRepository freelancerRepository;
     private final ProposalMapper proposalMapper;
 
-    public ProposalService(
+    public ProposalServiceImpl(
             ProposalRepository proposalRepository,
             ProjectRepository projectRepository,
             FreelancerProfileRepository freelancerRepository,
@@ -169,9 +165,6 @@ public class ProposalService implements IProposalService {
             existentProposal.setStatus(requestDTO.getStatus());
         }
 
-        if (requestDTO.getPaymentStatus() != null) {
-            existentProposal.setPaymentStatus(requestDTO.getPaymentStatus());
-        }
         if (requestDTO.getNotes() != null) {
             existentProposal.setNotes(requestDTO.getNotes());
         }

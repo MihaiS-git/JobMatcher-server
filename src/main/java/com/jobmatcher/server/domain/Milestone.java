@@ -59,11 +59,12 @@ public class Milestone extends Auditable {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus = PaymentStatus.NONE;
+    private PaymentStatus paymentStatus = PaymentStatus.NOT_STARTED;
 
     @Size(max=2000, message = "Notes cannot exceed 2000 characters.")
     private String notes;
 
+    @NotNull
     private LocalDate plannedStartDate;
     private LocalDate plannedEndDate;
     private LocalDate actualStartDate;
@@ -73,10 +74,30 @@ public class Milestone extends Auditable {
     @Enumerated(EnumType.STRING)
     private Priority priority = Priority.NONE;
 
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name="contract_id", nullable = false)
+    private Contract contract;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "invoice_id", nullable = true)
+    private Invoice invoice;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "payment_id", nullable = true)
+    private Payment payment;
 
     @PrePersist
-    private void prePersist() {
-        if (actualStartDate == null) actualStartDate = plannedStartDate;
-        if (actualEndDate == null) actualEndDate = plannedEndDate;
+    @PreUpdate
+    private void applyDefaults() {
+        if(plannedStartDate != null && estimatedDuration != null) {
+            plannedEndDate = plannedStartDate.plusDays(estimatedDuration);
+        }
+        if (actualStartDate == null && plannedStartDate != null) {
+            actualStartDate = plannedStartDate;
+        }
+        if(actualStartDate != null && estimatedDuration != null) {
+            actualEndDate = actualStartDate.plusDays(estimatedDuration);
+        }
     }
+
 }

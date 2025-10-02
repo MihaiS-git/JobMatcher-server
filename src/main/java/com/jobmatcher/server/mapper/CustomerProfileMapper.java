@@ -1,5 +1,6 @@
 package com.jobmatcher.server.mapper;
 
+import com.jobmatcher.server.domain.Contract;
 import com.jobmatcher.server.domain.CustomerProfile;
 import com.jobmatcher.server.domain.Language;
 import com.jobmatcher.server.domain.User;
@@ -51,6 +52,9 @@ public class CustomerProfileMapper {
                 .websiteUrl(entity.getWebsiteUrl())
                 .socialMedia(entity.getSocialMedia())
                 .about(entity.getAbout())
+                .contractsIds(entity.getContracts() != null
+                        ? entity.getContracts().stream().map(Contract::getId).collect(Collectors.toSet())
+                        : Set.of())
                 .build();
     }
 

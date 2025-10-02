@@ -25,6 +25,8 @@ public class ProjectDetailDTO {
     private JobCategoryDTO category;
     private Set<JobSubcategoryDTO> subcategories;
     private Set<ProposalSummaryDTO> proposals;
+    private UUID acceptedProposalId;
+    private UUID contractId;
     private OffsetDateTime createdAt;
     private OffsetDateTime lastUpdate;
 }

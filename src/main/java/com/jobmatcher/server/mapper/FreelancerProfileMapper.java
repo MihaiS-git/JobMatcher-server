@@ -52,6 +52,9 @@ public class FreelancerProfileMapper {
                 .about(entity.getAbout())
                 .socialMedia(entity.getSocialMedia())
                 .websiteUrl(entity.getWebsiteUrl())
+                .contractIds(entity.getContracts() != null
+                        ? entity.getContracts().stream().map(Contract::getId).collect(Collectors.toSet())
+                        : Set.of())
                 .build();
     }
 

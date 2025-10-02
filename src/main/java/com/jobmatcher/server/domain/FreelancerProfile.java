@@ -48,4 +48,7 @@ public class FreelancerProfile extends PublicProfile{
     @OneToMany(mappedBy = "freelancerProfile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("createdAt DESC")
     private Set<PortfolioItem> portfolioItems = new HashSet<>();
+
+    @OneToMany(mappedBy="freelancer", fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private Set<Contract> contracts = new HashSet<>();
 }

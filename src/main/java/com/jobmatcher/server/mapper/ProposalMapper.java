@@ -1,12 +1,16 @@
 package com.jobmatcher.server.mapper;
 
 import com.jobmatcher.server.domain.FreelancerProfile;
+import com.jobmatcher.server.domain.Milestone;
 import com.jobmatcher.server.domain.Project;
 import com.jobmatcher.server.domain.Proposal;
 import com.jobmatcher.server.model.ProposalDetailDTO;
 import com.jobmatcher.server.model.ProposalRequestDTO;
 import com.jobmatcher.server.model.ProposalSummaryDTO;
 import org.springframework.stereotype.Component;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -35,13 +39,16 @@ public class ProposalMapper {
                 .bonusAmount(entity.getBonusAmount())
                 .estimatedDuration(entity.getEstimatedDuration())
                 .status(entity.getStatus())
-                .paymentStatus(entity.getPaymentStatus())
                 .notes(entity.getNotes())
                 .plannedStartDate(entity.getPlannedStartDate() != null ? entity.getPlannedStartDate().toString() : null)
                 .plannedEndDate(entity.getPlannedEndDate() != null ? entity.getPlannedEndDate().toString() : null)
                 .actualStartDate(entity.getActualStartDate() != null ? entity.getActualStartDate().toString() : null)
                 .actualEndDate(entity.getActualEndDate() != null ? entity.getActualEndDate().toString() : null)
                 .priority(entity.getPriority())
+                .milestonesIds(entity.getMilestones() != null
+                        ? entity.getMilestones().stream().map(Milestone::getId).collect(Collectors.toSet())
+                        : Set.of())
+                .contractId(entity.getProject().getContract().getId())
                 .createdAt(entity.getCreatedAt())
                 .lastUpdate(entity.getLastUpdate())
                 .build();
@@ -62,7 +69,6 @@ public class ProposalMapper {
                 .bonusAmount(entity.getBonusAmount())
                 .estimatedDuration(entity.getEstimatedDuration())
                 .status(entity.getStatus())
-                .paymentStatus(entity.getPaymentStatus())
                 .notes(entity.getNotes())
                 .plannedStartDate(entity.getPlannedStartDate() != null ? entity.getPlannedStartDate().toString() : null)
                 .plannedEndDate(entity.getPlannedEndDate() != null ? entity.getPlannedEndDate().toString() : null)
@@ -89,7 +95,6 @@ public class ProposalMapper {
         if (dto.getBonusAmount() != null) entity.setBonusAmount(dto.getBonusAmount());
         if (dto.getEstimatedDuration() != null) entity.setEstimatedDuration(dto.getEstimatedDuration());
         if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
-        if (dto.getPaymentStatus() != null) entity.setPaymentStatus(dto.getPaymentStatus());
         if (dto.getNotes() != null) entity.setNotes(dto.getNotes());
         if (dto.getPlannedStartDate() != null) entity.setPlannedStartDate(dto.getPlannedStartDate());
         if (dto.getPlannedEndDate() != null) entity.setPlannedEndDate(dto.getPlannedEndDate());
