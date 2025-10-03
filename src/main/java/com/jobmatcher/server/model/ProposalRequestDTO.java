@@ -9,6 +9,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -44,10 +45,10 @@ public class ProposalRequestDTO {
     @Size(max=2000, message = "Notes cannot exceed 2000 characters.")
     private String notes;
 
-    private LocalDate plannedStartDate;
-    private LocalDate plannedEndDate;
-    private LocalDate actualStartDate;
-    private LocalDate actualEndDate;
+    private OffsetDateTime plannedStartDate;
+    private OffsetDateTime plannedEndDate;
+    private OffsetDateTime actualStartDate;
+    private OffsetDateTime actualEndDate;
 
     private Priority priority;
 

@@ -29,16 +29,20 @@ public class Contract extends Auditable {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
+    @NotNull
     @OneToOne(mappedBy = "contract", fetch = FetchType.LAZY)
     private Proposal proposal;
 
+    @NotNull
     @OneToOne(mappedBy = "contract", fetch = FetchType.LAZY)
     private Project project;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     private CustomerProfile customer;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "freelancer_id", nullable = false)
     private FreelancerProfile freelancer;

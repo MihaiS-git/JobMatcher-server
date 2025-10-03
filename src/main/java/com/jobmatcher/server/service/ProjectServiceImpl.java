@@ -35,6 +35,8 @@ public class ProjectServiceImpl implements IProjectService {
     private final JobSubcategoryRepository jobSubcategoryRepository;
     private final JwtService jwtService;
     private final IUserService userService;
+    private final ContractRepository contractRepository;
+    private final ProposalRepository proposalRepository;
 
     public ProjectServiceImpl(
             ProjectRepository projectRepository,
@@ -44,7 +46,7 @@ public class ProjectServiceImpl implements IProjectService {
             JobCategoryRepository jobCategoryRepository,
             JobSubcategoryRepository jobSubcategoryRepository,
             JwtService jwtService,
-            IUserService userService
+            IUserService userService, ContractRepository contractRepository, ProposalRepository proposalRepository
     ) {
         this.projectRepository = projectRepository;
         this.projectMapper = projectMapper;
@@ -54,6 +56,8 @@ public class ProjectServiceImpl implements IProjectService {
         this.jobSubcategoryRepository = jobSubcategoryRepository;
         this.jwtService = jwtService;
         this.userService = userService;
+        this.contractRepository = contractRepository;
+        this.proposalRepository = proposalRepository;
     }
 
     @Transactional(readOnly = true)
@@ -92,10 +96,10 @@ public class ProjectServiceImpl implements IProjectService {
 
     @Override
     public ProjectDetailDTO createProject(ProjectRequestDTO requestDto) {
-        if(requestDto.getCustomerId() == null || requestDto.getCustomerId().isBlank()) {
+        if(requestDto.getCustomerId() == null) {
             throw new InvalidProjectOperationException("Please create a profile before creating a project.");
         }
-        CustomerProfile customer = customerProfileRepository.findById(UUID.fromString(requestDto.getCustomerId()))
+        CustomerProfile customer = customerProfileRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + requestDto.getCustomerId()));
         if(customer.getUser().getRole() != Role.CUSTOMER) {
             throw new InvalidProjectOperationException("Only users with CUSTOMER role can create projects.");
@@ -127,10 +131,6 @@ public class ProjectServiceImpl implements IProjectService {
     public ProjectDetailDTO updateProject(UUID id, ProjectRequestDTO requestDto) {
         Project existingProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
-        FreelancerProfile freelancer = requestDto.getFreelancerId() != null
-                ? freelancerProfileRepository.findById(UUID.fromString(requestDto.getFreelancerId()))
-                .orElseThrow(() -> new ResourceNotFoundException("Freelancer not found with id: " + requestDto.getFreelancerId()))
-                : null;
         JobCategory category = requestDto.getCategoryId() != null
                 ? jobCategoryRepository.findById(requestDto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + requestDto.getCategoryId()))
@@ -144,7 +144,30 @@ public class ProjectServiceImpl implements IProjectService {
 
         ProjectRequestDTO sanitizedRequest = sanitizeProjectRequest(requestDto);
 
-        if (freelancer != null) existingProject.setFreelancer(freelancer);
+        if(requestDto.getFreelancerId().isPresent()) {
+            FreelancerProfile freelancer = freelancerProfileRepository.findById(requestDto.getFreelancerId().get())
+                    .orElseThrow(() -> new ResourceNotFoundException("Freelancer not found with id: " + requestDto.getFreelancerId().get()));
+            existingProject.setFreelancer(freelancer);
+        } else {
+            existingProject.setFreelancer(null);
+        }
+
+        if (requestDto.getContractId().isPresent()) {
+            Contract contract = contractRepository.findById(requestDto.getContractId().get())
+                    .orElseThrow(() -> new ResourceNotFoundException("Contract not found with id: " + requestDto.getContractId().get()));
+            existingProject.setContract(contract);
+        } else {
+            existingProject.setContract(null);
+        }
+
+        if (requestDto.getAcceptedProposalId().isPresent()) {
+            Proposal proposal = proposalRepository.findById(requestDto.getAcceptedProposalId().get())
+                    .orElseThrow(() -> new ResourceNotFoundException("Proposal not found with id: " + requestDto.getAcceptedProposalId().get()));
+            existingProject.setAcceptedProposal(proposal);
+        } else {
+            existingProject.setAcceptedProposal(null);
+        }
+
         updateIfPresent(sanitizedRequest.getTitle(), existingProject::setTitle);
         updateIfPresent(sanitizedRequest.getDescription(), existingProject::setDescription);
         updateIfPresent(requestDto.getStatus(), existingProject::setStatus);

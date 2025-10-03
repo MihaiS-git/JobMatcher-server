@@ -87,6 +87,6 @@ public class Project extends Auditable{
     private Proposal acceptedProposal;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "contract_id", unique = true)
+    @JoinColumn(name = "contract_id", unique = true, nullable = true)
     private Contract contract;
 }

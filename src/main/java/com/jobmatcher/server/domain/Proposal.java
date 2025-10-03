@@ -10,6 +10,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -63,10 +64,10 @@ public class Proposal extends Auditable{
     private String notes;
 
     @NotNull
-    private LocalDate plannedStartDate;
-    private LocalDate plannedEndDate;
-    private LocalDate actualStartDate;
-    private LocalDate actualEndDate;
+    private OffsetDateTime plannedStartDate;
+    private OffsetDateTime plannedEndDate;
+    private OffsetDateTime actualStartDate;
+    private OffsetDateTime actualEndDate;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -76,7 +77,7 @@ public class Proposal extends Auditable{
     private Set<Milestone> milestones = new HashSet<>();
 
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "contract_id", unique = true)
+    @JoinColumn(name = "contract_id", unique = true, nullable = true)
     private Contract contract;
 
     @PrePersist

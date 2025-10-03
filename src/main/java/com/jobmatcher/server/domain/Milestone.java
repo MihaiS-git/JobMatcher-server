@@ -55,7 +55,7 @@ public class Milestone extends Auditable {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private MilestoneStatus status = MilestoneStatus.NONE;
+    private MilestoneStatus status = MilestoneStatus.PENDING;
 
     @NotNull
     @Enumerated(EnumType.STRING)

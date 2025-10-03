@@ -26,17 +26,19 @@ public class ProposalServiceImpl implements IProposalService {
     private final ProjectRepository projectRepository;
     private final FreelancerProfileRepository freelancerRepository;
     private final ProposalMapper proposalMapper;
+    private final IContractService contractService;
 
     public ProposalServiceImpl(
             ProposalRepository proposalRepository,
             ProjectRepository projectRepository,
             FreelancerProfileRepository freelancerRepository,
-            ProposalMapper proposalMapper
+            ProposalMapper proposalMapper, IContractService contractService
     ) {
         this.proposalRepository = proposalRepository;
         this.projectRepository = projectRepository;
         this.freelancerRepository = freelancerRepository;
         this.proposalMapper = proposalMapper;
+        this.contractService = contractService;
     }
 
     @Transactional(readOnly = true)
@@ -149,6 +151,12 @@ public class ProposalServiceImpl implements IProposalService {
                     FreelancerProfile freelancer = freelancerRepository.findById(existentProposal.getFreelancer().getId())
                             .orElseThrow(() -> new ResourceNotFoundException("Freelancer not found"));
                     project.setFreelancer(freelancer);
+                    project.setAcceptedProposal(proposalRepository.findById(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Proposal not found")));
+
+                    Contract contract = getContract(existentProposal, project, freelancer);
+                    contractService.createContract(contract);
+
                     proposalRepository.rejectOtherPendingProposals(project.getId(), existentProposal.getId(), ProposalStatus.REJECTED);
 
                     project.setStatus(ProjectStatus.IN_PROGRESS);
@@ -188,11 +196,38 @@ public class ProposalServiceImpl implements IProposalService {
         return proposalMapper.toDetailDto(updatedProposal);
     }
 
+    private static Contract getContract(
+            Proposal existentProposal,
+            Project project,
+            FreelancerProfile freelancer
+    ) {
+        Contract contract = new Contract();
+        contract.setProposal(existentProposal);
+        contract.setProject(project);
+        contract.setCustomer(project.getCustomer());
+        contract.setFreelancer(freelancer);
+        contract.setTitle("Contract for Project: " + project.getTitle());
+        contract.setDescription("Contract between " +
+                project.getCustomer().getUser().getFirstName() + " " +
+                project.getCustomer().getUser().getLastName() + " and " +
+                freelancer.getUser().getFirstName() + " " +
+                freelancer.getUser().getLastName() +
+                " for the project "+ project.getTitle());
+        contract.setAmount(existentProposal.getAmount());
+        contract.setStartDate(existentProposal.getPlannedStartDate());
+        contract.setEndDate(existentProposal.getPlannedEndDate());
+        contract.setPaymentType(project.getPaymentType());
+        contract.setMilestones(existentProposal.getMilestones());
+        return contract;
+    }
 
     @Override
     public void deleteProposalById(UUID id) {
         Proposal existentProposal = proposalRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Proposal not found"));
+        if(existentProposal.getContract() != null) {
+            throw new IllegalStateException("Cannot delete a proposal that has an associated contract.");
+        }
         proposalRepository.delete(existentProposal);
     }
 }

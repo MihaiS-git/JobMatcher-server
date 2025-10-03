@@ -12,7 +12,9 @@ import lombok.extern.jackson.Jacksonized;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -20,9 +22,11 @@ import java.util.Set;
 @ToString
 public class ProjectRequestDTO {
     @NotBlank(groups = CreateUpdateValidation.OnCreate.class)
-    private String customerId;
+    private UUID customerId;
 
-    private String freelancerId;
+    private Optional<UUID> freelancerId;
+
+    private Optional<UUID> contractId;
 
     @Size(max=255, message = "Title must be up to 255 characters")
     @NotBlank(groups = CreateUpdateValidation.OnCreate.class, message = "Title cannot be blank")
@@ -53,4 +57,6 @@ public class ProjectRequestDTO {
     @Size(max = 5, message = "You can select up to 5 subcategories")
     @NotNull(groups = CreateUpdateValidation.OnCreate.class, message = "At least one subcategory must be selected")
     private Set<Long> subcategoryIds;
+
+    private Optional<UUID> acceptedProposalId;
 }

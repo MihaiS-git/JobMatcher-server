@@ -6,8 +6,10 @@ public enum ProjectStatus {
     OPEN,
     PROPOSALS_RECEIVED,
     IN_PROGRESS,
-    COMPLETED,
     CANCELLED,
+    COMPLETED,
+    TERMINATED,
+    ON_HOLD,
     NONE;
 
     @JsonCreator

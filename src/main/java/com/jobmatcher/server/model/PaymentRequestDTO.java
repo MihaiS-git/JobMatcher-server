@@ -1,6 +1,6 @@
 package com.jobmatcher.server.model;
 
-import jakarta.validation.constraints.NotNull;
+import com.jobmatcher.server.domain.PaymentStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -10,8 +10,8 @@ import java.util.UUID;
 @Builder
 public class PaymentRequestDTO {
 
-    @NotNull
     private UUID invoiceId;
-
+    private PaymentStatus status;
     private String notes;
+
 }
