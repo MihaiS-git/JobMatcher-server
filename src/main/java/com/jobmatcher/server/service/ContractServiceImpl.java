@@ -6,13 +6,14 @@ import com.jobmatcher.server.mapper.ContractMapper;
 import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.ContractRepository;
+import com.jobmatcher.server.repository.InvoiceRepository;
+import com.jobmatcher.server.repository.PaymentRepository;
 import com.jobmatcher.server.specification.ContractSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -30,6 +31,8 @@ public class ContractServiceImpl implements IContractService {
     private final IProjectService projectService;
     private final IProposalService proposalService;
     private final JwtService jwtService;
+    private final InvoiceRepository invoiceRepository;
+    private final PaymentRepository paymentRepository;
 
     public ContractServiceImpl(
             ContractRepository contractRepository,
@@ -40,7 +43,8 @@ public class ContractServiceImpl implements IContractService {
             MilestoneMapper milestoneMapper,
             IProjectService projectService,
             IProposalService proposalService,
-            JwtService jwtService
+            JwtService jwtService,
+            InvoiceRepository invoiceRepository, PaymentRepository paymentRepository
     ) {
         this.contractRepository = contractRepository;
         this.contractMapper = contractMapper;
@@ -51,6 +55,8 @@ public class ContractServiceImpl implements IContractService {
         this.projectService = projectService;
         this.proposalService = proposalService;
         this.jwtService = jwtService;
+        this.invoiceRepository = invoiceRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     @Transactional(readOnly = true)
@@ -139,10 +145,10 @@ public class ContractServiceImpl implements IContractService {
             }
 
             ProjectRequestDTO projectRequestDTO = ProjectRequestDTO.builder()
-                    .freelancerId(Optional.empty())
-                    .contractId(Optional.empty())
+                    .freelancerId(null)
+                    .contractId(null)
                     .status(ProjectStatus.PROPOSALS_RECEIVED)
-                    .acceptedProposalId(Optional.empty())
+                    .acceptedProposalId(null)
                     .build();
             projectService.updateProject(project.getId(), projectRequestDTO);
         }
@@ -202,17 +208,21 @@ public class ContractServiceImpl implements IContractService {
             }
             projectService.updateProject(existentContract.getProject().getId(), projectRequestDTO);
         }
-        if (request.getInvoice() != null) {
-            existentContract.setInvoice(request.getInvoice());
+        if (request.getInvoiceId() != null) {
+            Invoice invoice = invoiceRepository.findById(request.getInvoiceId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Invoice with ID " +
+                            request.getInvoiceId() + " not found."));
+            existentContract.setInvoice(invoice);
         }
-        if (request.getPayment() != null) {
-            existentContract.setPayment(request.getPayment());
+        if (request.getPaymentId() != null) {
+            Payment payment = paymentRepository.findById(request.getPaymentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Payment with ID " +
+                            request.getPaymentId() + " not found."));
+            existentContract.setPayment(payment);
         }
         if (request.getTotalPaid() != null) {
             existentContract.setTotalPaid(request.getTotalPaid());
-        }
-        if (request.getRemainingBalance() != null) {
-            existentContract.setRemainingBalance(request.getRemainingBalance());
+            existentContract.setRemainingBalance(existentContract.getAmount().subtract(request.getTotalPaid()));
         }
         if (request.getPaymentStatus() != null) {
             existentContract.setPaymentStatus(request.getPaymentStatus());

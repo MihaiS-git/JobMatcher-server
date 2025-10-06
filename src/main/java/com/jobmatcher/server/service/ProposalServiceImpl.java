@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -157,7 +159,9 @@ public class ProposalServiceImpl implements IProposalService {
                             .orElseThrow(() -> new ResourceNotFoundException("Proposal not found")));
 
                     Contract contract = getContract(existentProposal, project, freelancer);
-                    contractRepository.save(contract);
+                    project.setContract(contract);
+                    existentProposal.setContract(contract);
+                    Contract savedContract = contractRepository.save(contract);
 
                     proposalRepository.rejectOtherPendingProposals(project.getId(), existentProposal.getId(), ProposalStatus.REJECTED);
 
@@ -219,7 +223,6 @@ public class ProposalServiceImpl implements IProposalService {
         contract.setStartDate(existentProposal.getPlannedStartDate());
         contract.setEndDate(existentProposal.getPlannedEndDate());
         contract.setPaymentType(project.getPaymentType());
-        contract.setMilestones(existentProposal.getMilestones());
         return contract;
     }
 

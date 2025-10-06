@@ -24,7 +24,6 @@ public class ProposalDetailDTO {
     private BigDecimal bonusAmount;
     private Integer estimatedDuration; // in days
     private ProposalStatus status;
-    private PaymentStatus paymentStatus;
     private String notes;
     private String plannedStartDate;
     private String plannedEndDate;

@@ -48,7 +48,7 @@ public class ProposalMapper {
                 .milestonesIds(entity.getMilestones() != null
                         ? entity.getMilestones().stream().map(Milestone::getId).collect(Collectors.toSet())
                         : Set.of())
-                .contractId(entity.getProject().getContract().getId())
+                .contractId(entity.getProject().getContract() != null ? entity.getProject().getContract().getId() : null)
                 .createdAt(entity.getCreatedAt())
                 .lastUpdate(entity.getLastUpdate())
                 .build();

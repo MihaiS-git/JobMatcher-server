@@ -34,11 +34,11 @@ public class ContractController {
         return ResponseEntity.ok(page);
     }
 
-    @GetMapping("/{contractId}")
+    @GetMapping("/{id}")
     public ResponseEntity<ContractDetailDTO> getContractById(
-            @PathVariable String contractId
+            @PathVariable String id
     ) {
-        ContractDetailDTO contract = contractService.getContractById(UUID.fromString(contractId));
+        ContractDetailDTO contract = contractService.getContractById(UUID.fromString(id));
         return ResponseEntity.ok(contract);
     }
 

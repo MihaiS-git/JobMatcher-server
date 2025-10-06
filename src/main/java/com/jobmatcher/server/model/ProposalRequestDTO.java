@@ -40,8 +40,6 @@ public class ProposalRequestDTO {
 
     private ProposalStatus status;
 
-    private PaymentStatus paymentStatus;
-
     @Size(max=2000, message = "Notes cannot exceed 2000 characters.")
     private String notes;
 

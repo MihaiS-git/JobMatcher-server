@@ -144,25 +144,25 @@ public class ProjectServiceImpl implements IProjectService {
 
         ProjectRequestDTO sanitizedRequest = sanitizeProjectRequest(requestDto);
 
-        if(requestDto.getFreelancerId().isPresent()) {
-            FreelancerProfile freelancer = freelancerProfileRepository.findById(requestDto.getFreelancerId().get())
-                    .orElseThrow(() -> new ResourceNotFoundException("Freelancer not found with id: " + requestDto.getFreelancerId().get()));
+        if(requestDto.getFreelancerId() != null) {
+            FreelancerProfile freelancer = freelancerProfileRepository.findById(requestDto.getFreelancerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Freelancer not found with id: " + requestDto.getFreelancerId()));
             existingProject.setFreelancer(freelancer);
         } else {
             existingProject.setFreelancer(null);
         }
 
-        if (requestDto.getContractId().isPresent()) {
-            Contract contract = contractRepository.findById(requestDto.getContractId().get())
-                    .orElseThrow(() -> new ResourceNotFoundException("Contract not found with id: " + requestDto.getContractId().get()));
+        if (requestDto.getContractId() != null) {
+            Contract contract = contractRepository.findById(requestDto.getContractId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Contract not found with id: " + requestDto.getContractId()));
             existingProject.setContract(contract);
         } else {
             existingProject.setContract(null);
         }
 
-        if (requestDto.getAcceptedProposalId().isPresent()) {
-            Proposal proposal = proposalRepository.findById(requestDto.getAcceptedProposalId().get())
-                    .orElseThrow(() -> new ResourceNotFoundException("Proposal not found with id: " + requestDto.getAcceptedProposalId().get()));
+        if (requestDto.getAcceptedProposalId() != null) {
+            Proposal proposal = proposalRepository.findById(requestDto.getAcceptedProposalId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Proposal not found with id: " + requestDto.getAcceptedProposalId()));
             existingProject.setAcceptedProposal(proposal);
         } else {
             existingProject.setAcceptedProposal(null);
