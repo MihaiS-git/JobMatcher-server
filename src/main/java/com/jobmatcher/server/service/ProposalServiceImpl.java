@@ -6,6 +6,7 @@ import com.jobmatcher.server.mapper.ProposalMapper;
 import com.jobmatcher.server.model.ProposalDetailDTO;
 import com.jobmatcher.server.model.ProposalRequestDTO;
 import com.jobmatcher.server.model.ProposalSummaryDTO;
+import com.jobmatcher.server.repository.ContractRepository;
 import com.jobmatcher.server.repository.FreelancerProfileRepository;
 import com.jobmatcher.server.repository.ProjectRepository;
 import com.jobmatcher.server.repository.ProposalRepository;
@@ -26,19 +27,20 @@ public class ProposalServiceImpl implements IProposalService {
     private final ProjectRepository projectRepository;
     private final FreelancerProfileRepository freelancerRepository;
     private final ProposalMapper proposalMapper;
-    private final IContractService contractService;
+    private final ContractRepository contractRepository;
 
     public ProposalServiceImpl(
             ProposalRepository proposalRepository,
             ProjectRepository projectRepository,
             FreelancerProfileRepository freelancerRepository,
-            ProposalMapper proposalMapper, IContractService contractService
+            ProposalMapper proposalMapper,
+            ContractRepository contractRepository
     ) {
         this.proposalRepository = proposalRepository;
         this.projectRepository = projectRepository;
         this.freelancerRepository = freelancerRepository;
         this.proposalMapper = proposalMapper;
-        this.contractService = contractService;
+        this.contractRepository = contractRepository;
     }
 
     @Transactional(readOnly = true)
@@ -155,7 +157,7 @@ public class ProposalServiceImpl implements IProposalService {
                             .orElseThrow(() -> new ResourceNotFoundException("Proposal not found")));
 
                     Contract contract = getContract(existentProposal, project, freelancer);
-                    contractService.createContract(contract);
+                    contractRepository.save(contract);
 
                     proposalRepository.rejectOtherPendingProposals(project.getId(), existentProposal.getId(), ProposalStatus.REJECTED);
 

@@ -88,7 +88,7 @@ public class MilestoneService implements IMilestoneService {
                         .status(ContractStatus.COMPLETED)
                         .paymentStatus(existentMilestone.getPaymentStatus() == PaymentStatus.PAID ? PaymentStatus.PAID : PaymentStatus.PROCESSING)
                         .build();
-                contractService.updateContract(contract.getId(), contractRequestDTO);
+                contractService.updateContractById(contract.getId(), contractRequestDTO);
             }
         }
         if (requestDTO.getPaymentStatus() != null)

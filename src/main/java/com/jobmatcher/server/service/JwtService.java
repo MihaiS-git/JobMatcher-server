@@ -1,5 +1,6 @@
 package com.jobmatcher.server.service;
 
+import com.jobmatcher.server.domain.Role;
 import com.jobmatcher.server.domain.User;
 import com.jobmatcher.server.exception.InvalidAuthException;
 import io.jsonwebtoken.Claims;
@@ -45,7 +46,6 @@ public class JwtService {
     }
 
     public String generateToken(Map<String, Object> extraClaims, User user){
-
         extraClaims.put("role", user.getRole().name());
         extraClaims.put("email", user.getEmail());
 
@@ -73,6 +73,10 @@ public class JwtService {
             // Token invalid due to expiration or other JWT exceptions
             return true;
         }
+    }
+
+    public Role extractRole(String token) {
+        return Role.valueOf(extractClaim(token, claims -> claims.get("role", String.class)));
     }
 
     private Date extractExpiration(String token) {

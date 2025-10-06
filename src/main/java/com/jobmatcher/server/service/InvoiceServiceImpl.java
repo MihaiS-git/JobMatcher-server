@@ -8,6 +8,7 @@ import com.jobmatcher.server.mapper.InvoiceMapper;
 import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.*;
+import com.jobmatcher.server.specification.InvoiceSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,56 +26,51 @@ public class InvoiceServiceImpl implements IInvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceMapper invoiceMapper;
-    private final ContractRepository contractRepository;
-    private final MilestoneRepository milestoneRepository;
     private final ContractMapper contractMapper;
     private final MilestoneMapper milestoneMapper;
-    private final AddressMapper addressMapper;
+    private final JwtService jwtService;
+    private final ContractRepository contractRepository;
+    private final MilestoneRepository milestoneRepository;
     private final IContractService contractService;
     private final IMilestoneService milestoneService;
+    private final AddressMapper addressMapper;
 
     public InvoiceServiceImpl(
             InvoiceRepository invoiceRepository,
             InvoiceMapper invoiceMapper,
-            ContractRepository contractRepository,
-            MilestoneRepository milestoneRepository,
             ContractMapper contractMapper,
             MilestoneMapper milestoneMapper,
-            AddressMapper addressMapper, IContractService contractService, IMilestoneService milestoneService
+            JwtService jwtService, ContractRepository contractRepository, MilestoneRepository milestoneRepository, IContractService contractService, IMilestoneService milestoneService, AddressMapper addressMapper
     ) {
         this.invoiceRepository = invoiceRepository;
         this.invoiceMapper = invoiceMapper;
-        this.contractRepository = contractRepository;
-        this.milestoneRepository = milestoneRepository;
         this.contractMapper = contractMapper;
         this.milestoneMapper = milestoneMapper;
-        this.addressMapper = addressMapper;
+        this.jwtService = jwtService;
+        this.contractRepository = contractRepository;
+        this.milestoneRepository = milestoneRepository;
         this.contractService = contractService;
         this.milestoneService = milestoneService;
+        this.addressMapper = addressMapper;
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Page<InvoiceSummaryDTO> getAllInvoicesByCustomerId(UUID customerId, Pageable pageable) {
-        Page<Invoice> invoices = invoiceRepository.findAllByCustomerId(customerId, pageable);
+    public Page<InvoiceSummaryDTO> getAllInvoicesByProfileId(
+            String authHeader,
+            String profileId,
+            InvoiceFilterDTO filter,
+            Pageable pageable
+    ) {
+        String token = authHeader.replace("Bearer ", "").trim();
+        Role role = jwtService.extractRole(token);
 
-        return invoices.map(invoice -> {
-            ContractSummaryDTO contractDto = contractMapper.toSummaryDto(invoice.getContract());
-            MilestoneResponseDTO milestoneDto = invoice.getMilestone() != null ? milestoneMapper.toDto(invoice.getMilestone()) : null;
-            return invoiceMapper.toSummaryDto(invoice, contractDto, milestoneDto);
-        });
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public Page<InvoiceSummaryDTO> getAllInvoicesByFreelancerId(UUID freelancerId, Pageable pageable) {
-        Page<Invoice> invoices = invoiceRepository.findAllByFreelancerId(freelancerId, pageable);
-
-        return invoices.map(invoice -> {
-            ContractSummaryDTO contractDto = contractMapper.toSummaryDto(invoice.getContract());
-            MilestoneResponseDTO milestoneDto = invoice.getMilestone() != null ? milestoneMapper.toDto(invoice.getMilestone()) : null;
-            return invoiceMapper.toSummaryDto(invoice, contractDto, milestoneDto);
-        });
+        return invoiceRepository.findAll(InvoiceSpecifications.withFiltersAndRole(filter, role, profileId), pageable)
+                .map(i -> {
+                    ContractSummaryDTO contractDto = contractMapper.toSummaryDto(i.getContract());
+                    MilestoneResponseDTO milestoneDto = i.getMilestone() != null ? milestoneMapper.toDto(i.getMilestone()) : null;
+                    return invoiceMapper.toSummaryDto(i, contractDto, milestoneDto);
+                });
     }
 
     @Override
@@ -148,7 +144,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
                             .build();
                     milestoneService.updateMilestone(existentInvoice.getMilestone().getId(), milestoneRequestDTO);
                 }
-                contractService.updateContract(request.getContractId(), contractRequestDTO);
+                contractService.updateContractById(request.getContractId(), contractRequestDTO);
             } else if (request.getStatus() == InvoiceStatus.PENDING) {
                 if (existentInvoice.getMilestone() == null) {
                     contractRequestDTO = ContractRequestDTO.builder()
@@ -167,14 +163,14 @@ public class InvoiceServiceImpl implements IInvoiceService {
                             .paymentStatus(anyMilestonePaid ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.PENDING)
                             .build();
                 }
-                contractService.updateContract(request.getContractId(), contractRequestDTO);
+                contractService.updateContractById(request.getContractId(), contractRequestDTO);
             } else if (request.getStatus() == InvoiceStatus.CANCELLED) {
                 if (existentInvoice.getMilestone() == null) {
                     contractRequestDTO = ContractRequestDTO.builder()
                             .status(ContractStatus.ACTIVE)
                             .paymentStatus(PaymentStatus.PENDING)
                             .build();
-                    contractService.updateContract(request.getContractId(), contractRequestDTO);
+                    contractService.updateContractById(request.getContractId(), contractRequestDTO);
                 } else {
                     MilestoneRequestDTO milestoneRequestDTO = MilestoneRequestDTO.builder()
                             .status(MilestoneStatus.PENDING)
@@ -187,7 +183,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
                             .paymentStatus(anyMilestonePaid ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.PENDING)
                             .build();
                 }
-                contractService.updateContract(request.getContractId(), contractRequestDTO);
+                contractService.updateContractById(request.getContractId(), contractRequestDTO);
             }
         }
         // Update payment if provided
@@ -219,7 +215,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
 
         // Update related milestone and contract statuses
         ContractRequestDTO contractRequestDTO;
-        if(invoice.getMilestone() != null){
+        if (invoice.getMilestone() != null) {
             MilestoneRequestDTO milestoneRequestDTO = MilestoneRequestDTO.builder()
                     .status(MilestoneStatus.PENDING)
                     .paymentStatus(PaymentStatus.PENDING)
@@ -236,7 +232,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
                     .paymentStatus(PaymentStatus.PENDING)
                     .build();
         }
-        contractService.updateContract(invoice.getContract().getId(), contractRequestDTO);
+        contractService.updateContractById(invoice.getContract().getId(), contractRequestDTO);
     }
 
     private ContractDetailDTO getContractDetailDTO(Contract contract) {
@@ -258,8 +254,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
                         .collect(Collectors.toSet())
                 : Set.of();
 
-        ContractDetailDTO contractDto = contractMapper.toDetailDto(contract, customerContact, freelancerContact, milestoneDtos);
-        return contractDto;
+        return contractMapper.toDetailDto(contract, customerContact, freelancerContact, milestoneDtos);
     }
 
     private static boolean isAnyMilestonePaid(Invoice existentInvoice) {

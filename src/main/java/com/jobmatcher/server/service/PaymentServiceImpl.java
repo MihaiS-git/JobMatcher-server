@@ -9,6 +9,7 @@ import com.jobmatcher.server.mapper.PaymentMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.InvoiceRepository;
 import com.jobmatcher.server.repository.PaymentRepository;
+import com.jobmatcher.server.specification.PaymentSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,36 +29,40 @@ public class PaymentServiceImpl implements IPaymentService {
     private final ContractMapper contractMapper;
     private final MilestoneMapper mileStoneMapper;
     private final InvoiceMapper invoiceMapper;
-    private final IContractService contractService;
-    private final IMilestoneService milestoneService;
     private final IInvoiceService invoiceService;
+    private final JwtService jwtService;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, InvoiceRepository invoiceRepository, PaymentMapper paymentMapper, ContractMapper contractMapper, MilestoneMapper mileStoneMapper, InvoiceMapper invoiceMapper, IContractService contractService, IMilestoneService milestoneService, IInvoiceService invoiceService) {
+    public PaymentServiceImpl(
+            PaymentRepository paymentRepository,
+            InvoiceRepository invoiceRepository,
+            PaymentMapper paymentMapper,
+            ContractMapper contractMapper,
+            MilestoneMapper mileStoneMapper,
+            InvoiceMapper invoiceMapper,
+            IInvoiceService invoiceService, JwtService jwtService
+    ) {
         this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
         this.paymentMapper = paymentMapper;
         this.contractMapper = contractMapper;
         this.mileStoneMapper = mileStoneMapper;
         this.invoiceMapper = invoiceMapper;
-        this.contractService = contractService;
-        this.milestoneService = milestoneService;
         this.invoiceService = invoiceService;
+        this.jwtService = jwtService;
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Page<PaymentSummaryDTO> getAllPaymentsByCustomerId(UUID customerId, Pageable pageable) {
-        Page<Payment> payments = paymentRepository.findAllByCustomerId(customerId, pageable);
-        return payments.map(payment -> {
-            PaymentDetail paymentDetail = getPaymentDetail(payment.getInvoice());
-            return paymentMapper.toSummaryDto(payment, paymentDetail.contractSummaryDTO(), paymentDetail.milestoneResponseDTO(), paymentDetail.invoiceSummaryDTO());
-        });
-    }
+    public Page<PaymentSummaryDTO> getAllPaymentsByProfileId(
+            String authHeader,
+            String profileId,
+            PaymentFilterDTO filter,
+            Pageable pageable
+    ) {
+        String token = authHeader.replace("Bearer ", "").trim();
+        Role role = jwtService.extractRole(token);
 
-    @Transactional(readOnly = true)
-    @Override
-    public Page<PaymentSummaryDTO> getAllPaymentsByFreelancerId(UUID freelancerId, Pageable pageable) {
-        Page<Payment> payments = paymentRepository.findAllByFreelancerId(freelancerId, pageable);
+        Page<Payment> payments = paymentRepository.findAll(PaymentSpecification.withFiltersAndRole(filter, profileId, role), pageable);
         return payments.map(payment -> {
             PaymentDetail paymentDetail = getPaymentDetail(payment.getInvoice());
             return paymentMapper.toSummaryDto(payment, paymentDetail.contractSummaryDTO(), paymentDetail.milestoneResponseDTO(), paymentDetail.invoiceSummaryDTO());

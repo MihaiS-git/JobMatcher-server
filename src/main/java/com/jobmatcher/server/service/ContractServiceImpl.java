@@ -6,11 +6,13 @@ import com.jobmatcher.server.mapper.ContractMapper;
 import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.ContractRepository;
+import com.jobmatcher.server.specification.ContractSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,6 +29,7 @@ public class ContractServiceImpl implements IContractService {
     private final MilestoneMapper milestoneMapper;
     private final IProjectService projectService;
     private final IProposalService proposalService;
+    private final JwtService jwtService;
 
     public ContractServiceImpl(
             ContractRepository contractRepository,
@@ -36,7 +39,8 @@ public class ContractServiceImpl implements IContractService {
             IUserService userService,
             MilestoneMapper milestoneMapper,
             IProjectService projectService,
-            IProposalService proposalService
+            IProposalService proposalService,
+            JwtService jwtService
     ) {
         this.contractRepository = contractRepository;
         this.contractMapper = contractMapper;
@@ -46,20 +50,21 @@ public class ContractServiceImpl implements IContractService {
         this.milestoneMapper = milestoneMapper;
         this.projectService = projectService;
         this.proposalService = proposalService;
+        this.jwtService = jwtService;
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Page<ContractSummaryDTO> getAllContractsByCustomerId(UUID customerId, Pageable pageable) {
-        Page<Contract> contracts = contractRepository.findAllByCustomerId(customerId, pageable);
-        return contracts.map(contractMapper::toSummaryDto);
-    }
+    public Page<ContractSummaryDTO> getAllContractsByProfileId(
+            String authHeader,
+            String profileId,
+            Pageable pageable,
+            ContractFilterDTO filter
+    ) {
+        String token = authHeader.replace("Bearer ", "").trim();
+        Role role = jwtService.extractRole(token);
 
-    @Transactional(readOnly = true)
-    @Override
-    public Page<ContractSummaryDTO> getAllContractsByFreelancerId(UUID freelancerId, Pageable pageable) {
-        Page<Contract> contracts = contractRepository.findAllByFreelancerId(freelancerId, pageable);
-        return contracts.map(contractMapper::toSummaryDto);
+        return contractRepository.findAll(ContractSpecifications.withFiltersAndRole(filter, role, profileId), pageable).map(contractMapper::toSummaryDto);
     }
 
     @Transactional(readOnly = true)
@@ -93,24 +98,7 @@ public class ContractServiceImpl implements IContractService {
     }
 
     @Override
-    public ContractDetailDTO createContract(Contract contract) {
-        if (contract.getProject() == null ||
-                contract.getProject().getCustomer() == null ||
-                contract.getProject().getFreelancer() == null) {
-            throw new IllegalStateException("Project, customer and freelancer must be assigned before creating a contract.");
-        }
-        Contract savedContract = contractRepository.save(contract);
-        ContractDetailData contractDetailData = getContractDetailData(savedContract);
-        return contractMapper.toDetailDto(
-                savedContract,
-                contractDetailData.customerContact,
-                contractDetailData.freelancerContact,
-                contractDetailData.milestonesList
-        );
-    }
-
-    @Override
-    public ContractDetailDTO updateContract(UUID contractId, ContractRequestDTO request) {
+    public ContractDetailDTO updateContractById(UUID contractId, ContractRequestDTO request) {
         Contract existentContract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract with ID " + contractId + " not found."));
         Contract updatedContract = updateExistentContract(request, existentContract);
@@ -126,7 +114,7 @@ public class ContractServiceImpl implements IContractService {
     }
 
     @Override
-    public void deleteContract(UUID contractId) {
+    public void deleteContractById(UUID contractId) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract with ID " + contractId + " not found."));
         if (contract.getInvoice() != null || contract.getMilestones() != null) {
@@ -151,10 +139,10 @@ public class ContractServiceImpl implements IContractService {
             }
 
             ProjectRequestDTO projectRequestDTO = ProjectRequestDTO.builder()
-                    .freelancerId(null)
-                    .contractId(null)
+                    .freelancerId(Optional.empty())
+                    .contractId(Optional.empty())
                     .status(ProjectStatus.PROPOSALS_RECEIVED)
-                    .acceptedProposal(null)
+                    .acceptedProposalId(Optional.empty())
                     .build();
             projectService.updateProject(project.getId(), projectRequestDTO);
         }
