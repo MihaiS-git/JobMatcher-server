@@ -10,7 +10,11 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface IContractService {
-    Page<ContractSummaryDTO> getAllContractsByProfileId(String authHeader, String profileId, Pageable pageable, ContractFilterDTO filter);
+    Page<ContractSummaryDTO> getAllContracts(
+            String token,
+            Pageable pageable,
+            ContractFilterDTO filter
+    );
     ContractDetailDTO getContractById(UUID contractId);
     ContractDetailDTO getContractByProjectId(UUID projectId);
     ContractDetailDTO updateContractById(UUID contractId, ContractRequestDTO requestDTO);

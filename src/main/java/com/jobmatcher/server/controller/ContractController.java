@@ -26,11 +26,12 @@ public class ContractController {
     @GetMapping
     public ResponseEntity<Page<ContractSummaryDTO>> getAllContractsByProfileId(
             @RequestHeader("Authorization") String authHeader,
-            @RequestParam String profileId,
-            @ModelAttribute ContractFilterDTO filter,
-            Pageable pageable
+            Pageable pageable,
+            @ModelAttribute ContractFilterDTO filter
     ) {
-        Page<ContractSummaryDTO> page = contractService.getAllContractsByProfileId(authHeader, profileId, pageable, filter);
+        String token = authHeader.replace("Bearer ", "").trim();
+
+        Page<ContractSummaryDTO> page = contractService.getAllContracts(token, pageable, filter);
         return ResponseEntity.ok(page);
     }
 

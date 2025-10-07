@@ -12,14 +12,14 @@ import java.util.UUID;
 
 public class ContractSpecifications {
 
-    public static Specification<Contract> withFiltersAndRole(ContractFilterDTO filter, Role role, String profileId) {
+    public static Specification<Contract> withFiltersAndRole(ContractFilterDTO filter, Role role, UUID profileId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             if(role == Role.STAFF){
-                predicates.add(cb.equal(root.get("freelancer").get("id"), UUID.fromString(profileId)));
+                predicates.add(cb.equal(root.get("freelancer").get("id"), profileId));
             } else if(role == Role.CUSTOMER){
-                predicates.add(cb.equal(root.get("customer").get("id"), UUID.fromString(profileId)));
+                predicates.add(cb.equal(root.get("customer").get("id"), profileId));
             }
 
             if (filter.getFreelancerId() != null) {

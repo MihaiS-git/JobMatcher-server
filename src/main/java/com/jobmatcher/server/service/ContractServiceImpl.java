@@ -5,9 +5,7 @@ import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ContractMapper;
 import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.*;
-import com.jobmatcher.server.repository.ContractRepository;
-import com.jobmatcher.server.repository.InvoiceRepository;
-import com.jobmatcher.server.repository.PaymentRepository;
+import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.specification.ContractSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +31,8 @@ public class ContractServiceImpl implements IContractService {
     private final JwtService jwtService;
     private final InvoiceRepository invoiceRepository;
     private final PaymentRepository paymentRepository;
+    private final FreelancerProfileRepository freelancerProfileRepository;
+    private final CustomerProfileRepository customerProfileRepository;
 
     public ContractServiceImpl(
             ContractRepository contractRepository,
@@ -44,7 +44,7 @@ public class ContractServiceImpl implements IContractService {
             IProjectService projectService,
             IProposalService proposalService,
             JwtService jwtService,
-            InvoiceRepository invoiceRepository, PaymentRepository paymentRepository
+            InvoiceRepository invoiceRepository, PaymentRepository paymentRepository, FreelancerProfileRepository freelancerProfileRepository, CustomerProfileRepository customerProfileRepository
     ) {
         this.contractRepository = contractRepository;
         this.contractMapper = contractMapper;
@@ -57,21 +57,52 @@ public class ContractServiceImpl implements IContractService {
         this.jwtService = jwtService;
         this.invoiceRepository = invoiceRepository;
         this.paymentRepository = paymentRepository;
+        this.freelancerProfileRepository = freelancerProfileRepository;
+        this.customerProfileRepository = customerProfileRepository;
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Page<ContractSummaryDTO> getAllContractsByProfileId(
-            String authHeader,
-            String profileId,
+    public Page<ContractSummaryDTO> getAllContracts(
+            String token,
             Pageable pageable,
             ContractFilterDTO filter
     ) {
-        String token = authHeader.replace("Bearer ", "").trim();
-        Role role = jwtService.extractRole(token);
+        User user = getUser(token);
+        Role role = user.getRole();
+
+        UUID profileId = switch (role) {
+            case CUSTOMER -> getCustomerId(user.getId());
+            case STAFF -> getFreelancerId(user.getId());
+            default -> null;
+        };
 
         return contractRepository.findAll(ContractSpecifications.withFiltersAndRole(filter, role, profileId), pageable).map(contractMapper::toSummaryDto);
     }
+
+    private User getUser(String token){
+        String email = jwtService.extractUsername(token);
+        return userService.getUserByEmail(email);
+    }
+
+    private UUID getFreelancerId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        return freelancerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Freelancer profile not found for user: " + userId))
+                .getId();
+    }
+
+    private UUID getCustomerId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        CustomerProfile customer = customerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer profile not found for user: " + userId));
+        return customer.getId();
+    }
+
 
     @Transactional(readOnly = true)
     @Override
