@@ -45,9 +45,6 @@ public class ProposalMapper {
                 .actualStartDate(entity.getActualStartDate() != null ? entity.getActualStartDate().toString() : null)
                 .actualEndDate(entity.getActualEndDate() != null ? entity.getActualEndDate().toString() : null)
                 .priority(entity.getPriority())
-                .milestonesIds(entity.getMilestones() != null
-                        ? entity.getMilestones().stream().map(Milestone::getId).collect(Collectors.toSet())
-                        : Set.of())
                 .contractId(entity.getProject().getContract() != null ? entity.getProject().getContract().getId() : null)
                 .createdAt(entity.getCreatedAt())
                 .lastUpdate(entity.getLastUpdate())

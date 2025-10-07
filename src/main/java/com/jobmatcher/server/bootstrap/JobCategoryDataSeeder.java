@@ -31,8 +31,10 @@ public class JobCategoryDataSeeder implements ApplicationRunner {
         JobCategory specialized = new JobCategory("Specialized / Niche", "Specialist services");
         JobCategory tech = new JobCategory("Tech-Heavy / Advanced", "Advanced tech work");
 
+        System.out.println("Seeding job categories and subcategories...");
         categoryRepository.saveAll(List.of(digital, business, specialized, tech));
-
+        System.out.println("Job categories seeded.");
+        System.out.println("Seeding job subcategories...");
         subcategoryRepository.saveAll(List.of(
                 new JobSubcategory("Web Development", "Frontend, backend, fullstack", digital),
                 new JobSubcategory("Mobile App Development", "iOS, Android, React Native", digital),
@@ -63,5 +65,6 @@ public class JobCategoryDataSeeder implements ApplicationRunner {
                 new JobSubcategory("Blockchain Development", "Smart contracts, crypto apps", tech),
                 new JobSubcategory("AR/VR Development", "Augmented & virtual reality", tech)
         ));
+        System.out.println("Job subcategories seeded.");
     }
 }

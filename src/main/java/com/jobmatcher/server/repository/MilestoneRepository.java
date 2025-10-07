@@ -9,6 +9,6 @@ import java.util.UUID;
 
 public interface MilestoneRepository extends JpaRepository<Milestone, UUID> {
 
-    Page<Milestone> findByProposalId(UUID proposalId, Pageable pageable);
+    Page<Milestone> findByContractId(UUID contractId, Pageable pageable);
 
 }

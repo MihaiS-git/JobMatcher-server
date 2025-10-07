@@ -24,9 +24,9 @@ public class Milestone extends Auditable {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "proposal_id", nullable = false)
-    private Proposal proposal;
+    @ManyToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name="contract_id", nullable = false)
+    private Contract contract;
 
     @NotNull
     @Size(max=255, message = "Title cannot exceed 255 characters.")
@@ -73,10 +73,6 @@ public class Milestone extends Auditable {
     @NotNull
     @Enumerated(EnumType.STRING)
     private Priority priority = Priority.NONE;
-
-    @ManyToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name="contract_id", nullable = false)
-    private Contract contract;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "invoice_id", nullable = true)

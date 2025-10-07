@@ -8,51 +8,60 @@ import com.jobmatcher.server.model.MilestoneRequestDTO;
 import com.jobmatcher.server.model.MilestoneResponseDTO;
 import com.jobmatcher.server.repository.ContractRepository;
 import com.jobmatcher.server.repository.MilestoneRepository;
-import com.jobmatcher.server.repository.ProposalRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.UUID;
 
+@Transactional(rollbackFor = Exception.class)
 @Service
 public class MilestoneService implements IMilestoneService {
 
     private final MilestoneRepository milestoneRepository;
-    private final ProposalRepository proposalRepository;
     private final MilestoneMapper milestoneMapper;
     private final IContractService contractService;
     private final ContractRepository contractRepository;
 
     public MilestoneService(
             MilestoneRepository milestoneRepository,
-            ProposalRepository proposalRepository,
-            MilestoneMapper milestoneMapper, IContractService contractService, ContractRepository contractRepository
+            MilestoneMapper milestoneMapper,
+            IContractService contractService,
+            ContractRepository contractRepository
     ) {
         this.milestoneRepository = milestoneRepository;
-        this.proposalRepository = proposalRepository;
         this.milestoneMapper = milestoneMapper;
         this.contractService = contractService;
         this.contractRepository = contractRepository;
     }
 
+    @Transactional(readOnly = true)
     @Override
-    public Page<MilestoneResponseDTO> getMilestonesByProposalId(UUID projectId, Pageable pageable) {
-        return milestoneRepository.findByProposalId(projectId, pageable).map(milestoneMapper::toDto);
+    public Page<MilestoneResponseDTO> getMilestonesByContractId(UUID contractId, Pageable pageable) {
+        return milestoneRepository.findByContractId(contractId, pageable).map(milestoneMapper::toDto);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public MilestoneResponseDTO getMilestoneById(UUID id) {
-        Milestone milestone = milestoneRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Milestone not found"));
+        Milestone milestone = milestoneRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Milestone not found"));
         return milestoneMapper.toDto(milestone);
     }
 
     @Override
     public MilestoneResponseDTO createMilestone(MilestoneRequestDTO requestDTO) {
-        Proposal proposal = proposalRepository.findById(requestDTO.getProposalId()).orElseThrow(() -> new ResourceNotFoundException("Proposal not found"));
-        Milestone milestone = milestoneMapper.toEntity(requestDTO, proposal);
+        Contract contract = contractRepository.findById(requestDTO.getContractId())
+                .orElseThrow(() -> new ResourceNotFoundException("Contract not found"));
+        if (contract.getStatus() == ContractStatus.COMPLETED || contract.getStatus() == ContractStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot add milestone to a completed or cancelled contract");
+        }
+        Milestone milestone = milestoneMapper.toEntity(requestDTO, contract);
+        milestone.setContract(contract);
         Milestone savedMilestone = milestoneRepository.save(milestone);
+        contract.getMilestones().add(savedMilestone);
         return milestoneMapper.toDto(savedMilestone);
     }
 
@@ -70,7 +79,7 @@ public class MilestoneService implements IMilestoneService {
             existentMilestone.setEstimatedDuration(requestDTO.getEstimatedDuration());
         if (requestDTO.getStatus() != null) {
             existentMilestone.setStatus(requestDTO.getStatus());
-            Contract contract = contractRepository.findById(existentMilestone.getProposal().getContract().getId())
+            Contract contract = contractRepository.findById(existentMilestone.getContract().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Contract not found"));
             Set<Milestone> milestones = contract.getMilestones();
 

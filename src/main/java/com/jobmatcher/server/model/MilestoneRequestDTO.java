@@ -16,8 +16,6 @@ import java.util.UUID;
 @Getter
 @Builder
 public class MilestoneRequestDTO {
-    @NotNull
-    private UUID proposalId;
 
     @NotNull
     private UUID contractId;

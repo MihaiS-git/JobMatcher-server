@@ -305,10 +305,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
         log.warn("Database constraint violation", ex);
+        String rawMessage = ex.getMostSpecificCause().getMessage();
+        String userMessage = "A database constraint was violated. Please check related entities or required fields.";
+
+        if (rawMessage != null) {
+            if (rawMessage.contains("username")) {
+                userMessage = "Username already exists.";
+            } else if (rawMessage.contains("email")) {
+                userMessage = "Email address already exists.";
+            } else if (rawMessage.contains("contract_id")) {
+                userMessage = "Milestone must be linked to a contract before saving.";
+            }
+        }
+
         return buildErrorResponse(
-                ex.getMostSpecificCause().getMessage().contains("username")
-                        ? "Username already exists."
-                        : "Database constraint violated: " + ex.getMostSpecificCause().getMessage(),
+                userMessage,
                 HttpStatus.BAD_REQUEST,
                 request.getRequestURI(),
                 ErrorCode.VALIDATION_FAILED

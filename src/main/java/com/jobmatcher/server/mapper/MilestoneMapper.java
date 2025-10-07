@@ -1,7 +1,7 @@
 package com.jobmatcher.server.mapper;
 
+import com.jobmatcher.server.domain.Contract;
 import com.jobmatcher.server.domain.Milestone;
-import com.jobmatcher.server.domain.Proposal;
 import com.jobmatcher.server.model.MilestoneRequestDTO;
 import com.jobmatcher.server.model.MilestoneResponseDTO;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,8 @@ public class MilestoneMapper {
 
         return MilestoneResponseDTO.builder()
                 .id(entity.getId())
-                .proposalId(entity.getProposal().getId())
+                .contractId(entity.getContract().getId())
+                .contractId(entity.getContract().getId())
                 .title(entity.getTitle())
                 .description(entity.getDescription())
                 .amount(entity.getAmount())
@@ -31,19 +32,18 @@ public class MilestoneMapper {
                 .actualStartDate(entity.getActualStartDate())
                 .actualEndDate(entity.getActualEndDate())
                 .priority(entity.getPriority())
-                .contractId(entity.getContract().getId())
-                .invoiceId(entity.getInvoice().getId())
-                .paymentId(entity.getPayment().getId())
+                .invoiceId(entity.getInvoice() != null ? entity.getInvoice().getId() : null)
+                .paymentId(entity.getPayment() != null ? entity.getPayment().getId() : null)
                 .build();
     }
 
-    public Milestone toEntity(MilestoneRequestDTO dto, Proposal proposal) {
+    public Milestone toEntity(MilestoneRequestDTO dto, Contract contract) {
         if (dto == null) {
             return null;
         }
 
         Milestone entity = new Milestone();
-        entity.setProposal(proposal);
+        entity.setContract(contract);
 
         if (dto.getTitle() != null) entity.setTitle(dto.getTitle());
         if (dto.getDescription() != null) entity.setDescription(dto.getDescription());

@@ -25,11 +25,11 @@ public class MilestoneController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<MilestoneResponseDTO>> getMilestonesByProposalId(
-            @RequestParam("proposalId") UUID proposalId,
+    public ResponseEntity<Page<MilestoneResponseDTO>> getMilestonesByContractId(
+            @RequestParam("contractId") UUID contractId,
             Pageable pageable
             ) {
-        Page<MilestoneResponseDTO> milestones = milestoneService.getMilestonesByProposalId(proposalId, pageable);
+        Page<MilestoneResponseDTO> milestones = milestoneService.getMilestonesByContractId(contractId, pageable);
         return ResponseEntity.ok(milestones);
     }
 

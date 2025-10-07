@@ -72,9 +72,6 @@ public class Proposal extends Auditable{
     @Enumerated(EnumType.STRING)
     private Priority priority = Priority.NONE;
 
-    @OneToMany(mappedBy = "proposal", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<Milestone> milestones = new HashSet<>();
-
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "contract_id", unique = true, nullable = true)
     private Contract contract;

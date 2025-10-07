@@ -15,7 +15,6 @@ import java.util.UUID;
 public class MilestoneResponseDTO {
 
     private UUID id;
-    private UUID proposalId;
     private String title;
     private String description;
     private BigDecimal amount;

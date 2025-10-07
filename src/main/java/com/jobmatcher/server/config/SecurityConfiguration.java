@@ -46,7 +46,9 @@ public class SecurityConfiguration {
     public SecurityConfiguration(
             JwtAuthenticationFilter jwtAuthenticationFilter,
             CustomOAuth2SuccessHandler customOAuth2SuccessHandler,
-            CustomOAuth2FailureHandler customOAuth2FailureHandler, CustomAccessDeniedHandler customAccessDeniedHandler) {
+            CustomOAuth2FailureHandler customOAuth2FailureHandler,
+            CustomAccessDeniedHandler customAccessDeniedHandler
+    ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.customOAuth2SuccessHandler = customOAuth2SuccessHandler;
         this.customOAuth2FailureHandler = customOAuth2FailureHandler;

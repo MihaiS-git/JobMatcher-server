@@ -78,5 +78,6 @@ public class LanguagesDataSeeder implements ApplicationRunner {
                 new Language("Kannada"),
                 new Language("Gujarati")
         ));
+        System.out.println("Languages seeded.");
     }
 }
