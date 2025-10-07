@@ -3,6 +3,7 @@ package com.jobmatcher.server.specification;
 import com.jobmatcher.server.domain.Contract;
 import com.jobmatcher.server.domain.Role;
 import com.jobmatcher.server.model.ContractFilterDTO;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -16,29 +17,28 @@ public class ContractSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // Explicit joins for lazy associations
+            var customerJoin = root.join("customer", JoinType.LEFT);
+            var freelancerJoin = root.join("freelancer", JoinType.LEFT);
+
+            // Role based filtering
             if(role == Role.STAFF){
                 predicates.add(cb.equal(root.get("freelancer").get("id"), profileId));
             } else if(role == Role.CUSTOMER){
                 predicates.add(cb.equal(root.get("customer").get("id"), profileId));
             }
 
-            if (filter.getFreelancerId() != null) {
-                predicates.add(cb.equal(root.get("freelancer").get("id"), filter.getFreelancerId()));
+            // Apply filters from ContractFilterDTO
+            if (filter.getCustomerName() != null && !filter.getCustomerName().isBlank()) {
+                String likePattern = "%" + filter.getCustomerName().toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(customerJoin.get("name")), likePattern));
             }
-            if (filter.getCustomerId() != null) {
-                predicates.add(cb.equal(root.get("customer").get("id"), filter.getCustomerId()));
-            }
-            if (filter.getProjectId() != null) {
-                predicates.add(cb.equal(root.get("project").get("id"), filter.getProjectId()));
-            }
-            if (filter.getProposalId() != null) {
-                predicates.add(cb.equal(root.get("proposal").get("id"), filter.getProposalId()));
+            if (filter.getFreelancerName() != null && !filter.getFreelancerName().isBlank()) {
+                String likePattern = "%" + filter.getFreelancerName().toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(freelancerJoin.get("name")), likePattern));
             }
             if (filter.getStatus() != null) {
                 predicates.add(cb.equal(root.get("status"), filter.getStatus()));
-            }
-            if (filter.getPaymentStatus() != null) {
-                predicates.add(cb.equal(root.get("paymentStatus"), filter.getPaymentStatus()));
             }
             if (filter.getPaymentType() != null) {
                 predicates.add(cb.equal(root.get("paymentType"), filter.getPaymentType()));
