@@ -25,17 +25,17 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<InvoiceSummaryDTO>> getAllInvoicesByProfileId(
+    public ResponseEntity<Page<InvoiceSummaryDTO>> getAllInvoices(
             @RequestHeader("Authorization") String authHeader,
-            @RequestParam String profileId,
-            @ModelAttribute InvoiceFilterDTO filter,
-            Pageable pageable
+            Pageable pageable,
+            @ModelAttribute InvoiceFilterDTO filter
     ) {
-        Page<InvoiceSummaryDTO> page = invoiceService.getAllInvoicesByProfileId(
-                authHeader,
-                profileId,
-                filter,
-                pageable
+        String token = authHeader.replace("Bearer ", "").trim();
+
+        Page<InvoiceSummaryDTO> page = invoiceService.getAllInvoices(
+                token,
+                pageable,
+                filter
         );
         return ResponseEntity.ok(page);
     }

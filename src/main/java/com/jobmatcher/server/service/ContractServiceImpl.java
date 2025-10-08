@@ -77,7 +77,8 @@ public class ContractServiceImpl implements IContractService {
             default -> null;
         };
 
-        return contractRepository.findAll(ContractSpecifications.withFiltersAndRole(filter, role, profileId), pageable).map(contractMapper::toSummaryDto);
+        return contractRepository.findAll(ContractSpecifications.withFiltersAndRole(filter, role, profileId), pageable)
+                .map(contractMapper::toSummaryDto);
     }
 
     private User getUser(String token){

@@ -15,10 +15,9 @@ public interface IInvoiceService {
     InvoiceDetailDTO updateInvoice(UUID invoiceId, InvoiceRequestDTO request);
     void deleteInvoice(UUID invoiceId);
 
-    Page<InvoiceSummaryDTO> getAllInvoicesByProfileId(
-            String authHeader,
-            String profileId,
-            InvoiceFilterDTO filter,
-            Pageable pageable
+    Page<InvoiceSummaryDTO> getAllInvoices(
+            String token,
+            Pageable pageable,
+            InvoiceFilterDTO filter
     );
 }

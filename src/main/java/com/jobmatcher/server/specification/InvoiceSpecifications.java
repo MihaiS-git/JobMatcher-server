@@ -15,7 +15,7 @@ public class InvoiceSpecifications {
     public static Specification<Invoice> withFiltersAndRole(
             InvoiceFilterDTO filter,
             Role role,
-            String profileId
+            UUID profileId
     ) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -23,9 +23,9 @@ public class InvoiceSpecifications {
             var contractJoin = root.join("contract");
 
             if(role == Role.STAFF){
-             predicates.add(cb.equal(contractJoin.get("freelancer").get("id"), UUID.fromString(profileId)));
+             predicates.add(cb.equal(contractJoin.get("freelancer").get("id"), profileId));
             } else if(role == Role.CUSTOMER){
-                predicates.add(cb.equal(contractJoin.get("customer").get("id"), UUID.fromString(profileId)));
+                predicates.add(cb.equal(contractJoin.get("customer").get("id"), profileId));
             }
 
             if (filter.getContractId() != null) {

@@ -34,13 +34,16 @@ public class InvoiceServiceImpl implements IInvoiceService {
     private final IContractService contractService;
     private final IMilestoneService milestoneService;
     private final AddressMapper addressMapper;
+    private final IUserService userService;
+    private final FreelancerProfileRepository freelancerProfileRepository;
+    private final CustomerProfileRepository customerProfileRepository;
 
     public InvoiceServiceImpl(
             InvoiceRepository invoiceRepository,
             InvoiceMapper invoiceMapper,
             ContractMapper contractMapper,
             MilestoneMapper milestoneMapper,
-            JwtService jwtService, ContractRepository contractRepository, MilestoneRepository milestoneRepository, IContractService contractService, IMilestoneService milestoneService, AddressMapper addressMapper
+            JwtService jwtService, ContractRepository contractRepository, MilestoneRepository milestoneRepository, IContractService contractService, IMilestoneService milestoneService, AddressMapper addressMapper, IUserService userService, FreelancerProfileRepository freelancerProfileRepository, CustomerProfileRepository customerProfileRepository
     ) {
         this.invoiceRepository = invoiceRepository;
         this.invoiceMapper = invoiceMapper;
@@ -52,18 +55,27 @@ public class InvoiceServiceImpl implements IInvoiceService {
         this.contractService = contractService;
         this.milestoneService = milestoneService;
         this.addressMapper = addressMapper;
+        this.userService = userService;
+        this.freelancerProfileRepository = freelancerProfileRepository;
+        this.customerProfileRepository = customerProfileRepository;
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Page<InvoiceSummaryDTO> getAllInvoicesByProfileId(
-            String authHeader,
-            String profileId,
-            InvoiceFilterDTO filter,
-            Pageable pageable
+    public Page<InvoiceSummaryDTO> getAllInvoices(
+            String token,
+            Pageable pageable,
+            InvoiceFilterDTO filter
+
     ) {
-        String token = authHeader.replace("Bearer ", "").trim();
-        Role role = jwtService.extractRole(token);
+        User user = getUser(token);
+        Role role = user.getRole();
+
+        UUID profileId = switch (role) {
+            case CUSTOMER -> getCustomerId(user.getId());
+            case STAFF -> getFreelancerId(user.getId());
+            default -> null;
+        };
 
         return invoiceRepository.findAll(InvoiceSpecifications.withFiltersAndRole(filter, role, profileId), pageable)
                 .map(i -> {
@@ -71,6 +83,29 @@ public class InvoiceServiceImpl implements IInvoiceService {
                     MilestoneResponseDTO milestoneDto = i.getMilestone() != null ? milestoneMapper.toDto(i.getMilestone()) : null;
                     return invoiceMapper.toSummaryDto(i, contractDto, milestoneDto);
                 });
+    }
+
+    private User getUser(String token){
+        String email = jwtService.extractUsername(token);
+        return userService.getUserByEmail(email);
+    }
+
+    private UUID getFreelancerId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        return freelancerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Freelancer profile not found for user: " + userId))
+                .getId();
+    }
+
+    private UUID getCustomerId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        CustomerProfile customer = customerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer profile not found for user: " + userId));
+        return customer.getId();
     }
 
     @Override
