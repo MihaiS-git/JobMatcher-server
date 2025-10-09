@@ -9,6 +9,7 @@ import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.specification.InvoiceSpecifications;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service
 public class InvoiceServiceImpl implements IInvoiceService {
@@ -68,6 +70,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
             InvoiceFilterDTO filter
 
     ) {
+        log.info("Fetching invoices with filters: {}", filter);
         User user = getUser(token);
         Role role = user.getRole();
 
@@ -77,6 +80,14 @@ public class InvoiceServiceImpl implements IInvoiceService {
             default -> null;
         };
 
+        log.info("User role: {}, Profile ID: {}", role, profileId);
+        Page<InvoiceSummaryDTO> page = invoiceRepository.findAll(InvoiceSpecifications.withFiltersAndRole(filter, role, profileId), pageable)
+                .map(i -> {
+                    ContractSummaryDTO contractDto = contractMapper.toSummaryDto(i.getContract());
+                    MilestoneResponseDTO milestoneDto = i.getMilestone() != null ? milestoneMapper.toDto(i.getMilestone()) : null;
+                    return invoiceMapper.toSummaryDto(i, contractDto, milestoneDto);
+                });
+        log.info("Found {} invoices", page.getTotalElements());
         return invoiceRepository.findAll(InvoiceSpecifications.withFiltersAndRole(filter, role, profileId), pageable)
                 .map(i -> {
                     ContractSummaryDTO contractDto = contractMapper.toSummaryDto(i.getContract());

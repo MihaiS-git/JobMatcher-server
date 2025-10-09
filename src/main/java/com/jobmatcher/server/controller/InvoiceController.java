@@ -41,7 +41,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/{invoiceId}")
-    public ResponseEntity<InvoiceDetailDTO> getInvoiceById(@RequestParam String invoiceId) {
+    public ResponseEntity<InvoiceDetailDTO> getInvoiceById(@PathVariable String invoiceId) {
         InvoiceDetailDTO invoice = invoiceService.getInvoiceById(UUID.fromString(invoiceId));
         return ResponseEntity.ok(invoice);
     }

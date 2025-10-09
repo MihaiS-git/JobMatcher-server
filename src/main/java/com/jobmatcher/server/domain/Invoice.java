@@ -25,7 +25,8 @@ public class Invoice extends Auditable {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @OneToOne(mappedBy = "invoice", fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contract_id", unique = true, nullable = false)
     private Contract contract;
 
     @OneToOne(mappedBy = "invoice", fetch = FetchType.LAZY)
