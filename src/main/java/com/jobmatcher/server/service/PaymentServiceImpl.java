@@ -7,9 +7,12 @@ import com.jobmatcher.server.mapper.InvoiceMapper;
 import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.mapper.PaymentMapper;
 import com.jobmatcher.server.model.*;
+import com.jobmatcher.server.repository.CustomerProfileRepository;
+import com.jobmatcher.server.repository.FreelancerProfileRepository;
 import com.jobmatcher.server.repository.InvoiceRepository;
 import com.jobmatcher.server.repository.PaymentRepository;
 import com.jobmatcher.server.specification.PaymentSpecification;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
+@Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service
 public class PaymentServiceImpl implements IPaymentService {
@@ -31,6 +35,9 @@ public class PaymentServiceImpl implements IPaymentService {
     private final InvoiceMapper invoiceMapper;
     private final IInvoiceService invoiceService;
     private final JwtService jwtService;
+    private final IUserService userService;
+    private final FreelancerProfileRepository freelancerProfileRepository;
+    private final CustomerProfileRepository customerProfileRepository;
 
     public PaymentServiceImpl(
             PaymentRepository paymentRepository,
@@ -39,7 +46,11 @@ public class PaymentServiceImpl implements IPaymentService {
             ContractMapper contractMapper,
             MilestoneMapper mileStoneMapper,
             InvoiceMapper invoiceMapper,
-            IInvoiceService invoiceService, JwtService jwtService
+            IInvoiceService invoiceService,
+            JwtService jwtService,
+            IUserService userService,
+            FreelancerProfileRepository freelancerProfileRepository,
+            CustomerProfileRepository customerProfileRepository
     ) {
         this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
@@ -49,24 +60,60 @@ public class PaymentServiceImpl implements IPaymentService {
         this.invoiceMapper = invoiceMapper;
         this.invoiceService = invoiceService;
         this.jwtService = jwtService;
+        this.userService = userService;
+        this.freelancerProfileRepository = freelancerProfileRepository;
+        this.customerProfileRepository = customerProfileRepository;
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Page<PaymentSummaryDTO> getAllPaymentsByProfileId(
-            String authHeader,
-            String profileId,
-            PaymentFilterDTO filter,
-            Pageable pageable
+    public Page<PaymentSummaryDTO> getAllPayments(
+            String token,
+            Pageable pageable,
+            PaymentFilterDTO filter
     ) {
-        String token = authHeader.replace("Bearer ", "").trim();
-        Role role = jwtService.extractRole(token);
+        User user = getUser(token);
+        Role role = user.getRole();
 
-        Page<Payment> payments = paymentRepository.findAll(PaymentSpecification.withFiltersAndRole(filter, profileId, role), pageable);
-        return payments.map(payment -> {
-            PaymentDetail paymentDetail = getPaymentDetail(payment.getInvoice());
-            return paymentMapper.toSummaryDto(payment, paymentDetail.contractSummaryDTO(), paymentDetail.milestoneResponseDTO(), paymentDetail.invoiceSummaryDTO());
-        });
+        UUID profileId = switch (role) {
+            case CUSTOMER -> getCustomerId(user.getId());
+            case STAFF -> getFreelancerId(user.getId());
+            default -> null;
+        };
+
+        return paymentRepository.findAll(PaymentSpecification.withFiltersAndRole(filter, role, profileId), pageable)
+                .map(payment -> {
+                    PaymentDetail paymentDetail = getPaymentDetail(payment.getInvoice());
+                    return paymentMapper.toSummaryDto(
+                            payment,
+                            paymentDetail.contractSummaryDTO(),
+                            paymentDetail.milestoneResponseDTO(),
+                            paymentDetail.invoiceSummaryDTO()
+                    );
+                });
+    }
+
+    private User getUser(String token) {
+        String email = jwtService.extractUsername(token);
+        return userService.getUserByEmail(email);
+    }
+
+    private UUID getFreelancerId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        return freelancerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Freelancer profile not found for user: " + userId))
+                .getId();
+    }
+
+    private UUID getCustomerId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        CustomerProfile customer = customerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer profile not found for user: " + userId));
+        return customer.getId();
     }
 
     @Transactional(readOnly = true)
@@ -79,46 +126,24 @@ public class PaymentServiceImpl implements IPaymentService {
     }
 
     @Override
-    public PaymentDetailDTO createPayment(PaymentRequestDTO request) {
-        Invoice invoice = invoiceRepository.findById(request.getInvoiceId()).orElseThrow(() ->
+    public Payment createPayment(PaymentRequestDTO request) {
+        Invoice invoice = invoiceRepository.findById(UUID.fromString(request.getInvoiceId())).orElseThrow(() ->
                 new ResourceNotFoundException("Invoice not found"));
+
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            throw new IllegalStateException("Invoice is already marked as PAID");
+        }
+        if (paymentRepository.existsByInvoiceId(invoice.getId())) {
+            throw new IllegalStateException("Payment already exists for this invoice");
+        }
         Payment payment = new Payment();
         payment.setContract(invoice.getContract());
         payment.setMilestone(invoice.getMilestone());
         payment.setInvoice(invoice);
         payment.setAmount(invoice.getAmount());
-        payment.setStatus(PaymentStatus.PENDING);
         payment.setPaidAt(OffsetDateTime.now(ZoneOffset.UTC));
-        payment.setNotes(request.getNotes());
 
-        Payment savedPayment = paymentRepository.save(payment);
-
-        PaymentDetail paymentDetail = getPaymentDetail(invoice);
-
-        return paymentMapper.toDetailDto(savedPayment, paymentDetail.contractSummaryDTO(), paymentDetail.milestoneResponseDTO(), paymentDetail.invoiceSummaryDTO());
-    }
-
-    @Override
-    public PaymentDetailDTO updatePayment(UUID paymentId, PaymentRequestDTO request) {
-        Payment existentPayment = paymentRepository.findById(paymentId).orElseThrow(() ->
-                new ResourceNotFoundException("Payment not found"));
-        if (request.getStatus() != null) {
-            existentPayment.setStatus(request.getStatus());
-            if (request.getStatus() == PaymentStatus.PAID) {
-                InvoiceRequestDTO invoiceRequestDTO = InvoiceRequestDTO.builder()
-                        .status(InvoiceStatus.PAID)
-                        .build();
-                invoiceService.updateInvoice(request.getInvoiceId(), invoiceRequestDTO);
-            }
-        }
-        if (request.getNotes() != null) {
-            existentPayment.setNotes(request.getNotes());
-        }
-
-        Payment updatedPayment = paymentRepository.save(existentPayment);
-
-        PaymentDetail paymentDetail = getPaymentDetail(updatedPayment.getInvoice());
-        return paymentMapper.toDetailDto(updatedPayment, paymentDetail.contractSummaryDTO(), paymentDetail.milestoneResponseDTO(), paymentDetail.invoiceSummaryDTO());
+        return paymentRepository.save(payment);
     }
 
     @Override
@@ -133,6 +158,20 @@ public class PaymentServiceImpl implements IPaymentService {
                 .payment(null)
                 .build();
         invoiceService.updateInvoice(invoice.getId(), invoiceRequestDTO);
+    }
+
+    @Override
+    public void markInvoicePaid(UUID invoiceId) {
+        PaymentRequestDTO paymentRequestDto = PaymentRequestDTO.builder()
+                .invoiceId(invoiceId.toString())
+                .build();
+        Payment payment = createPayment(paymentRequestDto);
+
+        InvoiceRequestDTO invoiceRequestDTO = InvoiceRequestDTO.builder()
+                .status(InvoiceStatus.PAID)
+                .payment(payment)
+                .build();
+        invoiceService.updateInvoice(invoiceId, invoiceRequestDTO);
     }
 
     private record PaymentDetail(ContractSummaryDTO contractSummaryDTO, MilestoneResponseDTO milestoneResponseDTO,

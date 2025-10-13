@@ -1,11 +1,9 @@
 package com.jobmatcher.server.service;
 
 import com.jobmatcher.server.domain.ProjectStatus;
-import com.jobmatcher.server.model.PagedResponseDTO;
-import com.jobmatcher.server.model.ProjectRequestDTO;
-import com.jobmatcher.server.model.ProjectDetailDTO;
-import com.jobmatcher.server.model.ProjectSummaryDTO;
+import com.jobmatcher.server.model.*;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,4 +32,6 @@ public interface IProjectService {
             Long subcategoryId,
             String searchTerm
     );
+
+    void updateProjectStatus(UUID projectId, ProjectStatusUpdateDTO status);
 }

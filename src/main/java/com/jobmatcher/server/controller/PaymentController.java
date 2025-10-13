@@ -1,38 +1,74 @@
 package com.jobmatcher.server.controller;
 
-import com.jobmatcher.server.model.PaymentDetailDTO;
-import com.jobmatcher.server.model.PaymentFilterDTO;
-import com.jobmatcher.server.model.PaymentRequestDTO;
-import com.jobmatcher.server.model.PaymentSummaryDTO;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.jobmatcher.server.domain.Invoice;
+import com.jobmatcher.server.domain.InvoiceStatus;
+import com.jobmatcher.server.exception.ResourceNotFoundException;
+import com.jobmatcher.server.model.*;
+import com.jobmatcher.server.repository.InvoiceRepository;
 import com.jobmatcher.server.service.IPaymentService;
+import com.stripe.Stripe;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Event;
+import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
+import com.stripe.param.checkout.SessionCreateParams;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.*;
 
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
 
+@Slf4j
 @RestController
 @RequestMapping(API_VERSION + "/payments")
 public class PaymentController {
 
-    private final IPaymentService paymentService;
+    @Value("${stripe.api.key}")
+    private String STRIPE_API_KEY;
 
-    public PaymentController(IPaymentService paymentService) {
+    @Value("${stripe.webhook.secret}")
+    private String STRIPE_WEBHOOK_SECRET;
+
+    @Value("${frontend.url.dev}")
+    private String frontendUrl;
+
+    private final Gson gson = new Gson();
+
+    private final IPaymentService paymentService;
+    private final InvoiceRepository invoiceRepository;
+
+    public PaymentController(
+            IPaymentService paymentService,
+            InvoiceRepository invoiceRepository
+    ) {
         this.paymentService = paymentService;
+        this.invoiceRepository = invoiceRepository;
     }
 
     @GetMapping
-    public ResponseEntity<Page<PaymentSummaryDTO>> getAllPaymentsByProfileId(
+    public ResponseEntity<Page<PaymentSummaryDTO>> getAllPayments(
             @RequestHeader("Authorization") String authHeader,
-            @RequestParam String profileId,
-            @ModelAttribute PaymentFilterDTO filter,
-            Pageable pageable
+            Pageable pageable,
+            @ModelAttribute PaymentFilterDTO filter
     ) {
-        Page<PaymentSummaryDTO> payments = paymentService.getAllPaymentsByProfileId(authHeader, profileId, filter, pageable);
-        return ResponseEntity.ok(Page.empty());
+        String token = authHeader.replace("Bearer ", "").trim();
+
+        Page<PaymentSummaryDTO> page = paymentService.getAllPayments(
+                authHeader,
+                pageable,
+                filter
+        );
+        return ResponseEntity.ok(page);
     }
 
     @GetMapping("/invoice/{invoiceId}")
@@ -41,10 +77,112 @@ public class PaymentController {
         return ResponseEntity.ok(payment);
     }
 
-    @PostMapping
-    public ResponseEntity<PaymentDetailDTO> createPayment(@RequestBody PaymentRequestDTO request) {
-        PaymentDetailDTO createdPayment = paymentService.createPayment(request);
-        return ResponseEntity.ok(createdPayment);
+    @PostMapping("/stripe/webhook")
+    public ResponseEntity<String> handleStripeWebhook(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String sigHeader
+    ) {
+        Event event;
+        try {
+            event = Webhook.constructEvent(payload, sigHeader, STRIPE_WEBHOOK_SECRET);
+        } catch (SignatureVerificationException e) {
+            return ResponseEntity.badRequest().body("Invalid signature");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Invalid payload");
+        }
+
+        try {
+            switch (event.getType()) {
+                case "checkout.session.completed" -> handleCheckoutSessionCompleted(event);
+                default -> log.warn("Unhandled Stripe event type: {}", event.getType());
+            }
+
+            return ResponseEntity.ok("Webhook handled");
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Processing error");
+        }
+    }
+
+    private void handleCheckoutSessionCompleted(Event event) {
+        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+
+        if (deserializer.getObject().isPresent() && deserializer.getObject().get() instanceof Session session) {
+            processSession(session);
+        } else {
+            String sessionId = ((JsonObject) gson.fromJson(event.getData().toJson(), JsonObject.class))
+                    .get("object").getAsJsonObject().get("id").getAsString();
+            try {
+                Session session = Session.retrieve(sessionId);
+                processSession(session);
+            } catch (StripeException e) {
+                throw new RuntimeException(e); // fail webhook so Stripe retries
+            }
+        }
+    }
+
+    private void processSession(Session session) {
+        String clientReferenceId = session.getClientReferenceId();
+
+        if (clientReferenceId == null || clientReferenceId.isBlank()) {
+            return;
+        }
+
+        try {
+            UUID invoiceId = UUID.fromString(clientReferenceId.trim());
+            paymentService.markInvoicePaid(invoiceId);
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    @PostMapping("/stripe/checkout")
+    public ResponseEntity<?> createCheckoutSession(@RequestBody PaymentRequestDTO requestDTO) {
+
+        Invoice invoice = invoiceRepository.findById(UUID.fromString(requestDTO.getInvoiceId())).orElseThrow(() ->
+                new ResourceNotFoundException("Invoice not found"));
+        if (invoice.getStatus() == InvoiceStatus.PAID) {
+            return ResponseEntity.badRequest().body("Invoice is already marked as PAID");
+        }
+        try {
+            Stripe.apiKey = STRIPE_API_KEY;
+
+            SessionCreateParams params = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setClientReferenceId(requestDTO.getInvoiceId())
+                    .setSuccessUrl(frontendUrl + "/invoice-success?session_id={CHECKOUT_SESSION_ID}")
+                    .setCancelUrl(frontendUrl + "/invoice-cancel")
+                    .addAllLineItem(List.of(
+                            SessionCreateParams.LineItem.builder()
+                                    .setQuantity(1L)
+                                    .setPriceData(
+                                            SessionCreateParams.LineItem.PriceData.builder()
+                                                    .setCurrency("usd")
+                                                    .setUnitAmount(invoice.getAmount()
+                                                            .multiply(BigDecimal.valueOf(100))
+                                                            .longValue())
+                                                    .setProductData(
+                                                            SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                                    .setName("Invoice Payment")
+                                                                    .build()
+                                                    )
+                                                    .build()
+                                    )
+                                    .build()
+                    ))
+                    .build();
+
+            Session session = Session.create(params);
+
+            return ResponseEntity.ok(new StripeCheckoutResponseDTO(session.getUrl()));
+        } catch (StripeException e) {
+            return ResponseEntity.internalServerError().body("Stripe error: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Unexpected error: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{paymentId}")

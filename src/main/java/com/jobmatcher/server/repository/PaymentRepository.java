@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface PaymentRepository extends JpaRepository<Payment, UUID>, JpaSpecificationExecutor<Payment> {
 
     Optional<Payment> findByInvoiceId(UUID invoiceId);
+
+    boolean existsByInvoiceId(UUID id);
 }

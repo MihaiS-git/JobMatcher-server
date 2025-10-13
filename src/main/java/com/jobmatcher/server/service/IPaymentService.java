@@ -1,5 +1,6 @@
 package com.jobmatcher.server.service;
 
+import com.jobmatcher.server.domain.Payment;
 import com.jobmatcher.server.model.PaymentDetailDTO;
 import com.jobmatcher.server.model.PaymentFilterDTO;
 import com.jobmatcher.server.model.PaymentRequestDTO;
@@ -11,9 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 public interface IPaymentService {
-    Page<PaymentSummaryDTO> getAllPaymentsByProfileId(String authHeader, String profileId, PaymentFilterDTO filter, Pageable pageable);
+    Page<PaymentSummaryDTO> getAllPayments(String token, Pageable pageable, PaymentFilterDTO filter);
     PaymentDetailDTO getPaymentByInvoiceId(UUID invoiceId);
-    PaymentDetailDTO createPayment(PaymentRequestDTO request);
-    PaymentDetailDTO updatePayment(UUID paymentId, PaymentRequestDTO request);
+    Payment createPayment(PaymentRequestDTO request);
     void deletePayment(UUID paymentId);
+    void markInvoicePaid(UUID invoiceId);
 }
+

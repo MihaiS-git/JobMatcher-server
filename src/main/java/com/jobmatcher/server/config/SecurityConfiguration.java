@@ -84,7 +84,8 @@ public class SecurityConfiguration {
                                 API_VERSION + "/auth/login",
                                 API_VERSION + "/auth/recover-password",
                                 API_VERSION + "/auth/validate-reset-token",
-                                API_VERSION + "/auth/reset-password"
+                                API_VERSION + "/auth/reset-password",
+                                API_VERSION + "/payments/stripe/webhook"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2

@@ -4,10 +4,7 @@ import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.exception.InvalidProjectOperationException;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ProjectMapper;
-import com.jobmatcher.server.model.PagedResponseDTO;
-import com.jobmatcher.server.model.ProjectRequestDTO;
-import com.jobmatcher.server.model.ProjectDetailDTO;
-import com.jobmatcher.server.model.ProjectSummaryDTO;
+import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.util.SanitizationUtil;
 import org.springframework.transaction.annotation.Transactional;
@@ -139,8 +136,8 @@ public class ProjectServiceImpl implements IProjectService {
                 ? new HashSet<>(jobSubcategoryRepository.findAllById(requestDto.getSubcategoryIds()))
                 : new HashSet<>();
 
-        if (requestDto.getDeadline().isBefore(LocalDate.now()))
-            throw new IllegalArgumentException("Deadline cannot be in the past");
+        if (requestDto.getDeadline() == null || requestDto.getDeadline().isBefore(LocalDate.now().plusDays(1)))
+            throw new IllegalArgumentException("Deadline must be a future date.");
 
         ProjectRequestDTO sanitizedRequest = sanitizeProjectRequest(requestDto);
 
@@ -315,5 +312,13 @@ public class ProjectServiceImpl implements IProjectService {
                 start == 0,
                 end == projects.size()
         );
+    }
+
+    @Override
+    public void updateProjectStatus(UUID projectId, ProjectStatusUpdateDTO status) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project with ID " + projectId + " not found."));
+        project.setStatus(status.getStatus());
+        projectRepository.save(project);
     }
 }

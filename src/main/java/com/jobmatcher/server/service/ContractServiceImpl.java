@@ -219,26 +219,26 @@ public class ContractServiceImpl implements IContractService {
     private Contract updateExistentContract(ContractRequestDTO request, Contract existentContract) {
         if (request.getStatus() != null) {
             existentContract.setStatus(request.getStatus());
-            ProjectRequestDTO projectRequestDTO;
+            ProjectStatusUpdateDTO projectRequestDTO;
             switch (request.getStatus()) {
-                case ContractStatus.ACTIVE -> projectRequestDTO = ProjectRequestDTO.builder()
+                case ContractStatus.ACTIVE -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
                         .status(ProjectStatus.IN_PROGRESS)
                         .build();
-                case ContractStatus.CANCELLED -> projectRequestDTO = ProjectRequestDTO.builder()
+                case ContractStatus.CANCELLED -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
                         .status(ProjectStatus.CANCELLED)
                         .build();
-                case ContractStatus.COMPLETED -> projectRequestDTO = ProjectRequestDTO.builder()
+                case ContractStatus.COMPLETED -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
                         .status(ProjectStatus.COMPLETED)
                         .build();
-                case ContractStatus.TERMINATED -> projectRequestDTO = ProjectRequestDTO.builder()
+                case ContractStatus.TERMINATED -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
                         .status(ProjectStatus.TERMINATED)
                         .build();
-                case ContractStatus.ON_HOLD -> projectRequestDTO = ProjectRequestDTO.builder()
+                case ContractStatus.ON_HOLD -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
                         .status(ProjectStatus.ON_HOLD)
                         .build();
                 default -> projectRequestDTO = null;
             }
-            projectService.updateProject(existentContract.getProject().getId(), projectRequestDTO);
+            projectService.updateProjectStatus(existentContract.getProject().getId(), projectRequestDTO);
         }
         if (request.getInvoiceId() != null) {
             Invoice invoice = invoiceRepository.findById(request.getInvoiceId())

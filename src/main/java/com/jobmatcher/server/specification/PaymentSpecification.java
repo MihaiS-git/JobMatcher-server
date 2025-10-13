@@ -13,8 +13,8 @@ import java.util.UUID;
 public class PaymentSpecification {
     public static Specification<Payment> withFiltersAndRole(
             PaymentFilterDTO filter,
-            String profileId,
-            Role role
+            Role role,
+            UUID profileId
     ) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -23,9 +23,9 @@ public class PaymentSpecification {
             var contractJoin = invoiceJoin.join("contract");
 
             if (role == Role.STAFF) {
-                predicates.add(cb.equal(contractJoin.get("freelancer").get("id"), UUID.fromString(profileId)));
+                predicates.add(cb.equal(contractJoin.get("freelancer").get("id"), profileId));
             } else if (role == Role.CUSTOMER) {
-                predicates.add(cb.equal(contractJoin.get("customer").get("id"), UUID.fromString(profileId)));
+                predicates.add(cb.equal(contractJoin.get("customer").get("id"), profileId));
             }
 
             if (filter.getContractId() != null) {

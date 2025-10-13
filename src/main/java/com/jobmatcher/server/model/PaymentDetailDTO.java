@@ -17,7 +17,6 @@ public class PaymentDetailDTO {
     private InvoiceSummaryDTO invoice;
     private BigDecimal amount;
     private PaymentStatus status;
-    private OffsetDateTime dueDate;
     private OffsetDateTime paidAt;
     private String notes;
 }

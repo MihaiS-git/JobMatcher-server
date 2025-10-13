@@ -70,7 +70,6 @@ public class InvoiceServiceImpl implements IInvoiceService {
             InvoiceFilterDTO filter
 
     ) {
-        log.info("Fetching invoices with filters: {}", filter);
         User user = getUser(token);
         Role role = user.getRole();
 
@@ -80,14 +79,6 @@ public class InvoiceServiceImpl implements IInvoiceService {
             default -> null;
         };
 
-        log.info("User role: {}, Profile ID: {}", role, profileId);
-        Page<InvoiceSummaryDTO> page = invoiceRepository.findAll(InvoiceSpecifications.withFiltersAndRole(filter, role, profileId), pageable)
-                .map(i -> {
-                    ContractSummaryDTO contractDto = contractMapper.toSummaryDto(i.getContract());
-                    MilestoneResponseDTO milestoneDto = i.getMilestone() != null ? milestoneMapper.toDto(i.getMilestone()) : null;
-                    return invoiceMapper.toSummaryDto(i, contractDto, milestoneDto);
-                });
-        log.info("Found {} invoices", page.getTotalElements());
         return invoiceRepository.findAll(InvoiceSpecifications.withFiltersAndRole(filter, role, profileId), pageable)
                 .map(i -> {
                     ContractSummaryDTO contractDto = contractMapper.toSummaryDto(i.getContract());
@@ -169,6 +160,8 @@ public class InvoiceServiceImpl implements IInvoiceService {
     public InvoiceDetailDTO updateInvoice(UUID invoiceId, InvoiceRequestDTO request) {
         Invoice existentInvoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found."));
+        UUID contractId = existentInvoice.getContract().getId();
+
         // Update status if provided
         if (request.getStatus() != null) {
             ContractRequestDTO contractRequestDTO;
@@ -190,13 +183,14 @@ public class InvoiceServiceImpl implements IInvoiceService {
                             .build();
                     milestoneService.updateMilestone(existentInvoice.getMilestone().getId(), milestoneRequestDTO);
                 }
-                contractService.updateContractById(request.getContractId(), contractRequestDTO);
+                contractService.updateContractById(contractId, contractRequestDTO);
             } else if (request.getStatus() == InvoiceStatus.PENDING) {
                 if (existentInvoice.getMilestone() == null) {
                     contractRequestDTO = ContractRequestDTO.builder()
                             .status(ContractStatus.ACTIVE)
                             .paymentStatus(PaymentStatus.PENDING)
                             .build();
+                    contractService.updateContractById(contractId, contractRequestDTO);
                 } else {
                     MilestoneRequestDTO milestoneRequestDTO = MilestoneRequestDTO.builder()
                             .status(MilestoneStatus.PENDING)
@@ -209,14 +203,15 @@ public class InvoiceServiceImpl implements IInvoiceService {
                             .paymentStatus(anyMilestonePaid ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.PENDING)
                             .build();
                 }
-                contractService.updateContractById(request.getContractId(), contractRequestDTO);
+
+                contractService.updateContractById(contractId, contractRequestDTO);
             } else if (request.getStatus() == InvoiceStatus.CANCELLED) {
                 if (existentInvoice.getMilestone() == null) {
                     contractRequestDTO = ContractRequestDTO.builder()
                             .status(ContractStatus.ACTIVE)
                             .paymentStatus(PaymentStatus.PENDING)
                             .build();
-                    contractService.updateContractById(request.getContractId(), contractRequestDTO);
+                    contractService.updateContractById(contractId, contractRequestDTO);
                 } else {
                     MilestoneRequestDTO milestoneRequestDTO = MilestoneRequestDTO.builder()
                             .status(MilestoneStatus.PENDING)
@@ -229,11 +224,10 @@ public class InvoiceServiceImpl implements IInvoiceService {
                             .paymentStatus(anyMilestonePaid ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.PENDING)
                             .build();
                 }
-                contractService.updateContractById(request.getContractId(), contractRequestDTO);
+                contractService.updateContractById(contractId, contractRequestDTO);
             }
         }
         // Update payment if provided
-        // Only allow setting or clearing the payment, not replacing an existing one
         if (request.getPayment() != null && existentInvoice.getPayment() != null) {
             throw new IllegalStateException("Cannot replace an existing payment.");
         }

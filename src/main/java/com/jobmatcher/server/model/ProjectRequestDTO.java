@@ -20,7 +20,7 @@ import java.util.UUID;
 @Jacksonized
 @ToString
 public class ProjectRequestDTO {
-    @NotBlank(groups = CreateUpdateValidation.OnCreate.class)
+    @NotNull(groups = CreateUpdateValidation.OnCreate.class)
     private UUID customerId;
 
     private UUID freelancerId;

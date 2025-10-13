@@ -22,7 +22,6 @@ public class PaymentMapper {
                 .invoice(invoice)
                 .amount(entity.getAmount())
                 .status(entity.getStatus())
-                .dueDate(entity.getDueDate())
                 .paidAt(entity.getPaidAt())
                 .notes(entity.getNotes())
                 .build();
@@ -43,7 +42,6 @@ public class PaymentMapper {
                 .invoice(invoice)
                 .amount(entity.getAmount())
                 .status(entity.getStatus())
-                .dueDate(entity.getDueDate())
                 .paidAt(entity.getPaidAt())
                 .build();
     }

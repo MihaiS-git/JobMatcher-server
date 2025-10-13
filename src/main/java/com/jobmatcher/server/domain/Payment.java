@@ -2,7 +2,6 @@ package com.jobmatcher.server.domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -44,15 +43,13 @@ public class Payment extends Auditable {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private PaymentStatus status = PaymentStatus.PENDING;
-
-    @NotNull
-    @Future(message = "Due date must be in the future.")
-    private OffsetDateTime dueDate;
+    private PaymentStatus status = PaymentStatus.PAID;
 
     @NotNull
     private OffsetDateTime paidAt;
 
     @Size(max = 4000, message = "Notes cannot exceed 4000 characters.")
     private String notes;
+
+    private String stripePaymentIntentId;
 }
