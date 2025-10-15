@@ -121,35 +121,35 @@ public class InvoiceServiceImpl implements IInvoiceService {
 
     @Override
     public InvoiceDetailDTO createInvoice(InvoiceRequestDTO request) {
-        if (request.getContractId() == null) {
-            throw new IllegalArgumentException("ContractId must be provided.");
-        }
-        Milestone milestone = null;
-        MilestoneResponseDTO milestoneDto = null;
-        if (request.getMilestoneId() != null) {
-            milestone = milestoneRepository.findById(request.getMilestoneId()).orElseThrow(() ->
-                    new ResourceNotFoundException("Milestone not found."));
-        }
         Contract contract = contractRepository.findById(request.getContractId()).orElseThrow(() ->
                 new ResourceNotFoundException("Contract not found."));
 
-        if (milestone != null && !contract.getMilestones().contains(milestone)) {
-            throw new IllegalArgumentException("Milestone does not belong to the specified contract");
-        }
-
         Invoice invoice = new Invoice();
         invoice.setContract(contract);
-        if (milestone != null) {
+        invoice.setIssuedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        invoice.setDueDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
+
+        Milestone milestone = null;
+        MilestoneResponseDTO milestoneDto = null;
+
+        if(request.getMilestoneId() != null){
+            milestone = milestoneRepository.findById(request.getMilestoneId()).orElseThrow(() ->
+                    new ResourceNotFoundException("Milestone not found."));
+            if (!contract.getMilestones().contains(milestone)) {
+                throw new IllegalArgumentException("Milestone does not belong to this contract.");
+            }
             invoice.setMilestone(milestone);
             invoice.setAmount(milestone.getAmount());
             milestoneDto = milestoneMapper.toDto(milestone);
         } else {
             invoice.setAmount(contract.getAmount());
         }
-        invoice.setIssuedAt(OffsetDateTime.now(ZoneOffset.UTC));
-        invoice.setDueDate(OffsetDateTime.now(ZoneOffset.UTC).plusDays(30));
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
+        if(milestone != null){
+            milestone.setInvoice(savedInvoice);
+            milestoneRepository.save(milestone);
+        }
 
         ContractDetailDTO contractDto = getContractDetailDTO(contract);
 
@@ -288,13 +288,21 @@ public class InvoiceServiceImpl implements IInvoiceService {
                 .phone(freelancer.getUser().getPhone())
                 .address(addressMapper.toDto(freelancer.getUser().getAddress()))
                 .build();
+        Set<InvoiceSummaryDTO> invoiceDtos = contract.getInvoices() != null ?
+                contract.getInvoices().stream()
+                        .map(i -> {
+                            MilestoneResponseDTO milestoneDto = i.getMilestone() != null ? milestoneMapper.toDto(i.getMilestone()) : null;
+                            return invoiceMapper.toSummaryDto(i, contractMapper.toSummaryDto(contract), milestoneDto);
+                        })
+                        .collect(Collectors.toSet())
+                : Set.of();
         Set<MilestoneResponseDTO> milestoneDtos = contract.getMilestones() != null ?
                 contract.getMilestones().stream()
                         .map(milestoneMapper::toDto)
                         .collect(Collectors.toSet())
                 : Set.of();
 
-        return contractMapper.toDetailDto(contract, customerContact, freelancerContact, milestoneDtos);
+        return contractMapper.toDetailDto(contract, customerContact, freelancerContact, invoiceDtos, milestoneDtos);
     }
 
     private static boolean isAnyMilestonePaid(Invoice existentInvoice) {

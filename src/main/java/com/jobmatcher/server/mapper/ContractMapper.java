@@ -1,13 +1,12 @@
 package com.jobmatcher.server.mapper;
 
 import com.jobmatcher.server.domain.Contract;
-import com.jobmatcher.server.model.ContactDTO;
-import com.jobmatcher.server.model.ContractDetailDTO;
-import com.jobmatcher.server.model.ContractSummaryDTO;
-import com.jobmatcher.server.model.MilestoneResponseDTO;
+import com.jobmatcher.server.domain.Invoice;
+import com.jobmatcher.server.model.*;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class ContractMapper {
@@ -29,7 +28,7 @@ public class ContractMapper {
                 .build();
     }
 
-    public ContractDetailDTO toDetailDto(Contract entity, ContactDTO customerContact, ContactDTO freelancerContact, Set<MilestoneResponseDTO> milestones) {
+    public ContractDetailDTO toDetailDto(Contract entity, ContactDTO customerContact, ContactDTO freelancerContact, Set<InvoiceSummaryDTO> invoices, Set<MilestoneResponseDTO> milestones) {
         if(entity == null) {
             return null;
         }
@@ -51,7 +50,7 @@ public class ContractMapper {
                 .endDate(entity.getEndDate())
                 .paymentType(entity.getPaymentType())
                 .milestones(milestones)
-                .invoiceId(entity.getInvoice() != null ? entity.getInvoice().getId() : null)
+                .invoices(invoices)
                 .paymentId(entity.getPayment() != null ? entity.getPayment().getId() : null)
                 .totalPaid(entity.getTotalPaid())
                 .remainingBalance(entity.getRemainingBalance())

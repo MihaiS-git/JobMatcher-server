@@ -3,6 +3,7 @@ package com.jobmatcher.server.service;
 import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ContractMapper;
+import com.jobmatcher.server.mapper.InvoiceMapper;
 import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.*;
@@ -22,6 +23,7 @@ public class ContractServiceImpl implements IContractService {
 
     private final ContractRepository contractRepository;
     private final ContractMapper contractMapper;
+    private final InvoiceMapper invoiceMapper;
     private final ICustomerProfileService customerService;
     private final IFreelancerProfileService freelancerService;
     private final IUserService userService;
@@ -36,7 +38,7 @@ public class ContractServiceImpl implements IContractService {
 
     public ContractServiceImpl(
             ContractRepository contractRepository,
-            ContractMapper contractMapper,
+            ContractMapper contractMapper, InvoiceMapper invoiceMapper,
             ICustomerProfileService customerService,
             IFreelancerProfileService freelancerService,
             IUserService userService,
@@ -44,10 +46,14 @@ public class ContractServiceImpl implements IContractService {
             IProjectService projectService,
             IProposalService proposalService,
             JwtService jwtService,
-            InvoiceRepository invoiceRepository, PaymentRepository paymentRepository, FreelancerProfileRepository freelancerProfileRepository, CustomerProfileRepository customerProfileRepository
+            InvoiceRepository invoiceRepository,
+            PaymentRepository paymentRepository,
+            FreelancerProfileRepository freelancerProfileRepository,
+            CustomerProfileRepository customerProfileRepository
     ) {
         this.contractRepository = contractRepository;
         this.contractMapper = contractMapper;
+        this.invoiceMapper = invoiceMapper;
         this.customerService = customerService;
         this.freelancerService = freelancerService;
         this.userService = userService;
@@ -81,7 +87,7 @@ public class ContractServiceImpl implements IContractService {
                 .map(contractMapper::toSummaryDto);
     }
 
-    private User getUser(String token){
+    private User getUser(String token) {
         String email = jwtService.extractUsername(token);
         return userService.getUserByEmail(email);
     }
@@ -116,6 +122,7 @@ public class ContractServiceImpl implements IContractService {
                 contract,
                 contractDetailData.customerContact,
                 contractDetailData.freelancerContact,
+                contractDetailData.invoicesList,
                 contractDetailData.milestonesList
         );
     }
@@ -131,6 +138,7 @@ public class ContractServiceImpl implements IContractService {
                 contract,
                 contractDetailData.customerContact,
                 contractDetailData.freelancerContact,
+                contractDetailData.invoicesList,
                 contractDetailData.milestonesList
         );
     }
@@ -147,6 +155,7 @@ public class ContractServiceImpl implements IContractService {
                 updatedContract,
                 contractDetailData.customerContact(),
                 contractDetailData.freelancerContact(),
+                contractDetailData.invoicesList(),
                 contractDetailData.milestonesList()
         );
     }
@@ -155,7 +164,7 @@ public class ContractServiceImpl implements IContractService {
     public void deleteContractById(UUID contractId) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract with ID " + contractId + " not found."));
-        if (contract.getInvoice() != null || contract.getMilestones() != null) {
+        if (!contract.getInvoices().isEmpty() || !contract.getMilestones().isEmpty()) {
             throw new IllegalStateException("Cannot delete contract with associated milestones or invoice.");
         }
 
@@ -188,8 +197,13 @@ public class ContractServiceImpl implements IContractService {
     }
 
 
-    private record ContractDetailData(ContactDTO customerContact, ContactDTO freelancerContact,
-                                      Set<MilestoneResponseDTO> milestonesList) {
+    private record ContractDetailData(
+            ContactDTO customerContact,
+            ContactDTO freelancerContact,
+            Set<InvoiceSummaryDTO> invoicesList,
+            Set<MilestoneResponseDTO> milestonesList
+    ) {
+
     }
 
     private static ContactDTO getContact(UserResponseDTO user) {
@@ -209,11 +223,22 @@ public class ContractServiceImpl implements IContractService {
         UserResponseDTO freelancerUser = userService.getUserById(freelancer.getUserId());
         ContactDTO customerContact = getContact(customerUser);
         ContactDTO freelancerContact = getContact(freelancerUser);
+
+        ContractSummaryDTO contractSummary = contractMapper.toSummaryDto(contract);
+
+        Set<Invoice> invoices = contract.getInvoices();
+        Set<InvoiceSummaryDTO> invoicesList = invoices != null
+                ? invoices.stream().map((i) ->
+                invoiceMapper.toSummaryDto(
+                        i,
+                        contractSummary,
+                        i.getMilestone() != null ? milestoneMapper.toDto(i.getMilestone()) : null)).collect(Collectors.toSet())
+                : Set.of();
         Set<Milestone> milestones = contract.getMilestones();
         Set<MilestoneResponseDTO> milestonesList = milestones != null
                 ? milestones.stream().map(milestoneMapper::toDto).collect(Collectors.toSet())
                 : Set.of();
-        return new ContractDetailData(customerContact, freelancerContact, milestonesList);
+        return new ContractDetailData(customerContact, freelancerContact, invoicesList, milestonesList);
     }
 
     private Contract updateExistentContract(ContractRequestDTO request, Contract existentContract) {
@@ -244,7 +269,7 @@ public class ContractServiceImpl implements IContractService {
             Invoice invoice = invoiceRepository.findById(request.getInvoiceId())
                     .orElseThrow(() -> new ResourceNotFoundException("Invoice with ID " +
                             request.getInvoiceId() + " not found."));
-            existentContract.setInvoice(invoice);
+            existentContract.getInvoices().add(invoice);
         }
         if (request.getPaymentId() != null) {
             Payment payment = paymentRepository.findById(request.getPaymentId())

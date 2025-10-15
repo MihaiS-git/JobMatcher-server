@@ -78,8 +78,8 @@ public class Contract extends Auditable {
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Milestone> milestones = new HashSet<>();
 
-    @OneToOne(mappedBy = "contract", fetch = FetchType.LAZY)
-    private Invoice invoice;
+    @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Invoice> invoices = new HashSet<>();
 
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "payment_id", unique = true, nullable = true)

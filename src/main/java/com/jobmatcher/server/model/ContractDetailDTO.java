@@ -29,7 +29,7 @@ public class ContractDetailDTO {
     private OffsetDateTime endDate;
     private PaymentType paymentType;
     private Set<MilestoneResponseDTO> milestones;
-    private UUID invoiceId;
+    private Set<InvoiceSummaryDTO> invoices;
     private UUID paymentId;
     private BigDecimal totalPaid;
     private BigDecimal remainingBalance;

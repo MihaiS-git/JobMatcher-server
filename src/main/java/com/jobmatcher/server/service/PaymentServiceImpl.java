@@ -162,15 +162,18 @@ public class PaymentServiceImpl implements IPaymentService {
 
     @Override
     public void markInvoicePaid(UUID invoiceId) {
+        log.info("Marking invoice {} as PAID", invoiceId);
         PaymentRequestDTO paymentRequestDto = PaymentRequestDTO.builder()
                 .invoiceId(invoiceId.toString())
                 .build();
         Payment payment = createPayment(paymentRequestDto);
+        log.info("Created payment {} for invoice {}", payment.getId(), invoiceId);
 
         InvoiceRequestDTO invoiceRequestDTO = InvoiceRequestDTO.builder()
                 .status(InvoiceStatus.PAID)
                 .payment(payment)
                 .build();
+        log.info("Updating invoice {} status to PAID", invoiceId);
         invoiceService.updateInvoice(invoiceId, invoiceRequestDTO);
     }
 

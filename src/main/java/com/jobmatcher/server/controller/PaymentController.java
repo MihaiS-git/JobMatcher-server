@@ -82,18 +82,26 @@ public class PaymentController {
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String sigHeader
     ) {
+        log.info("Received Stripe webhook");
         Event event;
         try {
+            log.info("Verifying Stripe webhook signature");
             event = Webhook.constructEvent(payload, sigHeader, STRIPE_WEBHOOK_SECRET);
         } catch (SignatureVerificationException e) {
+            log.error("Invalid Stripe webhook signature: {}", e.getMessage());
             return ResponseEntity.badRequest().body("Invalid signature");
         } catch (Exception e) {
+            log.error("Error parsing Stripe webhook event: {}", e.getMessage());
             return ResponseEntity.badRequest().body("Invalid payload");
         }
 
         try {
+            log.info("Received Stripe event: {}", event.getType());
             switch (event.getType()) {
-                case "checkout.session.completed" -> handleCheckoutSessionCompleted(event);
+                case "checkout.session.completed" -> {
+                    log.info("Handling checkout.session.completed event");
+                    handleCheckoutSessionCompleted(event);
+                }
                 default -> log.warn("Unhandled Stripe event type: {}", event.getType());
             }
 
@@ -105,35 +113,45 @@ public class PaymentController {
     }
 
     private void handleCheckoutSessionCompleted(Event event) {
+        log.info("Processing checkout.session.completed event");
         EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
 
         if (deserializer.getObject().isPresent() && deserializer.getObject().get() instanceof Session session) {
+            log.info("Deserialized session object directly");
             processSession(session);
         } else {
+            log.info("Deserializing session object from JSON");
             String sessionId = ((JsonObject) gson.fromJson(event.getData().toJson(), JsonObject.class))
                     .get("object").getAsJsonObject().get("id").getAsString();
             try {
+                log.info("Retrieving session ID: {}", sessionId);
                 Session session = Session.retrieve(sessionId);
                 processSession(session);
             } catch (StripeException e) {
+                log.error("Failed to retrieve session {}: {}", sessionId, e.getMessage());
                 throw new RuntimeException(e); // fail webhook so Stripe retries
             }
         }
     }
 
     private void processSession(Session session) {
+        log.info("Processing session ID: {}", session.getId());
         String clientReferenceId = session.getClientReferenceId();
 
         if (clientReferenceId == null || clientReferenceId.isBlank()) {
+            log.warn("Session {} missing client_reference_id, skipping", session.getId());
             return;
         }
 
         try {
             UUID invoiceId = UUID.fromString(clientReferenceId.trim());
+            log.info("Marking invoice {} as PAID", invoiceId);
             paymentService.markInvoicePaid(invoiceId);
         } catch (IllegalArgumentException e) {
+            log.error("Invalid invoice ID in session {}: {}", session.getId(), e.getMessage());
             throw e;
         } catch (Exception e) {
+            log.error("Error marking invoice as PAID for session {}: {}", session.getId(), e.getMessage());
             throw new RuntimeException(e);
         }
     }
