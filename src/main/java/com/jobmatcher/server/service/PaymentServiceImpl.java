@@ -116,6 +116,16 @@ public class PaymentServiceImpl implements IPaymentService {
         return customer.getId();
     }
 
+
+    @Override
+    public PaymentDetailDTO getPaymentById(UUID paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+        PaymentDetail paymentDetail = getPaymentDetail(payment.getInvoice());
+
+        return paymentMapper.toDetailDto(payment, paymentDetail.contractSummaryDTO, paymentDetail.milestoneResponseDTO, paymentDetail.invoiceSummaryDTO);
+    }
+
     @Transactional(readOnly = true)
     @Override
     public PaymentDetailDTO getPaymentByInvoiceId(UUID invoiceId) {
@@ -144,20 +154,6 @@ public class PaymentServiceImpl implements IPaymentService {
         payment.setPaidAt(OffsetDateTime.now(ZoneOffset.UTC));
 
         return paymentRepository.save(payment);
-    }
-
-    @Override
-    public void deletePayment(UUID paymentId) {
-        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() ->
-                new ResourceNotFoundException("Payment not found"));
-        paymentRepository.deleteById(paymentId);
-        Invoice invoice = invoiceRepository.findById(payment.getInvoice().getId()).orElseThrow(() ->
-                new ResourceNotFoundException("Invoice not found"));
-        InvoiceRequestDTO invoiceRequestDTO = InvoiceRequestDTO.builder()
-                .status(InvoiceStatus.PENDING)
-                .payment(null)
-                .build();
-        invoiceService.updateInvoice(invoice.getId(), invoiceRequestDTO);
     }
 
     @Override

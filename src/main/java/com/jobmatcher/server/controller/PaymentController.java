@@ -64,11 +64,17 @@ public class PaymentController {
         String token = authHeader.replace("Bearer ", "").trim();
 
         Page<PaymentSummaryDTO> page = paymentService.getAllPayments(
-                authHeader,
+                token,
                 pageable,
                 filter
         );
         return ResponseEntity.ok(page);
+    }
+
+    @GetMapping("/{paymentId}")
+    public ResponseEntity<PaymentDetailDTO> getPaymentById(@PathVariable String paymentId) {
+        PaymentDetailDTO payment = paymentService.getPaymentById(UUID.fromString(paymentId));
+        return ResponseEntity.ok(payment);
     }
 
     @GetMapping("/invoice/{invoiceId}")
@@ -201,11 +207,5 @@ public class PaymentController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Unexpected error: " + e.getMessage());
         }
-    }
-
-    @DeleteMapping("/{paymentId}")
-    public ResponseEntity<Void> deletePayment(@PathVariable String paymentId) {
-        paymentService.deletePayment(UUID.fromString(paymentId));
-        return ResponseEntity.noContent().build();
     }
 }

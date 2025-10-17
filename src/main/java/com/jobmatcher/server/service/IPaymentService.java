@@ -13,9 +13,10 @@ import java.util.UUID;
 
 public interface IPaymentService {
     Page<PaymentSummaryDTO> getAllPayments(String token, Pageable pageable, PaymentFilterDTO filter);
+    PaymentDetailDTO getPaymentById(UUID paymentId);
     PaymentDetailDTO getPaymentByInvoiceId(UUID invoiceId);
     Payment createPayment(PaymentRequestDTO request);
-    void deletePayment(UUID paymentId);
+//    void deletePayment(UUID paymentId);
     void markInvoicePaid(UUID invoiceId);
 }
 

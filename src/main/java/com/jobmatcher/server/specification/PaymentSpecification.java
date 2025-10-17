@@ -28,12 +28,14 @@ public class PaymentSpecification {
                 predicates.add(cb.equal(contractJoin.get("customer").get("id"), profileId));
             }
 
-            if (filter.getContractId() != null) {
-                predicates.add(cb.equal(contractJoin.get("id"), filter.getContractId()));
+            if (filter.getContractId() != null && !filter.getContractId().isBlank()) {
+                UUID contractId = UUID.fromString(filter.getContractId());
+                predicates.add(cb.equal(contractJoin.get("id"), contractId));
             }
 
-            if (filter.getInvoiceId() != null) {
-                predicates.add(cb.equal(invoiceJoin.get("id"), filter.getInvoiceId()));
+            if (filter.getInvoiceId() != null && !filter.getInvoiceId().isBlank()) {
+                UUID invoiceId = UUID.fromString(filter.getInvoiceId());
+                predicates.add(cb.equal(invoiceJoin.get("id"), invoiceId));
             }
 
             if (filter.getStatus() != null) {

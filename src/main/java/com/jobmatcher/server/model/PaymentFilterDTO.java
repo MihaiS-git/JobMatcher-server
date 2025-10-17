@@ -11,5 +11,4 @@ public class PaymentFilterDTO {
     private String invoiceId;
     private PaymentStatus status;
     private String searchTerm;
-
 }
