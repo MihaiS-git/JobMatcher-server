@@ -97,7 +97,6 @@ public class ProjectMapper {
         project.setFreelancer(freelancer);
         project.setTitle(dto.getTitle());
         project.setDescription(dto.getDescription());
-        project.setStatus(dto.getStatus());
         project.setBudget(dto.getBudget());
         project.setPaymentType(dto.getPaymentType());
         project.setDeadline(dto.getDeadline());

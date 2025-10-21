@@ -8,6 +8,7 @@ import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.specification.ContractSpecifications;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service
 public class ContractServiceImpl implements IContractService {
@@ -123,7 +125,8 @@ public class ContractServiceImpl implements IContractService {
                 contractDetailData.customerContact,
                 contractDetailData.freelancerContact,
                 contractDetailData.invoicesList,
-                contractDetailData.milestonesList
+                contractDetailData.milestonesList,
+                contractDetailData.paymentType
         );
     }
 
@@ -139,7 +142,8 @@ public class ContractServiceImpl implements IContractService {
                 contractDetailData.customerContact,
                 contractDetailData.freelancerContact,
                 contractDetailData.invoicesList,
-                contractDetailData.milestonesList
+                contractDetailData.milestonesList,
+                contractDetailData.paymentType
         );
     }
 
@@ -156,7 +160,26 @@ public class ContractServiceImpl implements IContractService {
                 contractDetailData.customerContact(),
                 contractDetailData.freelancerContact(),
                 contractDetailData.invoicesList(),
-                contractDetailData.milestonesList()
+                contractDetailData.milestonesList(),
+                contractDetailData.paymentType()
+        );
+    }
+
+    @Override
+    public ContractDetailDTO updateContractStatusById(UUID contractId, ContractStatusRequestDTO request) {
+        Contract existentContract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract with ID " + contractId + " not found."));
+        Contract updatedContract = updateExistentContractStatus(request, existentContract);
+
+        ContractDetailData contractDetailData = getContractDetailData(updatedContract);
+
+        return contractMapper.toDetailDto(
+                updatedContract,
+                contractDetailData.customerContact(),
+                contractDetailData.freelancerContact(),
+                contractDetailData.invoicesList(),
+                contractDetailData.milestonesList(),
+                contractDetailData.paymentType()
         );
     }
 
@@ -174,10 +197,10 @@ public class ContractServiceImpl implements IContractService {
             Set<Proposal> proposals = project.getProposals();
             if (!proposals.isEmpty()) {
                 for (Proposal p : proposals) {
-                    ProposalRequestDTO proposalRequestDTO = ProposalRequestDTO.builder()
+                    ProposalStatusRequestDTO proposalRequestDTO = ProposalStatusRequestDTO.builder()
                             .status(ProposalStatus.PENDING)
                             .build();
-                    proposalService.updateProposalById(p.getId(), proposalRequestDTO);
+                    proposalService.updateProposalStatusById(p.getId(), proposalRequestDTO);
                 }
                 Proposal contractProposal = contract.getProposal();
                 if (contractProposal != null) {
@@ -188,22 +211,24 @@ public class ContractServiceImpl implements IContractService {
             ProjectRequestDTO projectRequestDTO = ProjectRequestDTO.builder()
                     .freelancerId(null)
                     .contractId(null)
-                    .status(ProjectStatus.PROPOSALS_RECEIVED)
                     .acceptedProposalId(null)
                     .build();
+            ProjectStatusUpdateDTO projectStatusRequestDTO = ProjectStatusUpdateDTO.builder()
+                    .status(ProjectStatus.OPEN)
+                    .build();
             projectService.updateProject(project.getId(), projectRequestDTO);
+            projectService.updateProjectStatus(project.getId(), projectStatusRequestDTO);
         }
         contractRepository.delete(contract);
     }
-
 
     private record ContractDetailData(
             ContactDTO customerContact,
             ContactDTO freelancerContact,
             Set<InvoiceSummaryDTO> invoicesList,
-            Set<MilestoneResponseDTO> milestonesList
+            Set<MilestoneResponseDTO> milestonesList,
+            PaymentType paymentType
     ) {
-
     }
 
     private static ContactDTO getContact(UserResponseDTO user) {
@@ -238,33 +263,12 @@ public class ContractServiceImpl implements IContractService {
         Set<MilestoneResponseDTO> milestonesList = milestones != null
                 ? milestones.stream().map(milestoneMapper::toDto).collect(Collectors.toSet())
                 : Set.of();
-        return new ContractDetailData(customerContact, freelancerContact, invoicesList, milestonesList);
+
+        PaymentType paymentType = contract.getProject().getPaymentType();
+        return new ContractDetailData(customerContact, freelancerContact, invoicesList, milestonesList, paymentType);
     }
 
     private Contract updateExistentContract(ContractRequestDTO request, Contract existentContract) {
-        if (request.getStatus() != null) {
-            existentContract.setStatus(request.getStatus());
-            ProjectStatusUpdateDTO projectRequestDTO;
-            switch (request.getStatus()) {
-                case ContractStatus.ACTIVE -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
-                        .status(ProjectStatus.IN_PROGRESS)
-                        .build();
-                case ContractStatus.CANCELLED -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
-                        .status(ProjectStatus.CANCELLED)
-                        .build();
-                case ContractStatus.COMPLETED -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
-                        .status(ProjectStatus.COMPLETED)
-                        .build();
-                case ContractStatus.TERMINATED -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
-                        .status(ProjectStatus.TERMINATED)
-                        .build();
-                case ContractStatus.ON_HOLD -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
-                        .status(ProjectStatus.ON_HOLD)
-                        .build();
-                default -> projectRequestDTO = null;
-            }
-            projectService.updateProjectStatus(existentContract.getProject().getId(), projectRequestDTO);
-        }
         if (request.getInvoiceId() != null) {
             Invoice invoice = invoiceRepository.findById(request.getInvoiceId())
                     .orElseThrow(() -> new ResourceNotFoundException("Invoice with ID " +
@@ -281,15 +285,35 @@ public class ContractServiceImpl implements IContractService {
             existentContract.setTotalPaid(request.getTotalPaid());
             existentContract.setRemainingBalance(existentContract.getAmount().subtract(request.getTotalPaid()));
         }
-        if (request.getPaymentStatus() != null) {
-            existentContract.setPaymentStatus(request.getPaymentStatus());
-        }
         if (request.getCompletedAt() != null) {
             existentContract.setCompletedAt(request.getCompletedAt());
         }
         if (request.getTerminatedAt() != null) {
             existentContract.setTerminatedAt(request.getTerminatedAt());
         }
+        return contractRepository.save(existentContract);
+    }
+
+    private Contract updateExistentContractStatus(ContractStatusRequestDTO request, Contract existentContract) {
+        log.info("Updating contract ID {} status to {}", existentContract.getId(), request.getStatus());
+        if (request.getStatus() != null) {
+            existentContract.setStatus(request.getStatus());
+            ProjectStatusUpdateDTO projectRequestDTO;
+            switch (request.getStatus()) {
+                case ContractStatus.COMPLETED -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
+                        .status(ProjectStatus.COMPLETED)
+                        .build();
+                case ContractStatus.TERMINATED, ContractStatus.CANCELLED ->
+                        projectRequestDTO = ProjectStatusUpdateDTO.builder()
+                                .status(ProjectStatus.STOPPED)
+                                .build();
+                default -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
+                        .status(ProjectStatus.IN_PROGRESS)
+                        .build();
+            }
+            projectService.updateProjectStatus(existentContract.getProject().getId(), projectRequestDTO);
+        }
+        log.info("Contract ID {} status updated to {}", existentContract.getId(), existentContract.getStatus());
         return contractRepository.save(existentContract);
     }
 }

@@ -3,9 +3,7 @@ package com.jobmatcher.server.service;
 import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.MilestoneMapper;
-import com.jobmatcher.server.model.ContractRequestDTO;
-import com.jobmatcher.server.model.MilestoneRequestDTO;
-import com.jobmatcher.server.model.MilestoneResponseDTO;
+import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.ContractRepository;
 import com.jobmatcher.server.repository.MilestoneRepository;
 import org.springframework.data.domain.Page;
@@ -18,14 +16,14 @@ import java.util.UUID;
 
 @Transactional(rollbackFor = Exception.class)
 @Service
-public class MilestoneService implements IMilestoneService {
+public class MilestoneServiceImpl implements IMilestoneService {
 
     private final MilestoneRepository milestoneRepository;
     private final MilestoneMapper milestoneMapper;
     private final IContractService contractService;
     private final ContractRepository contractRepository;
 
-    public MilestoneService(
+    public MilestoneServiceImpl(
             MilestoneRepository milestoneRepository,
             MilestoneMapper milestoneMapper,
             IContractService contractService,
@@ -77,31 +75,6 @@ public class MilestoneService implements IMilestoneService {
         if (requestDTO.getBonusAmount() != null) existentMilestone.setBonusAmount(requestDTO.getBonusAmount());
         if (requestDTO.getEstimatedDuration() != null)
             existentMilestone.setEstimatedDuration(requestDTO.getEstimatedDuration());
-        if (requestDTO.getStatus() != null) {
-            existentMilestone.setStatus(requestDTO.getStatus());
-            Contract contract = contractRepository.findById(existentMilestone.getContract().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Contract not found"));
-            Set<Milestone> milestones = contract.getMilestones();
-
-            boolean isCompleted = false;
-            for (Milestone milestone : milestones) {
-                if (milestone.getStatus() == MilestoneStatus.COMPLETED || milestone.getStatus() == MilestoneStatus.CANCELLED || milestone.getStatus() == MilestoneStatus.NONE) {
-                    isCompleted = true;
-                } else {
-                    isCompleted = false;
-                    break;
-                }
-            }
-            if (isCompleted) {
-                ContractRequestDTO contractRequestDTO = ContractRequestDTO.builder()
-                        .status(ContractStatus.COMPLETED)
-                        .paymentStatus(existentMilestone.getPaymentStatus() == PaymentStatus.PAID ? PaymentStatus.PAID : PaymentStatus.PROCESSING)
-                        .build();
-                contractService.updateContractById(contract.getId(), contractRequestDTO);
-            }
-        }
-        if (requestDTO.getPaymentStatus() != null)
-            existentMilestone.setPaymentStatus(requestDTO.getPaymentStatus());
         if (requestDTO.getNotes() != null) existentMilestone.setNotes(requestDTO.getNotes());
         if (requestDTO.getPlannedStartDate() != null)
             existentMilestone.setPlannedStartDate(requestDTO.getPlannedStartDate());
@@ -112,6 +85,88 @@ public class MilestoneService implements IMilestoneService {
         if (requestDTO.getActualEndDate() != null)
             existentMilestone.setActualEndDate(requestDTO.getActualEndDate());
         if (requestDTO.getPriority() != null) existentMilestone.setPriority(requestDTO.getPriority());
+
+        Milestone updatedMilestone = milestoneRepository.save(existentMilestone);
+
+        return milestoneMapper.toDto(updatedMilestone);
+    }
+
+    @Override
+    public MilestoneResponseDTO updateMilestoneStatusById(UUID id, MilestoneStatusRequestDTO requestDTO) {
+        Milestone existentMilestone = milestoneRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Milestone not found"));
+        Contract contract = contractRepository.findById(existentMilestone.getContract().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Contract not found"));
+        ContractStatusRequestDTO contractStatusRequestDTO;
+        Set<Milestone> milestones = contract.getMilestones();
+        boolean isContractCompleted = true;
+        Set<MilestoneStatus> completedStatuses = Set.of(
+                MilestoneStatus.COMPLETED,
+                MilestoneStatus.CANCELLED,
+                MilestoneStatus.PAID
+        );
+
+        switch (requestDTO.getStatus()) {
+            case PENDING: {
+                existentMilestone.setStatus(MilestoneStatus.PENDING);
+                contractStatusRequestDTO = ContractStatusRequestDTO.builder()
+                        .status(ContractStatus.ACTIVE)
+                        .build();
+                contractService.updateContractStatusById(contract.getId(), contractStatusRequestDTO);
+                break;
+            }
+            case IN_PROGRESS: {
+                existentMilestone.setStatus(MilestoneStatus.IN_PROGRESS);
+                contractStatusRequestDTO = ContractStatusRequestDTO.builder()
+                        .status(ContractStatus.ACTIVE)
+                        .build();
+                contractService.updateContractStatusById(contract.getId(), contractStatusRequestDTO);
+                break;
+            }
+            case COMPLETED: {
+                existentMilestone.setStatus(MilestoneStatus.COMPLETED);
+                for (Milestone milestone : milestones) {
+                    if (!completedStatuses.contains(milestone.getStatus())) {
+                        isContractCompleted = false;
+                        break;
+                    }
+                }
+                if (isContractCompleted) {
+                    contractStatusRequestDTO = ContractStatusRequestDTO.builder()
+                            .status(ContractStatus.COMPLETED)
+                            .build();
+                    contractService.updateContractStatusById(contract.getId(), contractStatusRequestDTO);
+                }
+                break;
+            }
+            case PAID: {
+                existentMilestone.setStatus(MilestoneStatus.PAID);
+
+                for (Milestone milestone : milestones) {
+                    if (!completedStatuses.contains(milestone.getStatus())) {
+                        isContractCompleted = false;
+                        break;
+                    }
+                }
+                if (isContractCompleted) {
+                    contractStatusRequestDTO = ContractStatusRequestDTO.builder()
+                            .status(ContractStatus.COMPLETED)
+                            .build();
+                    contractService.updateContractStatusById(contract.getId(), contractStatusRequestDTO);
+                }
+                break;
+            }
+            case CANCELLED: {
+                existentMilestone.setStatus(MilestoneStatus.CANCELLED);
+                contractStatusRequestDTO = ContractStatusRequestDTO.builder()
+                        .status(ContractStatus.ACTIVE)
+                        .build();
+                contractService.updateContractStatusById(contract.getId(), contractStatusRequestDTO);
+                break;
+            }
+            default:
+                throw new IllegalArgumentException("Invalid milestone status");
+        }
 
         Milestone updatedMilestone = milestoneRepository.save(existentMilestone);
 

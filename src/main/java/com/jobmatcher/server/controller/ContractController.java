@@ -2,6 +2,7 @@ package com.jobmatcher.server.controller;
 
 import com.jobmatcher.server.model.ContractDetailDTO;
 import com.jobmatcher.server.model.ContractFilterDTO;
+import com.jobmatcher.server.model.ContractStatusRequestDTO;
 import com.jobmatcher.server.model.ContractSummaryDTO;
 import com.jobmatcher.server.service.*;
 import org.springframework.data.domain.Page;
@@ -48,6 +49,15 @@ public class ContractController {
             @PathVariable String projectId
     ) {
         ContractDetailDTO contract = contractService.getContractByProjectId(UUID.fromString(projectId));
+        return ResponseEntity.ok(contract);
+    }
+
+    @PatchMapping("/status/{contractId}")
+    public ResponseEntity<ContractDetailDTO> updateContractStatusById(
+            @PathVariable String contractId,
+            @RequestBody ContractStatusRequestDTO requestDto
+    ) {
+        ContractDetailDTO contract = contractService.updateContractStatusById(UUID.fromString(contractId), requestDto);
         return ResponseEntity.ok(contract);
     }
 

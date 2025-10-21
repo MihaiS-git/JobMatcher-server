@@ -167,7 +167,6 @@ public class ProjectServiceImpl implements IProjectService {
 
         updateIfPresent(sanitizedRequest.getTitle(), existingProject::setTitle);
         updateIfPresent(sanitizedRequest.getDescription(), existingProject::setDescription);
-        updateIfPresent(requestDto.getStatus(), existingProject::setStatus);
         updateIfPresent(requestDto.getBudget(), existingProject::setBudget);
         updateIfPresent(requestDto.getPaymentType(), existingProject::setPaymentType);
         updateIfPresent(requestDto.getDeadline(), existingProject::setDeadline);
@@ -227,7 +226,6 @@ public class ProjectServiceImpl implements IProjectService {
                 .description(request.getDescription() != null
                         ? sanitizeOptionalText(request.getDescription().trim(), "Description")
                         : null)
-                .status(request.getStatus())
                 .budget(budget)
                 .paymentType(request.getPaymentType())
                 .deadline(request.getDeadline())
@@ -315,10 +313,11 @@ public class ProjectServiceImpl implements IProjectService {
     }
 
     @Override
-    public void updateProjectStatus(UUID projectId, ProjectStatusUpdateDTO status) {
+    public ProjectDetailDTO updateProjectStatus(UUID projectId, ProjectStatusUpdateDTO status) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project with ID " + projectId + " not found."));
         project.setStatus(status.getStatus());
-        projectRepository.save(project);
+        return projectMapper.toDto(projectRepository.save(project));
     }
+
 }

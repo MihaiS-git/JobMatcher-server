@@ -1,9 +1,6 @@
 package com.jobmatcher.server.service;
 
-import com.jobmatcher.server.model.ContractDetailDTO;
-import com.jobmatcher.server.model.ContractFilterDTO;
-import com.jobmatcher.server.model.ContractRequestDTO;
-import com.jobmatcher.server.model.ContractSummaryDTO;
+import com.jobmatcher.server.model.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -18,6 +15,9 @@ public interface IContractService {
     ContractDetailDTO getContractById(UUID contractId);
     ContractDetailDTO getContractByProjectId(UUID projectId);
     ContractDetailDTO updateContractById(UUID contractId, ContractRequestDTO requestDTO);
+
+    ContractDetailDTO updateContractStatusById(UUID contractId, ContractStatusRequestDTO request);
+
     void deleteContractById(UUID contractId);
 
 }

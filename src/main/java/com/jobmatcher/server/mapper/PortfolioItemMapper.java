@@ -55,6 +55,8 @@ public class PortfolioItemMapper {
                 .subcategories(entity.getSubcategories().stream()
                         .map(jobSubcategoryMapper::toDto)
                         .collect(Collectors.toSet()))
+                .imageUrls(entity.getImageUrls())
+                .freelancerProfileId(entity.getFreelancerProfile().getId())
                 .build();
     }
 

@@ -3,9 +3,7 @@ package com.jobmatcher.server.service;
 import com.jobmatcher.server.domain.*;
 import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ProposalMapper;
-import com.jobmatcher.server.model.ProposalDetailDTO;
-import com.jobmatcher.server.model.ProposalRequestDTO;
-import com.jobmatcher.server.model.ProposalSummaryDTO;
+import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.ContractRepository;
 import com.jobmatcher.server.repository.FreelancerProfileRepository;
 import com.jobmatcher.server.repository.ProjectRepository;
@@ -16,8 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -30,19 +26,22 @@ public class ProposalServiceImpl implements IProposalService {
     private final FreelancerProfileRepository freelancerRepository;
     private final ProposalMapper proposalMapper;
     private final ContractRepository contractRepository;
+    private final IProjectService projectService;
 
     public ProposalServiceImpl(
             ProposalRepository proposalRepository,
             ProjectRepository projectRepository,
             FreelancerProfileRepository freelancerRepository,
             ProposalMapper proposalMapper,
-            ContractRepository contractRepository
-    ) {
+            ContractRepository contractRepository,
+            IProjectService projectService
+            ) {
         this.proposalRepository = proposalRepository;
         this.projectRepository = projectRepository;
         this.freelancerRepository = freelancerRepository;
         this.proposalMapper = proposalMapper;
         this.contractRepository = contractRepository;
+        this.projectService = projectService;
     }
 
     @Transactional(readOnly = true)
@@ -91,11 +90,8 @@ public class ProposalServiceImpl implements IProposalService {
 
         Project project = projectRepository.findById(requestDTO.getProjectId()).orElseThrow(() ->
                 new ResourceNotFoundException("Project not found"));
-        if (project.getStatus() == ProjectStatus.IN_PROGRESS ||
-                project.getStatus() == ProjectStatus.COMPLETED ||
-                project.getStatus() == ProjectStatus.CANCELLED ||
-                project.getStatus() == ProjectStatus.NONE
-        ) {
+
+        if (project.getStatus() != ProjectStatus.OPEN) {
             throw new IllegalStateException("Cannot submit proposal to a project that is not open for proposals.");
         }
 
@@ -104,18 +100,14 @@ public class ProposalServiceImpl implements IProposalService {
 
         boolean exists = proposalRepository.existsByFreelancerIdAndProjectId(
                 requestDTO.getFreelancerId(), requestDTO.getProjectId());
+
         if (exists) {
-            throw new IllegalStateException("You have already submitted a proposal for this project.");
+            throw new IllegalStateException("You have already submitted a proposal for this project. You can update it instead.");
         }
 
         Proposal proposalRequest = proposalMapper.toEntity(requestDTO, project, freelancer);
         Proposal savedProposal = proposalRepository.save(proposalRequest);
         log.info("Created proposal with ID: {}", savedProposal.getId());
-
-        if (project.getStatus() == ProjectStatus.OPEN) {
-            project.setStatus(ProjectStatus.PROPOSALS_RECEIVED);
-            projectRepository.save(project);
-        }
 
         return proposalMapper.toSummaryDto(savedProposal);
     }
@@ -141,44 +133,6 @@ public class ProposalServiceImpl implements IProposalService {
             existentProposal.setEstimatedDuration(requestDTO.getEstimatedDuration());
         }
 
-        if (requestDTO.getStatus() != null) {
-            if (existentProposal.getStatus() != requestDTO.getStatus()) {
-                Project project = projectRepository.findById(existentProposal.getProject().getId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
-                if(project.getStatus() == ProjectStatus.COMPLETED ||
-                        project.getStatus() == ProjectStatus.CANCELLED ||
-                        project.getStatus() == ProjectStatus.NONE) {
-                    throw new IllegalStateException("Cannot change proposal status for a project that is completed, cancelled, or none.");
-                }
-
-                if (requestDTO.getStatus() == ProposalStatus.ACCEPTED) {
-                    FreelancerProfile freelancer = freelancerRepository.findById(existentProposal.getFreelancer().getId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Freelancer not found"));
-                    project.setFreelancer(freelancer);
-                    project.setAcceptedProposal(proposalRepository.findById(id)
-                            .orElseThrow(() -> new ResourceNotFoundException("Proposal not found")));
-
-                    Contract contract = getContract(existentProposal, project, freelancer);
-                    project.setContract(contract);
-                    existentProposal.setContract(contract);
-                    Contract savedContract = contractRepository.save(contract);
-
-                    proposalRepository.rejectOtherPendingProposals(project.getId(), existentProposal.getId(), ProposalStatus.REJECTED);
-
-                    project.setStatus(ProjectStatus.IN_PROGRESS);
-                } else if (requestDTO.getStatus() == ProposalStatus.WITHDRAWN) {
-                    if (project.getFreelancer() != null &&
-                            project.getFreelancer().getId().equals(existentProposal.getFreelancer().getId())) {
-                        project.setFreelancer(null);
-                    }
-                    project.setStatus(ProjectStatus.PROPOSALS_RECEIVED);
-                }
-                projectRepository.save(project);
-            }
-
-            existentProposal.setStatus(requestDTO.getStatus());
-        }
-
         if (requestDTO.getNotes() != null) {
             existentProposal.setNotes(requestDTO.getNotes());
         }
@@ -194,9 +148,66 @@ public class ProposalServiceImpl implements IProposalService {
         if (requestDTO.getActualEndDate() != null) {
             existentProposal.setActualEndDate(requestDTO.getActualEndDate());
         }
-        if (requestDTO.getPriority() != null) {
-            existentProposal.setPriority(requestDTO.getPriority());
-        }
+
+        Proposal updatedProposal = proposalRepository.save(existentProposal);
+
+        return proposalMapper.toDetailDto(updatedProposal);
+    }
+
+    @Override
+    public ProposalDetailDTO updateProposalStatusById(UUID id, ProposalStatusRequestDTO requestDTO) {
+        Proposal existentProposal = proposalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proposal not found"));
+
+        switch (requestDTO.getStatus()) {
+            case ACCEPTED -> {
+                log.info("Accepting proposal with ID: {}", id);
+
+                existentProposal.setStatus(ProposalStatus.ACCEPTED);
+
+                Project project = existentProposal.getProject();
+                FreelancerProfile freelancer = existentProposal.getFreelancer();
+                Contract contract = getContract(existentProposal,
+                        existentProposal.getProject(),
+                        existentProposal.getFreelancer());
+                Contract savedContract = contractRepository.save(contract);
+
+                existentProposal.setContract(savedContract);
+
+                project.setAcceptedProposal(existentProposal);
+                project.setContract(savedContract);
+                project.setFreelancer(freelancer);
+                project.setStatus(ProjectStatus.IN_PROGRESS);
+
+                freelancer.getContracts().add(savedContract);
+
+                proposalRepository.save(existentProposal);
+                projectRepository.save(project);
+                freelancerRepository.save(freelancer);
+
+                log.info("Created contract with ID: {} for proposal ID: {}", contract.getId(), id);
+            }
+            case REJECTED -> {
+                log.info("Rejecting proposal with ID: {}", id);
+                existentProposal.setStatus(ProposalStatus.REJECTED);
+            }
+            case WITHDRAWN -> {
+                log.info("Withdrawing proposal with ID: {}", id);
+                existentProposal.setStatus(ProposalStatus.WITHDRAWN);
+                ProjectStatusUpdateDTO projectStatusUpdateDTO = ProjectStatusUpdateDTO.builder()
+                        .status(ProjectStatus.OPEN)
+                        .build();
+                projectService.updateProjectStatus(
+                        existentProposal.getProject().getId(),
+                        projectStatusUpdateDTO
+                );
+            }
+            default -> {
+                log.info("Pending proposal with ID: {}", id);
+                existentProposal.setStatus(ProposalStatus.PENDING);
+            }
+        };
+
         Proposal updatedProposal = proposalRepository.save(existentProposal);
 
         return proposalMapper.toDetailDto(updatedProposal);
@@ -218,11 +229,11 @@ public class ProposalServiceImpl implements IProposalService {
                 project.getCustomer().getUser().getLastName() + " and " +
                 freelancer.getUser().getFirstName() + " " +
                 freelancer.getUser().getLastName() +
-                " for the project "+ project.getTitle());
+                " for the project " + project.getTitle());
         contract.setAmount(existentProposal.getAmount());
+        contract.setRemainingBalance(existentProposal.getAmount().subtract(contract.getTotalPaid()));
         contract.setStartDate(existentProposal.getPlannedStartDate());
         contract.setEndDate(existentProposal.getPlannedEndDate());
-        contract.setPaymentType(project.getPaymentType());
         return contract;
     }
 
@@ -230,7 +241,7 @@ public class ProposalServiceImpl implements IProposalService {
     public void deleteProposalById(UUID id) {
         Proposal existentProposal = proposalRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Proposal not found"));
-        if(existentProposal.getContract() != null) {
+        if (existentProposal.getContract() != null) {
             throw new IllegalStateException("Cannot delete a proposal that has an associated contract.");
         }
         proposalRepository.delete(existentProposal);

@@ -1,6 +1,5 @@
 package com.jobmatcher.server.model;
 
-import com.jobmatcher.server.domain.InvoiceStatus;
 import com.jobmatcher.server.domain.Payment;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -16,8 +15,6 @@ public class InvoiceRequestDTO {
     private UUID contractId;
 
     private UUID milestoneId;
-
-    private InvoiceStatus status;
 
     private Payment payment;
 

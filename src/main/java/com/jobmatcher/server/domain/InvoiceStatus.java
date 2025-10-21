@@ -1,7 +1,7 @@
 package com.jobmatcher.server.domain;
 
 public enum InvoiceStatus {
-    PENDING,
-    PAID,
-    CANCELLED
+    PENDING,     // Awaiting payment
+    PAID,        // Fully paid
+    CANCELLED;   // Invalidated
 }

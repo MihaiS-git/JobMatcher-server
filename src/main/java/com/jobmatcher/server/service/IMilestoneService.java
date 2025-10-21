@@ -2,6 +2,7 @@ package com.jobmatcher.server.service;
 
 import com.jobmatcher.server.model.MilestoneRequestDTO;
 import com.jobmatcher.server.model.MilestoneResponseDTO;
+import com.jobmatcher.server.model.MilestoneStatusRequestDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,6 +13,9 @@ public interface IMilestoneService {
     MilestoneResponseDTO getMilestoneById(UUID id);
     MilestoneResponseDTO createMilestone(MilestoneRequestDTO requestDTO);
     MilestoneResponseDTO updateMilestone(UUID id, MilestoneRequestDTO requestDTO);
+
+    MilestoneResponseDTO updateMilestoneStatusById(UUID id, MilestoneStatusRequestDTO requestDTO);
+
     void deleteMilestone(UUID id);
 
 }

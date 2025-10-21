@@ -57,10 +57,6 @@ public class Milestone extends Auditable {
     @Enumerated(EnumType.STRING)
     private MilestoneStatus status = MilestoneStatus.PENDING;
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus = PaymentStatus.NOT_STARTED;
-
     @Size(max=2000, message = "Notes cannot exceed 2000 characters.")
     private String notes;
 
@@ -72,7 +68,7 @@ public class Milestone extends Auditable {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private Priority priority = Priority.NONE;
+    private Priority priority = Priority.LOW;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "invoice_id", nullable = true)

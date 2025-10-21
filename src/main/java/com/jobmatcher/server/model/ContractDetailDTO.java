@@ -27,14 +27,14 @@ public class ContractDetailDTO {
     private BigDecimal amount;
     private OffsetDateTime startDate;
     private OffsetDateTime endDate;
-    private PaymentType paymentType;
     private Set<MilestoneResponseDTO> milestones;
     private Set<InvoiceSummaryDTO> invoices;
     private UUID paymentId;
     private BigDecimal totalPaid;
     private BigDecimal remainingBalance;
-    private PaymentStatus paymentStatus;
     private OffsetDateTime signedAt;
     private OffsetDateTime completedAt;
     private OffsetDateTime terminatedAt;
+
+    private PaymentType paymentType;
 }

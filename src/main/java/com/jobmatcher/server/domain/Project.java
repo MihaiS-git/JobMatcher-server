@@ -46,7 +46,7 @@ public class Project extends Auditable{
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private ProjectStatus status = ProjectStatus.OPEN;
+    private ProjectStatus status = ProjectStatus.DRAFT;
 
     @NotNull
     @DecimalMin("0.0")
@@ -86,7 +86,6 @@ public class Project extends Auditable{
     @JoinColumn(name = "accepted_proposal_id", unique = true, nullable = true)
     private Proposal acceptedProposal;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "contract_id", unique = true, nullable = true)
+    @OneToOne(mappedBy = "project", fetch = FetchType.LAZY)
     private Contract contract;
 }

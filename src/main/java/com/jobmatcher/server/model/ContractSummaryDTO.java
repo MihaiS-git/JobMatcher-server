@@ -1,7 +1,6 @@
 package com.jobmatcher.server.model;
 
 import com.jobmatcher.server.domain.ContractStatus;
-import com.jobmatcher.server.domain.PaymentType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -20,5 +19,4 @@ public class ContractSummaryDTO {
     private BigDecimal amount;
     private OffsetDateTime startDate;
     private OffsetDateTime endDate;
-    private PaymentType paymentType;
 }

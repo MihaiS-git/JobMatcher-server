@@ -3,6 +3,7 @@ package com.jobmatcher.server.controller;
 import com.jobmatcher.server.domain.ProposalStatus;
 import com.jobmatcher.server.model.ProposalDetailDTO;
 import com.jobmatcher.server.model.ProposalRequestDTO;
+import com.jobmatcher.server.model.ProposalStatusRequestDTO;
 import com.jobmatcher.server.model.ProposalSummaryDTO;
 import com.jobmatcher.server.service.IProposalService;
 import org.springframework.data.domain.Page;
@@ -71,6 +72,12 @@ public class ProposalController {
     @PatchMapping("/{id}")
     public ResponseEntity<ProposalDetailDTO> updateProposalById(@PathVariable("id") String id, @RequestBody ProposalRequestDTO requestDTO) {
         ProposalDetailDTO updatedProposal = proposalService.updateProposalById(UUID.fromString(id), requestDTO);
+        return ResponseEntity.ok(updatedProposal);
+    }
+
+    @PatchMapping("/status/{id}")
+    public ResponseEntity<ProposalDetailDTO> updateProposalStatusById(@PathVariable("id") String id, @RequestBody ProposalStatusRequestDTO requestDTO) {
+        ProposalDetailDTO updatedProposal = proposalService.updateProposalStatusById(UUID.fromString(id), requestDTO);
         return ResponseEntity.ok(updatedProposal);
     }
 

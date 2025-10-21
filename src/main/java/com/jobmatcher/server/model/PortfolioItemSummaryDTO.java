@@ -14,5 +14,6 @@ public class PortfolioItemSummaryDTO {
     private String description;
     private JobCategoryDTO category;
     private Set<JobSubcategoryDTO> subcategories;
-    private Integer freelancerProfileId;
+    private Set<String> imageUrls;
+    private UUID freelancerProfileId;
 }

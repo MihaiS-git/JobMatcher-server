@@ -40,9 +40,6 @@ public class ContractSpecifications {
             if (filter.getStatus() != null) {
                 predicates.add(cb.equal(root.get("status"), filter.getStatus()));
             }
-            if (filter.getPaymentType() != null) {
-                predicates.add(cb.equal(root.get("paymentType"), filter.getPaymentType()));
-            }
             if (filter.getSearchTerm() != null && !filter.getSearchTerm().isBlank()) {
                 String likePattern = "%" + filter.getSearchTerm().toLowerCase() + "%";
                 predicates.add(cb.or(

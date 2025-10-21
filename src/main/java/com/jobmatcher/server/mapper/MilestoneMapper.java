@@ -25,7 +25,6 @@ public class MilestoneMapper {
                 .bonusAmount(entity.getBonusAmount())
                 .estimatedDuration(entity.getEstimatedDuration())
                 .status(entity.getStatus())
-                .paymentStatus(entity.getPaymentStatus())
                 .notes(entity.getNotes())
                 .plannedStartDate(entity.getPlannedStartDate())
                 .plannedEndDate(entity.getPlannedEndDate())
@@ -52,7 +51,6 @@ public class MilestoneMapper {
         if (dto.getBonusAmount() != null) entity.setBonusAmount(dto.getBonusAmount());
         if (dto.getEstimatedDuration() != null) entity.setEstimatedDuration(dto.getEstimatedDuration());
         if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
-        if (dto.getPaymentStatus() != null) entity.setPaymentStatus(dto.getPaymentStatus());
         if (dto.getNotes() != null) entity.setNotes(dto.getNotes());
         if (dto.getPlannedStartDate() != null) entity.setPlannedStartDate(dto.getPlannedStartDate());
         if (dto.getPlannedEndDate() != null) entity.setPlannedEndDate(dto.getPlannedEndDate());

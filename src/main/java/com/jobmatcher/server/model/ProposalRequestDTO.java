@@ -1,14 +1,11 @@
 package com.jobmatcher.server.model;
 
-import com.jobmatcher.server.domain.PaymentStatus;
 import com.jobmatcher.server.domain.Priority;
-import com.jobmatcher.server.domain.ProposalStatus;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -37,8 +34,6 @@ public class ProposalRequestDTO {
 
     @Min(value = 1, message = "Estimated duration must be at least 1 day.")
     private Integer estimatedDuration; // in days
-
-    private ProposalStatus status;
 
     @Size(max=2000, message = "Notes cannot exceed 2000 characters.")
     private String notes;

@@ -166,11 +166,14 @@ public class PaymentServiceImpl implements IPaymentService {
         log.info("Created payment {} for invoice {}", payment.getId(), invoiceId);
 
         InvoiceRequestDTO invoiceRequestDTO = InvoiceRequestDTO.builder()
-                .status(InvoiceStatus.PAID)
                 .payment(payment)
+                .build();
+        InvoiceStatusRequestDTO invoiceStatusRequestDTO = InvoiceStatusRequestDTO.builder()
+                .status(InvoiceStatus.PAID)
                 .build();
         log.info("Updating invoice {} status to PAID", invoiceId);
         invoiceService.updateInvoice(invoiceId, invoiceRequestDTO);
+        invoiceService.updateInvoiceStatusById(invoiceId, invoiceStatusRequestDTO);
     }
 
     private record PaymentDetail(ContractSummaryDTO contractSummaryDTO, MilestoneResponseDTO milestoneResponseDTO,

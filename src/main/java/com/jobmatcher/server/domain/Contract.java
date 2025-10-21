@@ -29,12 +29,12 @@ public class Contract extends Auditable {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     private UUID id;
 
-    @NotNull
-    @OneToOne(mappedBy = "contract", fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "proposal_id", unique = true, nullable = true)
     private Proposal proposal;
 
-    @NotNull
-    @OneToOne(mappedBy = "contract", fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "project_id", unique = true, nullable = true)
     private Project project;
 
     @NotNull
@@ -71,10 +71,6 @@ public class Contract extends Auditable {
     @NotNull
     private OffsetDateTime endDate;
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private PaymentType paymentType;
-
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Milestone> milestones = new HashSet<>();
 
@@ -92,10 +88,6 @@ public class Contract extends Auditable {
     @NotNull
     @DecimalMin("0.0")
     private BigDecimal remainingBalance = BigDecimal.ZERO;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus = PaymentStatus.NOT_STARTED;
 
     @NotNull
     private OffsetDateTime signedAt = OffsetDateTime.now();

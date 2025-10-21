@@ -6,8 +6,7 @@ public enum PaymentType {
     UPFRONT,
     MILESTONE,
     UPON_COMPLETION,
-    COMMISSION,
-    NONE;
+    COMMISSION;
 
     @JsonCreator
     public static PaymentType fromString(String value) {

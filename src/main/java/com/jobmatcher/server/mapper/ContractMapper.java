@@ -1,12 +1,11 @@
 package com.jobmatcher.server.mapper;
 
 import com.jobmatcher.server.domain.Contract;
-import com.jobmatcher.server.domain.Invoice;
+import com.jobmatcher.server.domain.PaymentType;
 import com.jobmatcher.server.model.*;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 public class ContractMapper {
@@ -24,11 +23,17 @@ public class ContractMapper {
                 .amount(entity.getAmount())
                 .startDate(entity.getStartDate())
                 .endDate(entity.getEndDate())
-                .paymentType(entity.getPaymentType())
                 .build();
     }
 
-    public ContractDetailDTO toDetailDto(Contract entity, ContactDTO customerContact, ContactDTO freelancerContact, Set<InvoiceSummaryDTO> invoices, Set<MilestoneResponseDTO> milestones) {
+    public ContractDetailDTO toDetailDto(
+            Contract entity,
+            ContactDTO customerContact,
+            ContactDTO freelancerContact,
+            Set<InvoiceSummaryDTO> invoices,
+            Set<MilestoneResponseDTO> milestones,
+            PaymentType paymentType
+    ) {
         if(entity == null) {
             return null;
         }
@@ -48,16 +53,15 @@ public class ContractMapper {
                 .amount(entity.getAmount())
                 .startDate(entity.getStartDate())
                 .endDate(entity.getEndDate())
-                .paymentType(entity.getPaymentType())
                 .milestones(milestones)
                 .invoices(invoices)
                 .paymentId(entity.getPayment() != null ? entity.getPayment().getId() : null)
                 .totalPaid(entity.getTotalPaid())
                 .remainingBalance(entity.getRemainingBalance())
-                .paymentStatus(entity.getPaymentStatus())
                 .signedAt(entity.getSignedAt())
                 .completedAt(entity.getCompletedAt())
                 .terminatedAt(entity.getTerminatedAt())
+                .paymentType(paymentType)
                 .build();
     }
 }

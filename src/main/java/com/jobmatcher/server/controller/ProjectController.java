@@ -1,10 +1,7 @@
 package com.jobmatcher.server.controller;
 
 import com.jobmatcher.server.domain.ProjectStatus;
-import com.jobmatcher.server.model.PagedResponseDTO;
-import com.jobmatcher.server.model.ProjectRequestDTO;
-import com.jobmatcher.server.model.ProjectDetailDTO;
-import com.jobmatcher.server.model.ProjectSummaryDTO;
+import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.service.IProjectService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
@@ -68,10 +65,7 @@ public class ProjectController {
             @RequestParam(required = false) String searchTerm
     ) {
         List<ProjectStatus> allowedStatuses = List.of(
-                ProjectStatus.OPEN,
-                ProjectStatus.PROPOSALS_RECEIVED,
-                ProjectStatus.NONE,
-                ProjectStatus.CANCELLED
+                ProjectStatus.OPEN
         );
 
         List<ProjectStatus> statusesToFetch;
@@ -124,6 +118,15 @@ public class ProjectController {
             @RequestBody @Valid ProjectRequestDTO requestDto
     ) {
         ProjectDetailDTO updated = projectService.updateProject(UUID.fromString(id), requestDto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PatchMapping("/status/{id}")
+    public ResponseEntity<ProjectDetailDTO> updateProjectStatus(
+            @PathVariable String id,
+            @RequestBody @Valid ProjectStatusUpdateDTO requestDto
+    ) {
+        ProjectDetailDTO updated = projectService.updateProjectStatus(UUID.fromString(id), requestDto);
         return ResponseEntity.ok(updated);
     }
 

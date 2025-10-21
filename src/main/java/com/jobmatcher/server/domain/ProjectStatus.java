@@ -3,14 +3,11 @@ package com.jobmatcher.server.domain;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 public enum ProjectStatus {
-    OPEN,
-    PROPOSALS_RECEIVED,
-    IN_PROGRESS,
-    CANCELLED,
-    COMPLETED,
-    TERMINATED,
-    ON_HOLD,
-    NONE;
+    DRAFT,        // Created but not published
+    OPEN,         // Accepting proposals
+    IN_PROGRESS,  // A contract started
+    COMPLETED,    // Work done and accepted
+    STOPPED;     // No longer active
 
     @JsonCreator
     public static ProjectStatus fromString(String value) {

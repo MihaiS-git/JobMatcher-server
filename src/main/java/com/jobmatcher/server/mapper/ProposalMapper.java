@@ -1,16 +1,12 @@
 package com.jobmatcher.server.mapper;
 
 import com.jobmatcher.server.domain.FreelancerProfile;
-import com.jobmatcher.server.domain.Milestone;
 import com.jobmatcher.server.domain.Project;
 import com.jobmatcher.server.domain.Proposal;
 import com.jobmatcher.server.model.ProposalDetailDTO;
 import com.jobmatcher.server.model.ProposalRequestDTO;
 import com.jobmatcher.server.model.ProposalSummaryDTO;
 import org.springframework.stereotype.Component;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 
 @Component
@@ -44,7 +40,6 @@ public class ProposalMapper {
                 .plannedEndDate(entity.getPlannedEndDate() != null ? entity.getPlannedEndDate().toString() : null)
                 .actualStartDate(entity.getActualStartDate() != null ? entity.getActualStartDate().toString() : null)
                 .actualEndDate(entity.getActualEndDate() != null ? entity.getActualEndDate().toString() : null)
-                .priority(entity.getPriority())
                 .contractId(entity.getProject().getContract() != null ? entity.getProject().getContract().getId() : null)
                 .createdAt(entity.getCreatedAt())
                 .lastUpdate(entity.getLastUpdate())
@@ -71,7 +66,6 @@ public class ProposalMapper {
                 .plannedEndDate(entity.getPlannedEndDate() != null ? entity.getPlannedEndDate().toString() : null)
                 .actualStartDate(entity.getActualStartDate() != null ? entity.getActualStartDate().toString() : null)
                 .actualEndDate(entity.getActualEndDate() != null ? entity.getActualEndDate().toString() : null)
-                .priority(entity.getPriority())
                 .createdAt(entity.getCreatedAt())
                 .lastUpdate(entity.getLastUpdate())
                 .build();
@@ -91,13 +85,11 @@ public class ProposalMapper {
         if (dto.getPenaltyAmount() != null) entity.setPenaltyAmount(dto.getPenaltyAmount());
         if (dto.getBonusAmount() != null) entity.setBonusAmount(dto.getBonusAmount());
         if (dto.getEstimatedDuration() != null) entity.setEstimatedDuration(dto.getEstimatedDuration());
-        if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
         if (dto.getNotes() != null) entity.setNotes(dto.getNotes());
         if (dto.getPlannedStartDate() != null) entity.setPlannedStartDate(dto.getPlannedStartDate());
         if (dto.getPlannedEndDate() != null) entity.setPlannedEndDate(dto.getPlannedEndDate());
         if (dto.getActualStartDate() != null) entity.setActualStartDate(dto.getActualStartDate());
         if (dto.getActualEndDate() != null) entity.setActualEndDate(dto.getActualEndDate());
-        if (dto.getPriority() != null) entity.setPriority(dto.getPriority());
 
         return entity;
     }

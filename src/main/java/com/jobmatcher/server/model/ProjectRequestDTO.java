@@ -35,9 +35,6 @@ public class ProjectRequestDTO {
     @NotBlank(groups = CreateUpdateValidation.OnCreate.class, message = "Description cannot be blank")
     private String description;
 
-    @NotNull(groups = CreateUpdateValidation.OnCreate.class, message = "Status must be provided")
-    private ProjectStatus status;
-
     @DecimalMin("0.0")
     @NotNull(groups = CreateUpdateValidation.OnCreate.class, message = "Budget must be a positive number")
     private BigDecimal budget;

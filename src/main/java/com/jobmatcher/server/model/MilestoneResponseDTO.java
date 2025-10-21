@@ -1,7 +1,6 @@
 package com.jobmatcher.server.model;
 
 import com.jobmatcher.server.domain.MilestoneStatus;
-import com.jobmatcher.server.domain.PaymentStatus;
 import com.jobmatcher.server.domain.Priority;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,7 +21,6 @@ public class MilestoneResponseDTO {
     private BigDecimal bonusAmount;
     private Integer estimatedDuration; // in days
     private MilestoneStatus status;
-    private PaymentStatus paymentStatus;
     private String notes;
     private LocalDate plannedStartDate;
     private LocalDate plannedEndDate;

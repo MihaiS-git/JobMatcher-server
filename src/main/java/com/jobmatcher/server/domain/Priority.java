@@ -5,5 +5,4 @@ public enum Priority {
     MEDIUM,
     HIGH,
     URGENT,
-    NONE;
 }

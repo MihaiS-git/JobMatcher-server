@@ -45,7 +45,15 @@ public class InvoiceServiceImpl implements IInvoiceService {
             InvoiceMapper invoiceMapper,
             ContractMapper contractMapper,
             MilestoneMapper milestoneMapper,
-            JwtService jwtService, ContractRepository contractRepository, MilestoneRepository milestoneRepository, IContractService contractService, IMilestoneService milestoneService, AddressMapper addressMapper, IUserService userService, FreelancerProfileRepository freelancerProfileRepository, CustomerProfileRepository customerProfileRepository
+            JwtService jwtService,
+            ContractRepository contractRepository,
+            MilestoneRepository milestoneRepository,
+            IContractService contractService,
+            IMilestoneService milestoneService,
+            AddressMapper addressMapper,
+            IUserService userService,
+            FreelancerProfileRepository freelancerProfileRepository,
+            CustomerProfileRepository customerProfileRepository
     ) {
         this.invoiceRepository = invoiceRepository;
         this.invoiceMapper = invoiceMapper;
@@ -87,7 +95,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
                 });
     }
 
-    private User getUser(String token){
+    private User getUser(String token) {
         String email = jwtService.extractUsername(token);
         return userService.getUserByEmail(email);
     }
@@ -132,7 +140,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
         Milestone milestone = null;
         MilestoneResponseDTO milestoneDto = null;
 
-        if(request.getMilestoneId() != null){
+        if (request.getMilestoneId() != null) {
             milestone = milestoneRepository.findById(request.getMilestoneId()).orElseThrow(() ->
                     new ResourceNotFoundException("Milestone not found."));
             if (!contract.getMilestones().contains(milestone)) {
@@ -146,7 +154,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
         }
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
-        if(milestone != null){
+        if (milestone != null) {
             milestone.setInvoice(savedInvoice);
             milestoneRepository.save(milestone);
         }
@@ -160,87 +168,85 @@ public class InvoiceServiceImpl implements IInvoiceService {
     public InvoiceDetailDTO updateInvoice(UUID invoiceId, InvoiceRequestDTO request) {
         Invoice existentInvoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found."));
-        UUID contractId = existentInvoice.getContract().getId();
-
-        // Update status if provided
-        if (request.getStatus() != null) {
-            ContractRequestDTO contractRequestDTO;
-            existentInvoice.setStatus(request.getStatus());
-            if (request.getStatus() == InvoiceStatus.PAID) {
-                if (existentInvoice.getMilestone() == null) {
-                    contractRequestDTO = ContractRequestDTO.builder()
-                            .status(ContractStatus.COMPLETED)
-                            .paymentStatus(PaymentStatus.PAID)
-                            .build();
-                } else {
-                    contractRequestDTO = ContractRequestDTO.builder()
-                            .status(ContractStatus.ACTIVE)
-                            .paymentStatus(PaymentStatus.PARTIALLY_PAID)
-                            .build();
-                    MilestoneRequestDTO milestoneRequestDTO = MilestoneRequestDTO.builder()
-                            .status(MilestoneStatus.COMPLETED)
-                            .paymentStatus(PaymentStatus.PAID)
-                            .build();
-                    milestoneService.updateMilestone(existentInvoice.getMilestone().getId(), milestoneRequestDTO);
-                }
-                contractService.updateContractById(contractId, contractRequestDTO);
-            } else if (request.getStatus() == InvoiceStatus.PENDING) {
-                if (existentInvoice.getMilestone() == null) {
-                    contractRequestDTO = ContractRequestDTO.builder()
-                            .status(ContractStatus.ACTIVE)
-                            .paymentStatus(PaymentStatus.PENDING)
-                            .build();
-                    contractService.updateContractById(contractId, contractRequestDTO);
-                } else {
-                    MilestoneRequestDTO milestoneRequestDTO = MilestoneRequestDTO.builder()
-                            .status(MilestoneStatus.PENDING)
-                            .paymentStatus(PaymentStatus.PENDING)
-                            .build();
-                    milestoneService.updateMilestone(existentInvoice.getMilestone().getId(), milestoneRequestDTO);
-                    boolean anyMilestonePaid = isAnyMilestonePaid(existentInvoice);
-                    contractRequestDTO = ContractRequestDTO.builder()
-                            .status(ContractStatus.ACTIVE)
-                            .paymentStatus(anyMilestonePaid ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.PENDING)
-                            .build();
-                }
-
-                contractService.updateContractById(contractId, contractRequestDTO);
-            } else if (request.getStatus() == InvoiceStatus.CANCELLED) {
-                if (existentInvoice.getMilestone() == null) {
-                    contractRequestDTO = ContractRequestDTO.builder()
-                            .status(ContractStatus.ACTIVE)
-                            .paymentStatus(PaymentStatus.PENDING)
-                            .build();
-                    contractService.updateContractById(contractId, contractRequestDTO);
-                } else {
-                    MilestoneRequestDTO milestoneRequestDTO = MilestoneRequestDTO.builder()
-                            .status(MilestoneStatus.PENDING)
-                            .paymentStatus(PaymentStatus.PENDING)
-                            .build();
-                    milestoneService.updateMilestone(existentInvoice.getMilestone().getId(), milestoneRequestDTO);
-                    boolean anyMilestonePaid = isAnyMilestonePaid(existentInvoice);
-                    contractRequestDTO = ContractRequestDTO.builder()
-                            .status(ContractStatus.ACTIVE)
-                            .paymentStatus(anyMilestonePaid ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.PENDING)
-                            .build();
-                }
-                contractService.updateContractById(contractId, contractRequestDTO);
-            }
-        }
-        // Update payment if provided
         if (request.getPayment() != null && existentInvoice.getPayment() != null) {
             throw new IllegalStateException("Cannot replace an existing payment.");
         }
         if (request.getPayment() == null && existentInvoice.getPayment() != null) {
-            // clearing the payment from deletePayment
             existentInvoice.setPayment(null);
         } else if (request.getPayment() != null) {
-            // setting payment from createPayment
             existentInvoice.setPayment(request.getPayment());
         }
         Invoice updatedInvoice = invoiceRepository.save(existentInvoice);
         ContractDetailDTO contractDto = getContractDetailDTO(updatedInvoice.getContract());
         MilestoneResponseDTO milestoneDto = updatedInvoice.getMilestone() != null ? milestoneMapper.toDto(updatedInvoice.getMilestone()) : null;
+        return invoiceMapper.toDetailDto(updatedInvoice, contractDto, milestoneDto);
+    }
+
+    @Override
+    public InvoiceDetailDTO updateInvoiceStatusById(UUID invoiceId, InvoiceStatusRequestDTO request) {
+        log.info("Updating status of invoice {} to {}", invoiceId, request.getStatus());
+        Invoice existentInvoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found."));
+        Contract contract = contractRepository.findById(existentInvoice.getContract().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Contract not found."));
+
+        switch (request.getStatus()) {
+            case PAID: {
+                existentInvoice.setStatus(InvoiceStatus.PAID);
+                if (existentInvoice.getMilestone() != null) {
+                    MilestoneStatusRequestDTO milestoneStatusRequestDTO = MilestoneStatusRequestDTO.builder()
+                            .status(MilestoneStatus.PAID)
+                            .build();
+                    milestoneService.updateMilestoneStatusById(existentInvoice.getMilestone().getId(), milestoneStatusRequestDTO);
+                } else {
+                    ContractStatusRequestDTO contractStatusRequestDTO = ContractStatusRequestDTO.builder()
+                            .status(ContractStatus.COMPLETED)
+                            .build();
+                    contractService.updateContractStatusById(contract.getId(), contractStatusRequestDTO);
+                }
+                break;
+            }
+            case CANCELLED: {
+                existentInvoice.setStatus(InvoiceStatus.CANCELLED);
+                if (existentInvoice.getMilestone() != null) {
+                    MilestoneStatusRequestDTO milestoneStatusRequestDTO = MilestoneStatusRequestDTO.builder()
+                            .status(MilestoneStatus.PENDING)
+                            .build();
+                    milestoneService.updateMilestoneStatusById(existentInvoice.getMilestone().getId(), milestoneStatusRequestDTO);
+                } else {
+                    ContractStatusRequestDTO contractStatusRequestDTO = ContractStatusRequestDTO.builder()
+                            .status(ContractStatus.ACTIVE)
+                            .build();
+                    contractService.updateContractStatusById(contract.getId(), contractStatusRequestDTO);
+                }
+                break;
+            }
+            case PENDING: {
+                existentInvoice.setStatus(InvoiceStatus.PENDING);
+                if (existentInvoice.getMilestone() != null) {
+                    MilestoneStatusRequestDTO milestoneStatusRequestDTO = MilestoneStatusRequestDTO.builder()
+                            .status(MilestoneStatus.PENDING)
+                            .build();
+                    milestoneService.updateMilestoneStatusById(existentInvoice.getMilestone().getId(), milestoneStatusRequestDTO);
+                } else {
+                    ContractStatusRequestDTO contractStatusRequestDTO = ContractStatusRequestDTO.builder()
+                            .status(ContractStatus.ACTIVE)
+                            .build();
+                    contractService.updateContractStatusById(contract.getId(), contractStatusRequestDTO);
+                }
+                break;
+            }
+            default:
+                log.info("No status change for invoice {}", invoiceId);
+                break;
+        }
+        log.info("Invoice {} status updated to {}", invoiceId, request.getStatus());
+        Invoice updatedInvoice = invoiceRepository.save(existentInvoice);
+        log.info("Invoice {} saved with status {}", invoiceId, updatedInvoice.getStatus());
+        ContractDetailDTO contractDto = getContractDetailDTO(updatedInvoice.getContract());
+        log.info("Fetched contract details for invoice {}", invoiceId);
+        MilestoneResponseDTO milestoneDto = updatedInvoice.getMilestone() != null ? milestoneMapper.toDto(updatedInvoice.getMilestone()) : null;
+        log.info("Fetched milestone details for invoice {}", invoiceId);
         return invoiceMapper.toDetailDto(updatedInvoice, contractDto, milestoneDto);
     }
 
@@ -253,26 +259,17 @@ public class InvoiceServiceImpl implements IInvoiceService {
         }
         invoiceRepository.delete(invoice);
 
-        // Update related milestone and contract statuses
-        ContractRequestDTO contractRequestDTO;
         if (invoice.getMilestone() != null) {
-            MilestoneRequestDTO milestoneRequestDTO = MilestoneRequestDTO.builder()
+            MilestoneStatusRequestDTO milestoneStatusRequestDTO = MilestoneStatusRequestDTO.builder()
                     .status(MilestoneStatus.PENDING)
-                    .paymentStatus(PaymentStatus.PENDING)
                     .build();
-            milestoneService.updateMilestone(invoice.getMilestone().getId(), milestoneRequestDTO);
-            boolean anyMilestonePaid = isAnyMilestonePaid(invoice);
-            contractRequestDTO = ContractRequestDTO.builder()
-                    .status(ContractStatus.ACTIVE)
-                    .paymentStatus(anyMilestonePaid ? PaymentStatus.PARTIALLY_PAID : PaymentStatus.PENDING)
-                    .build();
+            milestoneService.updateMilestoneStatusById(invoice.getMilestone().getId(), milestoneStatusRequestDTO);
         } else {
-            contractRequestDTO = ContractRequestDTO.builder()
+            ContractStatusRequestDTO contractStatusRequest = ContractStatusRequestDTO.builder()
                     .status(ContractStatus.ACTIVE)
-                    .paymentStatus(PaymentStatus.PENDING)
                     .build();
+            contractService.updateContractStatusById(invoice.getContract().getId(), contractStatusRequest);
         }
-        contractService.updateContractById(invoice.getContract().getId(), contractRequestDTO);
     }
 
     private ContractDetailDTO getContractDetailDTO(Contract contract) {
@@ -302,19 +299,8 @@ public class InvoiceServiceImpl implements IInvoiceService {
                         .collect(Collectors.toSet())
                 : Set.of();
 
-        return contractMapper.toDetailDto(contract, customerContact, freelancerContact, invoiceDtos, milestoneDtos);
-    }
+        PaymentType paymentType = contract.getProject().getPaymentType();
 
-    private static boolean isAnyMilestonePaid(Invoice existentInvoice) {
-        boolean anyMilestonePaid = false;
-        Set<Milestone> milestones = existentInvoice.getContract().getMilestones();
-        for (Milestone milestone : milestones) {
-            if (milestone.getPaymentStatus() == PaymentStatus.PAID) {
-                anyMilestonePaid = true;
-                break;
-            }
-        }
-        return anyMilestonePaid;
+        return contractMapper.toDetailDto(contract, customerContact, freelancerContact, invoiceDtos, milestoneDtos, paymentType);
     }
-
 }
