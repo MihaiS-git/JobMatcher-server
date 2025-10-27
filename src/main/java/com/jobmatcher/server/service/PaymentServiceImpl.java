@@ -7,10 +7,7 @@ import com.jobmatcher.server.mapper.InvoiceMapper;
 import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.mapper.PaymentMapper;
 import com.jobmatcher.server.model.*;
-import com.jobmatcher.server.repository.CustomerProfileRepository;
-import com.jobmatcher.server.repository.FreelancerProfileRepository;
-import com.jobmatcher.server.repository.InvoiceRepository;
-import com.jobmatcher.server.repository.PaymentRepository;
+import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.specification.PaymentSpecification;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,6 +15,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -38,6 +39,8 @@ public class PaymentServiceImpl implements IPaymentService {
     private final IUserService userService;
     private final FreelancerProfileRepository freelancerProfileRepository;
     private final CustomerProfileRepository customerProfileRepository;
+    private final ContractRepository contractRepository;
+    private final MilestoneRepository milestoneRepository;
 
     public PaymentServiceImpl(
             PaymentRepository paymentRepository,
@@ -50,7 +53,8 @@ public class PaymentServiceImpl implements IPaymentService {
             JwtService jwtService,
             IUserService userService,
             FreelancerProfileRepository freelancerProfileRepository,
-            CustomerProfileRepository customerProfileRepository
+            CustomerProfileRepository customerProfileRepository,
+            ContractRepository contractRepository, MilestoneRepository milestoneRepository
     ) {
         this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
@@ -63,6 +67,8 @@ public class PaymentServiceImpl implements IPaymentService {
         this.userService = userService;
         this.freelancerProfileRepository = freelancerProfileRepository;
         this.customerProfileRepository = customerProfileRepository;
+        this.contractRepository = contractRepository;
+        this.milestoneRepository = milestoneRepository;
     }
 
     @Transactional(readOnly = true)
@@ -159,6 +165,9 @@ public class PaymentServiceImpl implements IPaymentService {
     @Override
     public void markInvoicePaid(UUID invoiceId) {
         log.info("Marking invoice {} as PAID", invoiceId);
+        Invoice invoice = invoiceRepository.findById(invoiceId).orElseThrow(() ->
+                new ResourceNotFoundException("Invoice not found"));
+
         PaymentRequestDTO paymentRequestDto = PaymentRequestDTO.builder()
                 .invoiceId(invoiceId.toString())
                 .build();
@@ -174,6 +183,46 @@ public class PaymentServiceImpl implements IPaymentService {
         log.info("Updating invoice {} status to PAID", invoiceId);
         invoiceService.updateInvoice(invoiceId, invoiceRequestDTO);
         invoiceService.updateInvoiceStatusById(invoiceId, invoiceStatusRequestDTO);
+        log.info("Invoice {} marked as PAID", invoiceId);
+
+        Contract contract = invoice.getContract();
+        if(contract == null) {
+            log.warn("Invoice {} has no associated contract, skipping contract update", invoiceId);
+            throw new ResourceNotFoundException("Contract not found for invoice: " + invoiceId);
+        }
+        if(contract.getMilestones().isEmpty()) {
+            updateContract(contract, payment, invoice);
+        } else {
+            updateMilestone(invoiceId, invoice, payment);
+            updateContract(contract, payment, invoice);
+        }
+    }
+
+    private void updateMilestone(UUID invoiceId, Invoice invoice, Payment payment) {
+        Milestone milestone = invoice.getMilestone();
+        if (milestone == null) {
+            log.warn("Invoice {} has no associated milestone, skipping contract payment update", invoiceId);
+            throw new ResourceNotFoundException("Milestone not found for invoice: " + invoiceId);
+        }
+        milestone.setPayment(payment);
+        milestone.setActualEndDate(LocalDate.now(ZoneOffset.UTC));
+
+        milestoneRepository.save(milestone);
+        log.info("Milestone {} marked as paid", milestone.getId());
+    }
+
+    private void updateContract(Contract contract, Payment payment, Invoice invoice) {
+        if(contract.getMilestones().isEmpty()) {
+            contract.setPayment(payment);
+        }
+        contract.setCompletedAt(OffsetDateTime.now(ZoneOffset.UTC));
+
+        BigDecimal newTotalPaid = contract.getTotalPaid().add(invoice.getAmount());
+        contract.setTotalPaid(newTotalPaid);
+        contract.setRemainingBalance(contract.getAmount().subtract(newTotalPaid));
+
+        contractRepository.save(contract);
+        log.info("Contract {} marked as completed", contract.getId());
     }
 
     private record PaymentDetail(ContractSummaryDTO contractSummaryDTO, MilestoneResponseDTO milestoneResponseDTO,

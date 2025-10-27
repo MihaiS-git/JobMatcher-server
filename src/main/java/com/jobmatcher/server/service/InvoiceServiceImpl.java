@@ -168,6 +168,7 @@ public class InvoiceServiceImpl implements IInvoiceService {
     public InvoiceDetailDTO updateInvoice(UUID invoiceId, InvoiceRequestDTO request) {
         Invoice existentInvoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found."));
+
         if (request.getPayment() != null && existentInvoice.getPayment() != null) {
             throw new IllegalStateException("Cannot replace an existing payment.");
         }

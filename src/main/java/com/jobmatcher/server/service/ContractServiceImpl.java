@@ -14,6 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -167,6 +170,8 @@ public class ContractServiceImpl implements IContractService {
 
     @Override
     public ContractDetailDTO updateContractStatusById(UUID contractId, ContractStatusRequestDTO request) {
+        log.info("Updating contract ID {} status", contractId);
+
         Contract existentContract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract with ID " + contractId + " not found."));
         Contract updatedContract = updateExistentContractStatus(request, existentContract);
@@ -303,10 +308,13 @@ public class ContractServiceImpl implements IContractService {
                 case ContractStatus.COMPLETED -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
                         .status(ProjectStatus.COMPLETED)
                         .build();
-                case ContractStatus.TERMINATED, ContractStatus.CANCELLED ->
+                case ContractStatus.TERMINATED, ContractStatus.CANCELLED -> {
                         projectRequestDTO = ProjectStatusUpdateDTO.builder()
                                 .status(ProjectStatus.STOPPED)
                                 .build();
+                        existentContract.setTerminatedAt(OffsetDateTime.now(ZoneOffset.UTC));
+                        contractRepository.save(existentContract);
+                }
                 default -> projectRequestDTO = ProjectStatusUpdateDTO.builder()
                         .status(ProjectStatus.IN_PROGRESS)
                         .build();

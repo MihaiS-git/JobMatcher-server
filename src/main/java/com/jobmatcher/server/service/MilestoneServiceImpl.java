@@ -6,6 +6,7 @@ import com.jobmatcher.server.mapper.MilestoneMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.ContractRepository;
 import com.jobmatcher.server.repository.MilestoneRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Transactional(rollbackFor = Exception.class)
 @Service
 public class MilestoneServiceImpl implements IMilestoneService {
@@ -97,8 +99,11 @@ public class MilestoneServiceImpl implements IMilestoneService {
                 .orElseThrow(() -> new ResourceNotFoundException("Milestone not found"));
         Contract contract = contractRepository.findById(existentMilestone.getContract().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Contract not found"));
+
         ContractStatusRequestDTO contractStatusRequestDTO;
+
         Set<Milestone> milestones = contract.getMilestones();
+
         boolean isContractCompleted = true;
         Set<MilestoneStatus> completedStatuses = Set.of(
                 MilestoneStatus.COMPLETED,
@@ -124,6 +129,7 @@ public class MilestoneServiceImpl implements IMilestoneService {
                 break;
             }
             case COMPLETED: {
+                log.info("Updating milestone {} status to COMPLETED", id);
                 existentMilestone.setStatus(MilestoneStatus.COMPLETED);
                 for (Milestone milestone : milestones) {
                     if (!completedStatuses.contains(milestone.getStatus())) {
@@ -131,7 +137,11 @@ public class MilestoneServiceImpl implements IMilestoneService {
                         break;
                     }
                 }
+
+                log.info("is contract completed? {}", isContractCompleted);
+
                 if (isContractCompleted) {
+                    log.info("All milestones completed, updating contract {} status to COMPLETED", contract.getId());
                     contractStatusRequestDTO = ContractStatusRequestDTO.builder()
                             .status(ContractStatus.COMPLETED)
                             .build();
