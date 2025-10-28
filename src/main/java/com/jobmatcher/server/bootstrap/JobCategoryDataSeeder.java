@@ -6,11 +6,13 @@ import com.jobmatcher.server.repository.JobCategoryRepository;
 import com.jobmatcher.server.repository.JobSubcategoryRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@Order(1)
 public class JobCategoryDataSeeder implements ApplicationRunner {
 
     private final JobSubcategoryRepository subcategoryRepository;
@@ -66,5 +68,6 @@ public class JobCategoryDataSeeder implements ApplicationRunner {
                 new JobSubcategory("AR/VR Development", "Augmented & virtual reality", tech)
         ));
         System.out.println("Job subcategories seeded.");
+        System.out.println("-------------------------------------");
     }
 }

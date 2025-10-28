@@ -29,6 +29,7 @@ public class PublicProfile extends Auditable {
     private String username;
 
     @Lob
+//    @Column(columnDefinition = "TEXT")
     private String about;
 
     @ManyToMany(fetch = FetchType.LAZY)

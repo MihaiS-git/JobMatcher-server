@@ -51,5 +51,4 @@ public class Payment extends Auditable {
     @Size(max = 4000, message = "Notes cannot exceed 4000 characters.")
     private String notes;
 
-    private String stripePaymentIntentId;
 }

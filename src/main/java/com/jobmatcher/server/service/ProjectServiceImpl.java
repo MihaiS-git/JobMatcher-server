@@ -93,23 +93,23 @@ public class ProjectServiceImpl implements IProjectService {
 
     @Override
     public ProjectDetailDTO createProject(ProjectRequestDTO requestDto) {
-        if(requestDto.getCustomerId() == null) {
+        if (requestDto.getCustomerId() == null) {
             throw new InvalidProjectOperationException("Please create a profile before creating a project.");
         }
         CustomerProfile customer = customerProfileRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + requestDto.getCustomerId()));
-        if(customer.getUser().getRole() != Role.CUSTOMER) {
+        if (customer.getUser().getRole() != Role.CUSTOMER) {
             throw new InvalidProjectOperationException("Only users with CUSTOMER role can create projects.");
         }
 
 
-        if(requestDto.getCategoryId() == null) {
+        if (requestDto.getCategoryId() == null) {
             throw new IllegalArgumentException("Category must be provided.");
         }
         JobCategory category = jobCategoryRepository.findById(requestDto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found."));
 
-        if(requestDto.getSubcategoryIds() == null || requestDto.getSubcategoryIds().isEmpty()) {
+        if (requestDto.getSubcategoryIds() == null || requestDto.getSubcategoryIds().isEmpty()) {
             throw new IllegalArgumentException("At least one subcategory must be selected");
         }
         Set<JobSubcategory> subcategories = new HashSet<>(jobSubcategoryRepository.findAllById(requestDto.getSubcategoryIds()));
@@ -141,7 +141,7 @@ public class ProjectServiceImpl implements IProjectService {
 
         ProjectRequestDTO sanitizedRequest = sanitizeProjectRequest(requestDto);
 
-        if(requestDto.getFreelancerId() != null) {
+        if (requestDto.getFreelancerId() != null) {
             FreelancerProfile freelancer = freelancerProfileRepository.findById(requestDto.getFreelancerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Freelancer not found with id: " + requestDto.getFreelancerId()));
             existingProject.setFreelancer(freelancer);
@@ -259,7 +259,7 @@ public class ProjectServiceImpl implements IProjectService {
         return customer.getId();
     }
 
-    private User getUser(String token){
+    private User getUser(String token) {
         String email = jwtService.extractUsername(token);
         return userService.getUserByEmail(email);
     }
@@ -274,15 +274,20 @@ public class ProjectServiceImpl implements IProjectService {
         List<Project> projects = projectRepository.findByIdIn(filteredIds);
 
         // Step 3: apply sorting from Pageable
-        Comparator<Project> comparator = pageable.getSort().stream()
+        Comparator<Project> comparator = pageable.getSort().isSorted()
+                ? pageable.getSort().stream()
                 .map(order -> {
                     Comparator<Project> c = switch (order.getProperty()) {
                         case "title" -> Comparator.comparing(Project::getTitle, String.CASE_INSENSITIVE_ORDER);
                         case "status" -> Comparator.comparing(Project::getStatus);
-                        case "category" -> Comparator.comparing(p -> p.getCategory().getName(), String.CASE_INSENSITIVE_ORDER);
-                        case "deadline" -> Comparator.comparing(Project::getDeadline, Comparator.nullsLast(Comparator.naturalOrder()));
-                        case "paymentType" -> Comparator.comparing(Project::getPaymentType, Comparator.nullsLast(Comparator.naturalOrder()));
-                        case "budget" -> Comparator.comparing(Project::getBudget, Comparator.nullsLast(Comparator.naturalOrder()));
+                        case "category" ->
+                                Comparator.comparing(p -> p.getCategory().getName(), String.CASE_INSENSITIVE_ORDER);
+                        case "deadline" ->
+                                Comparator.comparing(Project::getDeadline, Comparator.nullsLast(Comparator.naturalOrder()));
+                        case "paymentType" ->
+                                Comparator.comparing(Project::getPaymentType, Comparator.nullsLast(Comparator.naturalOrder()));
+                        case "budget" ->
+                                Comparator.comparing(Project::getBudget, Comparator.nullsLast(Comparator.naturalOrder()));
                         default -> null;
                     };
                     if (c != null && order.isDescending()) c = c.reversed();
@@ -290,7 +295,8 @@ public class ProjectServiceImpl implements IProjectService {
                 })
                 .filter(Objects::nonNull)
                 .reduce(Comparator::thenComparing)
-                .orElse(Comparator.comparing(Project::getId));
+                .orElse(Comparator.comparing(Project::getId))
+                : Comparator.comparing(Project::getLastUpdate, Comparator.nullsLast(Comparator.naturalOrder())).reversed();
 
         projects.sort(comparator);
 

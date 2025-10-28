@@ -4,11 +4,13 @@ import com.jobmatcher.server.domain.Language;
 import com.jobmatcher.server.repository.LanguageRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@Order(2)
 public class LanguagesDataSeeder implements ApplicationRunner {
 
     private final LanguageRepository languageRepository;
@@ -79,5 +81,7 @@ public class LanguagesDataSeeder implements ApplicationRunner {
                 new Language("Gujarati")
         ));
         System.out.println("Languages seeded.");
+        System.out.println("-------------------------------------");
+
     }
 }
