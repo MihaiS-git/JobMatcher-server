@@ -10,6 +10,7 @@ import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.CustomerProfileRepository;
 import com.jobmatcher.server.repository.LanguageRepository;
 import com.jobmatcher.server.repository.UserRepository;
+import com.jobmatcher.server.util.SanitizationUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -198,4 +199,225 @@ class CustomerProfileServiceImplTest {
         verify(profileRepository).save(profileCaptor.capture());
         assertEquals("bad", profileCaptor.getValue().getUsername());
     }
+
+    @Test
+    void saveCustomerProfile_nullUsername_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(user.getId())
+                .username(null)
+                .build();
+
+        assertThrows(InvalidProfileDataException.class, () -> service.saveCustomerProfile(dto));
+    }
+
+    @Test
+    void saveCustomerProfile_userNotFound_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(UUID.randomUUID())
+                .username("valid")
+                .build();
+
+        when(userRepository.findById(dto.getUserId())).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.saveCustomerProfile(dto));
+    }
+
+    @Test
+    void saveCustomerProfile_invalidWebsiteUrl_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(user.getId())
+                .username("valid")
+                .websiteUrl("badurl")
+                .build();
+
+        when(userRepository.findById(dto.getUserId())).thenReturn(Optional.of(user));
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("badurl")).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.saveCustomerProfile(dto));
+        }
+    }
+
+    @Test
+    void updateCustomerProfile_invalidUsername_shouldThrow() {
+        when(profileRepository.findById(profileId)).thenReturn(Optional.of(profile));
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .username("bad<name>")
+                .build();
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("bad<name>")).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.updateCustomerProfile(profileId, dto));
+        }
+    }
+
+    @Test
+    void updateCustomerProfile_invalidCompany_shouldThrow() {
+        when(profileRepository.findById(profileId)).thenReturn(Optional.of(profile));
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .company("bad<company>")
+                .build();
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("bad<company>")).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.updateCustomerProfile(profileId, dto));
+        }
+    }
+
+    @Test
+    void updateCustomerProfile_invalidAbout_shouldThrow() {
+        when(profileRepository.findById(profileId)).thenReturn(Optional.of(profile));
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .about("bad<about>")
+                .build();
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("bad<about>")).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.updateCustomerProfile(profileId, dto));
+        }
+    }
+
+    @Test
+    void updateCustomerProfile_invalidWebsiteUrl_shouldThrow() {
+        when(profileRepository.findById(profileId)).thenReturn(Optional.of(profile));
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .websiteUrl("badurl")
+                .build();
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("badurl")).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.updateCustomerProfile(profileId, dto));
+        }
+    }
+
+    @Test
+    void updateCustomerProfile_invalidSocialMedia_shouldThrow() {
+        when(profileRepository.findById(profileId)).thenReturn(Optional.of(profile));
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .socialMedia(Set.of("badurl"))
+                .build();
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("badurl")).thenReturn(null);
+            assertThrows(InvalidProfileDataException.class, () -> service.updateCustomerProfile(profileId, dto));
+        }
+    }
+
+    @Test
+    void saveCustomerProfile_invalidCompany_sanitizationFails_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(user.getId())
+                .username("validuser")
+                .company("SomeCompany")
+                .build();
+
+        when(userRepository.findById(dto.getUserId())).thenReturn(Optional.of(user));
+
+        // Mock static sanitization to simulate invalid result
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("SomeCompany")).thenReturn(null);
+
+            assertThrows(InvalidProfileDataException.class, () -> service.saveCustomerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveCustomerProfile_invalidCompany_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(user.getId())
+                .username("validuser")
+                .company("SomeCompany")
+                .build();
+
+        when(userRepository.findById(dto.getUserId())).thenReturn(Optional.of(user));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("validuser")).thenReturn("validuser");
+            mocked.when(() -> SanitizationUtil.sanitizeText("SomeCompany")).thenReturn(null); // force invalid
+
+            assertThrows(InvalidProfileDataException.class,
+                    () -> service.saveCustomerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveCustomerProfile_invalidAbout_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(user.getId())
+                .username("validuser")
+                .about("AboutMe")
+                .build();
+
+        when(userRepository.findById(dto.getUserId())).thenReturn(Optional.of(user));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("validuser")).thenReturn("validuser");
+            mocked.when(() -> SanitizationUtil.sanitizeText("AboutMe")).thenReturn(null);
+
+            assertThrows(InvalidProfileDataException.class,
+                    () -> service.saveCustomerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveCustomerProfile_invalidWebsite_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(user.getId())
+                .username("validuser")
+                .websiteUrl("https://invalid.com")
+                .build();
+
+        when(userRepository.findById(dto.getUserId())).thenReturn(Optional.of(user));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("validuser")).thenReturn("validuser");
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("https://invalid.com")).thenReturn(null); // force invalid
+
+            assertThrows(InvalidProfileDataException.class,
+                    () -> service.saveCustomerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveCustomerProfile_invalidSocialMedia_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(user.getId())
+                .username("validuser")
+                .socialMedia(Set.of("https://twitter.com/invalid"))
+                .build();
+
+        when(userRepository.findById(dto.getUserId())).thenReturn(Optional.of(user));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("validuser")).thenReturn("validuser");
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("https://twitter.com/invalid")).thenReturn(null); // force invalid
+
+            assertThrows(InvalidProfileDataException.class,
+                    () -> service.saveCustomerProfile(dto));
+        }
+    }
+
+    @Test
+    void saveCustomerProfile_fetchLanguages_missingLanguage_shouldThrow() {
+        CustomerProfileRequestDTO dto = CustomerProfileRequestDTO.builder()
+                .userId(user.getId())
+                .username("validuser")
+                .languageIds(Set.of(1, 2)) // request 2 languages
+                .build();
+
+        when(userRepository.findById(dto.getUserId())).thenReturn(Optional.of(user));
+
+        // only language 1 exists
+        Language lang = new Language();
+        lang.setId(1);
+        when(languageRepository.findAllById(Set.of(1, 2))).thenReturn(List.of(lang));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("validuser")).thenReturn("validuser");
+
+            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
+                    () -> service.saveCustomerProfile(dto));
+            assertTrue(ex.getMessage().contains("Languages not found for IDs: [2]"));
+        }
+    }
+
 }

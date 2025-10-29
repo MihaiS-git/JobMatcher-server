@@ -897,4 +897,144 @@ class FreelancerProfileServiceImplTest {
         }
     }
 
+    @Test
+    void saveFreelancerProfile_shouldThrowForBlankWebsiteUrl() {
+        UUID userId = UUID.randomUUID();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validuser")
+                .websiteUrl("   ") // invalid blank
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText("validuser")).thenReturn("validuser");
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("   ")).thenReturn(null);
+
+            assertThrows(
+                    InvalidProfileDataException.class,
+                    () -> service.saveFreelancerProfile(dto),
+                    "Expected to throw when website URL is blank"
+            );
+        }
+    }
+
+    @Test
+    void saveFreelancerProfile_whenHourlyRateIsNonPositive_throwsException() {
+        UUID userId = UUID.randomUUID();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validuser")
+                .headline("Valid headline")
+                .about("Valid about")
+                .hourlyRate(0.0) // invalid
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            mocked.when(() -> SanitizationUtil.sanitizeText(anyString()))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            InvalidProfileDataException ex = assertThrows(InvalidProfileDataException.class,
+                    () -> service.saveFreelancerProfile(dto));
+            assertTrue(ex.getMessage().contains("Hourly rate must be positive"));
+        }
+    }
+
+    @Test
+    void saveFreelancerProfile_whenJobSubcategoryIdsContainMissing_throwsResourceNotFoundException() {
+        UUID userId = UUID.randomUUID();
+
+        // Given one subcategory ID requested, but repository returns empty list
+        Set<Long> requestedIds = Set.of(10L);
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validusername")
+                .headline("Valid headline")
+                .about("Valid about")
+                .websiteUrl("https://valid.com")
+                .jobSubcategoryIds(requestedIds)
+                .languageIds(Set.of(1))
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+        when(subcategoryRepository.findAllById(requestedIds)).thenReturn(Collections.emptyList());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.saveFreelancerProfile(dto));
+    }
+
+    @Test
+    void saveFreelancerProfile_whenLanguageIdsContainMissing_throwsResourceNotFoundException() {
+        UUID userId = UUID.randomUUID();
+
+        Set<Integer> requestedIds = Set.of(1, 2);
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validusername")
+                .headline("Valid headline")
+                .about("Valid about")
+                .websiteUrl("https://valid.com")
+                .jobSubcategoryIds(Set.of(100L))
+                .languageIds(requestedIds)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+        when(subcategoryRepository.findAllById(Set.of(100L))).thenReturn(List.of(new JobSubcategory(100L, "Web Dev")));
+        when(languageRepository.findAllById(requestedIds)).thenReturn(List.of(new Language(1, "English"))); // missing id 2
+
+        assertThrows(ResourceNotFoundException.class, () -> service.saveFreelancerProfile(dto));
+    }
+
+    @Test
+    void saveFreelancerProfile_blankHeadlineAndAbout_becomeNullWithoutException() {
+        UUID userId = UUID.randomUUID();
+
+        FreelancerProfileRequestDTO dto = FreelancerProfileRequestDTO.builder()
+                .userId(userId)
+                .username("validuser")
+                .headline("   ") // blank, not null
+                .about("   ")    // blank, not null
+                .websiteUrl("https://valid.com")
+                .build();
+
+        // stub user and mapper
+        when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+        when(profileMapper.toFreelancerDetailDto(any())).thenReturn(FreelancerDetailDTO.builder().build());
+        when(profileMapper.toEntity(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenAnswer(invocation -> {
+                    FreelancerProfile profile = new FreelancerProfile();
+                    profile.setUsername(invocation.getArgument(2)); // username
+                    profile.setHeadline(invocation.getArgument(3)); // sanitized headline (should be null for blank)
+                    profile.setAbout(invocation.getArgument(4));    // sanitized about (should be null for blank)
+                    profile.setWebsiteUrl(invocation.getArgument(5)); // sanitized websiteUrl
+                    return profile;
+                });
+
+
+        try (MockedStatic<SanitizationUtil> mocked = mockStatic(SanitizationUtil.class)) {
+            // sanitizeText returns original value for blank, as per branch
+            mocked.when(() -> SanitizationUtil.sanitizeText("validuser")).thenReturn("validuser");
+            mocked.when(() -> SanitizationUtil.sanitizeText("   ")).thenReturn("   "); // blank
+
+            mocked.when(() -> SanitizationUtil.sanitizeUrl("https://valid.com")).thenReturn("https://valid.com");
+
+            FreelancerDetailDTO result = service.saveFreelancerProfile(dto);
+
+            assertNotNull(result);
+
+            // capture saved entity to assert headline/about became null
+            ArgumentCaptor<FreelancerProfile> captor = ArgumentCaptor.forClass(FreelancerProfile.class);
+            verify(profileRepository).save(captor.capture());
+            FreelancerProfile saved = captor.getValue();
+
+            assertNull(saved.getHeadline(), "Blank headline should be treated as null");
+            assertNull(saved.getAbout(), "Blank about should be treated as null");
+        }
+    }
+
+
 }

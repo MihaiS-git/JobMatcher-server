@@ -265,7 +265,7 @@ public class ContractServiceImpl implements IContractService {
                         i.getMilestone() != null ? milestoneMapper.toDto(i.getMilestone()) : null)).collect(Collectors.toSet())
                 : Set.of();
         Set<Milestone> milestones = contract.getMilestones();
-        Set<MilestoneResponseDTO> milestonesList = milestones != null
+        Set<MilestoneResponseDTO> milestonesList = (milestones != null && !milestones.isEmpty())
                 ? milestones.stream().map(milestoneMapper::toDto).collect(Collectors.toSet())
                 : Set.of();
 

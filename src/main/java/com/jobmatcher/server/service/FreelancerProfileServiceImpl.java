@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -142,7 +141,6 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
                 skills, subcategories, languages, socialMedia);
         FreelancerProfile savedProfile = profileRepository.save(profile);
         return profileMapper.toFreelancerDetailDto(savedProfile);
-
     }
 
     @Override

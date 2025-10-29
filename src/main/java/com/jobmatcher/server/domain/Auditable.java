@@ -5,10 +5,12 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
 @Getter
+@Setter
 @MappedSuperclass
 public abstract class Auditable {
     @Column(name = "created_at", nullable = false)

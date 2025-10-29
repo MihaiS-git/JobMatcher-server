@@ -7,6 +7,7 @@ import com.jobmatcher.server.validator.CreateUpdateValidation;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Getter
+@Setter
 @Builder
 @Jacksonized
 @ToString
