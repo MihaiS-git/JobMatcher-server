@@ -42,17 +42,20 @@ public class SecurityConfiguration {
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final CustomOAuth2FailureHandler customOAuth2FailureHandler;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     public SecurityConfiguration(
             JwtAuthenticationFilter jwtAuthenticationFilter,
             CustomOAuth2SuccessHandler customOAuth2SuccessHandler,
             CustomOAuth2FailureHandler customOAuth2FailureHandler,
-            CustomAccessDeniedHandler customAccessDeniedHandler
+            CustomAccessDeniedHandler customAccessDeniedHandler,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.customOAuth2SuccessHandler = customOAuth2SuccessHandler;
         this.customOAuth2FailureHandler = customOAuth2FailureHandler;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
 
     @Bean
@@ -85,6 +88,7 @@ public class SecurityConfiguration {
                                 API_VERSION + "/auth/recover-password",
                                 API_VERSION + "/auth/validate-reset-token",
                                 API_VERSION + "/auth/reset-password",
+                                API_VERSION + "/auth/refresh-token",
                                 API_VERSION + "/payments/stripe/webhook"
                         ).permitAll()
                         .anyRequest().authenticated())
@@ -92,7 +96,7 @@ public class SecurityConfiguration {
                         .successHandler(customOAuth2SuccessHandler)
                         .failureHandler(customOAuth2FailureHandler))
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new CustomAuthenticationEntryPoint())
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -193,7 +193,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidAuthException.class)
     public ResponseEntity<ErrorResponse> handleInvalidAuthException(InvalidAuthException ex, HttpServletRequest request) {
         log.warn("Invalid authentication.", ex);
-        return buildErrorResponse("Authentication failed. Please check your credentials and try again.", HttpStatus.UNAUTHORIZED, request.getRequestURI(), ErrorCode.AUTH_INVALID);
+        return buildErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED, request.getRequestURI(), ErrorCode.AUTH_INVALID);
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
@@ -205,7 +205,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
         log.warn("Resource not found. ", ex);
-        return buildErrorResponse("Resource not found.", HttpStatus.NOT_FOUND, request.getRequestURI(), ErrorCode.RESOURCE_NOT_FOUND);
+        return buildErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND, request.getRequestURI(), ErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @ExceptionHandler(InvalidProjectOperationException.class)
@@ -223,7 +223,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PasswordResetException.class)
     public ResponseEntity<ErrorResponse> handlePasswordResetException(PasswordResetException ex, HttpServletRequest request) {
         log.warn("Password reset token has expired. ", ex);
-        return buildErrorResponse("Password reset failed. Password reset token has expired. Please try again.", HttpStatus.NOT_FOUND, request.getRequestURI(), ErrorCode.PASSWORD_RECOVERY_FAILED);
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request.getRequestURI(), ErrorCode.PASSWORD_RECOVERY_FAILED);
     }
 
     @ExceptionHandler(EmailSendException.class)

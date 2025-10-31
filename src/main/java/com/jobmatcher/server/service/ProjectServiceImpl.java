@@ -136,8 +136,9 @@ public class ProjectServiceImpl implements IProjectService {
                 ? new HashSet<>(jobSubcategoryRepository.findAllById(requestDto.getSubcategoryIds()))
                 : new HashSet<>();
 
-        if (requestDto.getDeadline() == null || requestDto.getDeadline().isBefore(LocalDate.now().plusDays(1)))
+        if (requestDto.getDeadline() != null && requestDto.getDeadline().isBefore(LocalDate.now().plusDays(1))){
             throw new IllegalArgumentException("Deadline must be a future date.");
+        }
 
         ProjectRequestDTO sanitizedRequest = sanitizeProjectRequest(requestDto);
 

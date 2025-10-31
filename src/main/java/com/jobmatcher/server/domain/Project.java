@@ -2,10 +2,7 @@ package com.jobmatcher.server.domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,6 +15,7 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Table(name = "projects")
 public class Project extends Auditable{
 
@@ -59,7 +57,7 @@ public class Project extends Auditable{
     private PaymentType paymentType;
 
     @NotNull
-    @Future
+//    @Future
     @Column(name = "deadline", nullable = false)
     private LocalDate deadline;
 

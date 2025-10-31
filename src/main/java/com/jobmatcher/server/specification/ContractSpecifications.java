@@ -48,6 +48,10 @@ public class ContractSpecifications {
                 ));
             }
 
+            // enforce default ordering (optional)
+            assert query != null;
+            query.orderBy(cb.desc(root.get("startDate")));
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }

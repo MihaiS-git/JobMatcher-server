@@ -61,26 +61,31 @@ public class Proposal extends Auditable{
     private String notes;
 
     @NotNull
+    @Column(name = "planned_start_date", nullable = false)
     private OffsetDateTime plannedStartDate;
+
+    @Column(name = "planned_end_date", nullable = false)
     private OffsetDateTime plannedEndDate;
+
+    @Column(name = "actual_start_date", nullable = false)
     private OffsetDateTime actualStartDate;
+
+    @Column(name = "actual_end_date", nullable = false)
     private OffsetDateTime actualEndDate;
 
     @OneToOne(mappedBy = "proposal", fetch = FetchType.LAZY)
     private Contract contract;
 
     @PrePersist
-    @PreUpdate
-    private void applyDefaults() {
-        if(plannedStartDate != null && estimatedDuration != null) {
-            plannedEndDate = plannedStartDate.plusDays(estimatedDuration);
-        }
-        if (actualStartDate == null && plannedStartDate != null) {
-            actualStartDate = plannedStartDate;
-        }
-        if(actualStartDate != null && estimatedDuration != null) {
-            actualEndDate = actualStartDate.plusDays(estimatedDuration);
-        }
-    }
+    private void prePersistDefaults() {
+        if (plannedStartDate == null) plannedStartDate = OffsetDateTime.now();
+        if (estimatedDuration == null) estimatedDuration = 7;
 
+        if (plannedEndDate == null)
+            plannedEndDate = plannedStartDate.plusDays(estimatedDuration);
+
+        if (actualStartDate == null) actualStartDate = plannedStartDate;
+        if (actualEndDate == null)
+            actualEndDate = actualStartDate.plusDays(estimatedDuration);
+    }
 }

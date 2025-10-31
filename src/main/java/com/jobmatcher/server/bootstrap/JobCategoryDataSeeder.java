@@ -6,6 +6,7 @@ import com.jobmatcher.server.repository.JobCategoryRepository;
 import com.jobmatcher.server.repository.JobSubcategoryRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 

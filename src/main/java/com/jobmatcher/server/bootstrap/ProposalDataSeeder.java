@@ -33,7 +33,7 @@ public class ProposalDataSeeder implements ApplicationRunner {
 
     @Override
     @Transactional
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
 
         List<Project> projects = projectRepository.findAll();
         List<FreelancerProfile> freelancers = freelancerProfileRepository.findAll();

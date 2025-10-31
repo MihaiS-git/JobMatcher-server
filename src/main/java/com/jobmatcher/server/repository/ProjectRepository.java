@@ -18,9 +18,10 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                 WHERE (:profileId IS NULL OR p.customer.id = :profileId OR p.freelancer.id = :profileId)
                   AND (:status IS NULL OR p.status = :status)
                   AND (:categoryId IS NULL OR p.category.id = :categoryId)
-                  AND (:subcategoryId IS NULL OR s.id = :subcategoryId)
-                  AND (:searchTerm IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
-                       OR LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+                  AND (:subcategoryId IS NULL OR s.id = :subcategoryId OR s.id IS NULL)
+                  AND (:searchTerm IS NULL OR :searchTerm = ''
+                      OR LOWER(p.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+                      OR LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
                 GROUP BY p.id
             """)
     List<UUID> findFilteredProjectIds(
@@ -41,8 +42,9 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                 WHERE (:statuses IS NULL OR p.status IN :statuses)
                   AND (:categoryId IS NULL OR p.category.id = :categoryId)
                   AND (:subcategoryId IS NULL OR s.id = :subcategoryId)
-                  AND (:searchTerm IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
-                       OR LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+                  AND (:searchTerm IS NULL OR :searchTerm = ''
+                      OR LOWER(p.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+                      OR LOWER(p.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
                 GROUP BY p.id
             """)
     List<UUID> findFilteredJobFeedProjectIds(

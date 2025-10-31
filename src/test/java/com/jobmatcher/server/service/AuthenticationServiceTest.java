@@ -71,7 +71,9 @@ class AuthenticationServiceTest {
 
     @Test
     void authenticate_shouldReturnJwtToken_whenCredentialsAreValid() {
-        AuthenticationRequest request = new AuthenticationRequest("user@example.com", "plainPassword");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("plainPassword");
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches(request.getPassword(), sampleUser.getPassword())).thenReturn(true);
@@ -87,7 +89,9 @@ class AuthenticationServiceTest {
 
     @Test
     void authenticate_shouldThrowInvalidAuthException_whenUserNotFound() {
-        AuthenticationRequest request = new AuthenticationRequest("missing@example.com", "plainPassword");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("missing@example.com");
+        request.setPassword("plainPassword");
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
@@ -101,7 +105,9 @@ class AuthenticationServiceTest {
 
     @Test
     void authenticate_shouldThrowInvalidAuthException_whenPasswordDoesNotMatch() {
-        AuthenticationRequest request = new AuthenticationRequest("user@example.com", "wrongPassword");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("wrongPassword");
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches(request.getPassword(), sampleUser.getPassword())).thenReturn(false);
@@ -116,7 +122,9 @@ class AuthenticationServiceTest {
     @Test
     void authenticate_shouldThrowInvalidAuthException_whenAccountDisabled() {
         sampleUser.setEnabled(false);
-        AuthenticationRequest request = new AuthenticationRequest("user@example.com", "password");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("password");
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches(request.getPassword(), sampleUser.getPassword())).thenReturn(true);
@@ -131,7 +139,9 @@ class AuthenticationServiceTest {
     @Test
     void authenticate_shouldThrowInvalidAuthException_whenAccountLocked() {
         sampleUser.setAccountNonLocked(false);
-        AuthenticationRequest request = new AuthenticationRequest("user@example.com", "password");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("password");
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches(request.getPassword(), sampleUser.getPassword())).thenReturn(true);
@@ -146,7 +156,9 @@ class AuthenticationServiceTest {
     @Test
     void authenticate_shouldThrowInvalidAuthException_whenAccountExpired() {
         sampleUser.setAccountNonExpired(false);
-        AuthenticationRequest request = new AuthenticationRequest("user@example.com", "password");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("password");
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches(request.getPassword(), sampleUser.getPassword())).thenReturn(true);
@@ -161,7 +173,9 @@ class AuthenticationServiceTest {
     @Test
     void authenticate_shouldThrowInvalidAuthException_whenCredentialsExpired() {
         sampleUser.setCredentialsNonExpired(false);
-        AuthenticationRequest request = new AuthenticationRequest("user@example.com", "password");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("password");
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches(request.getPassword(), sampleUser.getPassword())).thenReturn(true);
@@ -175,7 +189,9 @@ class AuthenticationServiceTest {
 
     @Test
     void login_shouldReturnAuthResponse() {
-        AuthenticationRequest request = new AuthenticationRequest("user@example.com", "password");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("user@example.com");
+        request.setPassword("password");
         RefreshToken mockRefreshToken = new RefreshToken();
         mockRefreshToken.setToken("refresh-token");
 
@@ -199,7 +215,9 @@ class AuthenticationServiceTest {
 
     @Test
     void login_shouldThrow_whenAuthenticationFails() {
-        AuthenticationRequest request = new AuthenticationRequest("missing@example.com", "password");
+        AuthenticationRequest request = new AuthenticationRequest();
+        request.setEmail("missing@example.com");
+        request.setPassword("password");
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authenticationService.login(request))

@@ -73,10 +73,10 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
 
         User user = oldToken.getUser();
 
+        RefreshToken newRefreshToken = createRefreshToken(user);
         refreshTokenRepository.delete(oldToken);
 
         String newAccessToken = jwtService.generateToken(user);
-        RefreshToken newRefreshToken = createRefreshToken(user);
 
         AuthUserDTO userDTO = userMapper.toDto(user);
 

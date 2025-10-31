@@ -34,7 +34,11 @@ public class LanguageServiceImpl implements ILanguageService{
 
     @Override
     public List<LanguageDTO> getAllLanguages() {
-        return languageRepository.findAll().stream().map(languageMapper::toDto).toList();
+        List<LanguageDTO> languages = languageRepository.findAll().stream().map(languageMapper::toDto).toList();
+        if(languages.isEmpty()){
+            throw new ResourceNotFoundException("No languages found.");
+        }
+        return languages;
     }
 
     @Override
