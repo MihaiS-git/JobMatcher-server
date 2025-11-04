@@ -4,6 +4,7 @@ import com.jobmatcher.server.domain.ProjectStatus;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.service.IProjectService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,43 +58,23 @@ public class ProjectController {
     }
 
     @GetMapping("/job-feed")
-    public ResponseEntity<PagedResponseDTO<ProjectSummaryDTO>> getAllJobFeedProjects(
+    public ResponseEntity<Page<ProjectSummaryDTO>> getAllJobFeedProjects(
             Pageable pageable,
-            @RequestParam(required = false) String status,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long subcategoryId,
             @RequestParam(required = false) String searchTerm
     ) {
-        List<ProjectStatus> allowedStatuses = List.of(
-                ProjectStatus.OPEN
-        );
+// Build filter DTO from request params
+        JobFeedProjectFilterDTO filter = JobFeedProjectFilterDTO.builder()
+                .categoryId(categoryId)
+                .subcategoryId(subcategoryId)
+                .searchTerm(searchTerm)
+                .build();
 
-        List<ProjectStatus> statusesToFetch;
+        // Fetch paged projects using the service
+        Page<ProjectSummaryDTO> projects = projectService.getAllJobFeedProjects(pageable, filter);
 
-        if (status != null && !status.isBlank()) {
-            try {
-                ProjectStatus parsed = ProjectStatus.valueOf(status.toUpperCase());
-                if (allowedStatuses.contains(parsed)) {
-                    statusesToFetch = List.of(parsed);
-                } else {
-                    statusesToFetch = allowedStatuses;
-                }
-            } catch (IllegalArgumentException e) {
-                statusesToFetch = allowedStatuses;
-            }
-        } else {
-            statusesToFetch = allowedStatuses;
-        }
-
-        PagedResponseDTO<ProjectSummaryDTO> response = projectService.getAllJobFeedProjects(
-                pageable,
-                statusesToFetch,
-                categoryId,
-                subcategoryId,
-                searchTerm
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(projects);
     }
 
     @GetMapping("/{id}")

@@ -6,7 +6,9 @@ import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ProjectMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.*;
+import com.jobmatcher.server.specification.JobFeedProjectSpecification;
 import com.jobmatcher.server.util.SanitizationUtil;
+import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -162,15 +164,34 @@ public class ProjectServiceImpl implements IProjectService {
             Proposal proposal = proposalRepository.findById(requestDto.getAcceptedProposalId())
                     .orElseThrow(() -> new ResourceNotFoundException("Proposal not found with id: " + requestDto.getAcceptedProposalId()));
             existingProject.setAcceptedProposal(proposal);
-        } else {
-            existingProject.setAcceptedProposal(null);
         }
 
-        updateIfPresent(sanitizedRequest.getTitle(), existingProject::setTitle);
-        updateIfPresent(sanitizedRequest.getDescription(), existingProject::setDescription);
-        updateIfPresent(requestDto.getBudget(), existingProject::setBudget);
-        updateIfPresent(requestDto.getPaymentType(), existingProject::setPaymentType);
-        updateIfPresent(requestDto.getDeadline(), existingProject::setDeadline);
+        if(sanitizedRequest.getTitle() != null && !sanitizedRequest.getTitle().isBlank()) {
+            existingProject.setTitle(sanitizedRequest.getTitle());
+        } else {
+            existingProject.setTitle("Untitled Project");
+        }
+
+        if(sanitizedRequest.getDescription() != null && !sanitizedRequest.getDescription().isBlank()) {
+            existingProject.setDescription(sanitizedRequest.getDescription());
+        } else {
+            existingProject.setDescription("No description provided.");
+        }
+
+        if(requestDto.getBudget() != null) {
+            existingProject.setBudget(requestDto.getBudget().setScale(2, RoundingMode.HALF_UP));
+        }
+
+        if(requestDto.getPaymentType() != null) {
+            existingProject.setPaymentType(requestDto.getPaymentType());
+        } else {
+            existingProject.setPaymentType(PaymentType.UPON_COMPLETION);
+        }
+
+        if(requestDto.getDeadline() != null) {
+            existingProject.setDeadline(requestDto.getDeadline());
+        }
+
         if (category != null) existingProject.setCategory(category);
         if (!subcategories.isEmpty()) existingProject.setSubcategories(subcategories);
 
@@ -185,26 +206,35 @@ public class ProjectServiceImpl implements IProjectService {
     }
 
     @Override
-    public PagedResponseDTO<ProjectSummaryDTO> getAllJobFeedProjects(
-            Pageable pageable,
-            List<ProjectStatus> statuses,
-            Long categoryId,
-            Long subcategoryId,
-            String searchTerm
-    ) {
-        // Step 1: fetch all matching IDs (no Pageable, no Sort)
-        List<UUID> filteredIds = projectRepository.findFilteredJobFeedProjectIds(
-                statuses, categoryId, subcategoryId, searchTerm
-        );
-
-        return buildPageResponse(pageable, filteredIds);
+    public Page<ProjectSummaryDTO> getAllJobFeedProjects(Pageable pageable, JobFeedProjectFilterDTO filter) {
+        var spec = JobFeedProjectSpecification.withFilters(filter);
+        return projectRepository.findAll(spec, pageable)
+                .map(projectMapper::toSummaryDto);
     }
 
-    private <T> void updateIfPresent(T value, Consumer<T> setter) {
-        if (value != null) {
-            setter.accept(value);
-        }
-    }
+//    @Override
+//    public PagedResponseDTO<ProjectSummaryDTO> getAllJobFeedProjects(
+//            Pageable pageable,
+//            List<ProjectStatus> statuses,
+//            Long categoryId,
+//            Long subcategoryId,
+//            String searchTerm
+//    ) {
+//        // Step 1: fetch all matching IDs (no Pageable, no Sort)
+//        List<UUID> filteredIds = projectRepository.findFilteredJobFeedProjectIds(
+//                statuses, categoryId, subcategoryId, searchTerm
+//        );
+//
+//        return buildPageResponse(pageable, filteredIds);
+//    }
+//
+//    private <T> void updateIfPresent(T value, Consumer<T> setter) {
+//        if (value != null) {
+//            setter.accept(value);
+//        }
+//    }
+
+
 
     private void updateIfPresent(String value, Consumer<String> setter) {
         if (value != null && !value.isBlank()) {

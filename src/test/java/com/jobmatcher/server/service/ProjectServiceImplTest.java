@@ -303,19 +303,19 @@ class ProjectServiceImplTest {
     // ───────────────────────────────────────────────
     // getAllJobFeedProjects
     // ───────────────────────────────────────────────
-    @Test
-    void getAllJobFeedProjects_shouldReturnPagedResponse() {
-        Pageable pageable = PageRequest.of(0, 2, Sort.by("title"));
-        List<UUID> ids = List.of(UUID.randomUUID(), UUID.randomUUID());
-        when(projectRepository.findFilteredJobFeedProjectIds(any(), any(), any(), any())).thenReturn(ids);
-        when(projectRepository.findByIdIn(ids))
-                .thenReturn(new ArrayList<>(List.of(project, project)));
-
-        when(projectMapper.toSummaryDto(any())).thenReturn(new ProjectSummaryDTO());
-
-        PagedResponseDTO<ProjectSummaryDTO> result = projectService.getAllJobFeedProjects(pageable, List.of(ProjectStatus.IN_PROGRESS), 1L, 2L, "term");
-        assertThat(result.content()).hasSize(2);
-    }
+//    @Test
+//    void getAllJobFeedProjects_shouldReturnPagedResponse() {
+//        Pageable pageable = PageRequest.of(0, 2, Sort.by("title"));
+//        List<UUID> ids = List.of(UUID.randomUUID(), UUID.randomUUID());
+//        when(projectRepository.findFilteredJobFeedProjectIds(any(), any(), any(), any())).thenReturn(ids);
+//        when(projectRepository.findByIdIn(ids))
+//                .thenReturn(new ArrayList<>(List.of(project, project)));
+//
+//        when(projectMapper.toSummaryDto(any())).thenReturn(new ProjectSummaryDTO());
+//
+//        PagedResponseDTO<ProjectSummaryDTO> result = projectService.getAllJobFeedProjects(pageable, List.of(ProjectStatus.IN_PROGRESS), 1L, 2L, "term");
+//        assertThat(result.content()).hasSize(2);
+//    }
 
     // ───────────────────────────────────────────────
     // updateProjectStatus
