@@ -6,20 +6,18 @@ import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.ProjectMapper;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.repository.*;
-import com.jobmatcher.server.specification.JobFeedProjectSpecification;
+import com.jobmatcher.server.specification.ProjectSpecification;
 import com.jobmatcher.server.util.SanitizationUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.HtmlUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.function.Consumer;
 
 @Slf4j
 @Transactional(rollbackFor = Exception.class)
@@ -61,29 +59,30 @@ public class ProjectServiceImpl implements IProjectService {
 
     @Transactional(readOnly = true)
     @Override
-    public PagedResponseDTO<ProjectSummaryDTO> getAllProjects(
-            String token,
-            Pageable pageable,
-            ProjectStatus status,
-            Long categoryId,
-            Long subcategoryId,
-            String searchTerm
-    ) {
+    public Page<ProjectSummaryDTO> getAllProjects(String token, Pageable pageable, ProjectFilterDTO filter) {
         User user = getUser(token);
         Role role = user.getRole();
 
         UUID profileId = switch (role) {
-            case CUSTOMER -> getCustomerId(user.getId());
-            case STAFF -> getFreelancerId(user.getId());
+            case Role.CUSTOMER -> getCustomerId(user.getId());
+            case Role.STAFF -> getFreelancerId(user.getId());
             default -> null;
         };
 
-        // Step 1: fetch all matching IDs (no Pageable, no Sort)
-        List<UUID> filteredIds = projectRepository.findFilteredProjectIds(
-                profileId, status, categoryId, subcategoryId, searchTerm
-        );
+        var spec = ProjectSpecification.withFilters(filter, role, profileId);
 
-        return buildPageResponse(pageable, filteredIds);
+        return projectRepository.findAll(spec, pageable)
+                .map(projectMapper::toSummaryDto);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<ProjectSummaryDTO> getAllJobFeedProjects(Pageable pageable, ProjectFilterDTO filter) {
+        ProjectStatus status = filter.getStatus();
+        filter.setStatus(ProjectStatus.OPEN);
+        var spec = ProjectSpecification.withFilters(filter, null, null);
+        return projectRepository.findAll(spec, pageable)
+                .map(projectMapper::toSummaryDto);
     }
 
     @Override
@@ -199,47 +198,18 @@ public class ProjectServiceImpl implements IProjectService {
     }
 
     @Override
+    public ProjectDetailDTO updateProjectStatus(UUID projectId, ProjectStatusUpdateDTO status) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project with ID " + projectId + " not found."));
+        project.setStatus(status.getStatus());
+        return projectMapper.toDto(projectRepository.save(project));
+    }
+
+    @Override
     public void deleteProject(UUID id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
         projectRepository.delete(project);
-    }
-
-    @Override
-    public Page<ProjectSummaryDTO> getAllJobFeedProjects(Pageable pageable, JobFeedProjectFilterDTO filter) {
-        var spec = JobFeedProjectSpecification.withFilters(filter);
-        return projectRepository.findAll(spec, pageable)
-                .map(projectMapper::toSummaryDto);
-    }
-
-//    @Override
-//    public PagedResponseDTO<ProjectSummaryDTO> getAllJobFeedProjects(
-//            Pageable pageable,
-//            List<ProjectStatus> statuses,
-//            Long categoryId,
-//            Long subcategoryId,
-//            String searchTerm
-//    ) {
-//        // Step 1: fetch all matching IDs (no Pageable, no Sort)
-//        List<UUID> filteredIds = projectRepository.findFilteredJobFeedProjectIds(
-//                statuses, categoryId, subcategoryId, searchTerm
-//        );
-//
-//        return buildPageResponse(pageable, filteredIds);
-//    }
-//
-//    private <T> void updateIfPresent(T value, Consumer<T> setter) {
-//        if (value != null) {
-//            setter.accept(value);
-//        }
-//    }
-
-
-
-    private void updateIfPresent(String value, Consumer<String> setter) {
-        if (value != null && !value.isBlank()) {
-            setter.accept(HtmlUtils.htmlEscape(value.trim()));
-        }
     }
 
     private static ProjectRequestDTO sanitizeProjectRequest(ProjectRequestDTO request) {
@@ -293,68 +263,6 @@ public class ProjectServiceImpl implements IProjectService {
     private User getUser(String token) {
         String email = jwtService.extractUsername(token);
         return userService.getUserByEmail(email);
-    }
-
-    private PagedResponseDTO<ProjectSummaryDTO> buildPageResponse(Pageable pageable, List<UUID> filteredIds) {
-        if (filteredIds.isEmpty()) {
-            return new PagedResponseDTO<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(),
-                    0, 0, true, true);
-        }
-
-        // Step 2: fetch full entities
-        List<Project> projects = projectRepository.findByIdIn(filteredIds);
-
-        // Step 3: apply sorting from Pageable
-        Comparator<Project> comparator = pageable.getSort().isSorted()
-                ? pageable.getSort().stream()
-                .map(order -> {
-                    Comparator<Project> c = switch (order.getProperty()) {
-                        case "title" -> Comparator.comparing(Project::getTitle, String.CASE_INSENSITIVE_ORDER);
-                        case "status" -> Comparator.comparing(Project::getStatus);
-                        case "category" ->
-                                Comparator.comparing(p -> p.getCategory().getName(), String.CASE_INSENSITIVE_ORDER);
-                        case "deadline" ->
-                                Comparator.comparing(Project::getDeadline, Comparator.nullsLast(Comparator.naturalOrder()));
-                        case "paymentType" ->
-                                Comparator.comparing(Project::getPaymentType, Comparator.nullsLast(Comparator.naturalOrder()));
-                        case "budget" ->
-                                Comparator.comparing(Project::getBudget, Comparator.nullsLast(Comparator.naturalOrder()));
-                        default -> null;
-                    };
-                    if (c != null && order.isDescending()) c = c.reversed();
-                    return c;
-                })
-                .filter(Objects::nonNull)
-                .reduce(Comparator::thenComparing)
-                .orElse(Comparator.comparing(Project::getId))
-                : Comparator.comparing(Project::getLastUpdate, Comparator.nullsLast(Comparator.naturalOrder())).reversed();
-
-        projects.sort(comparator);
-
-        // Step 4: apply pagination manually
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), projects.size());
-        List<ProjectSummaryDTO> content = projects.subList(start, end).stream()
-                .map(projectMapper::toSummaryDto)
-                .toList();
-
-        return new PagedResponseDTO<>(
-                content,
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                projects.size(),
-                (int) Math.ceil((double) projects.size() / pageable.getPageSize()),
-                start == 0,
-                end == projects.size()
-        );
-    }
-
-    @Override
-    public ProjectDetailDTO updateProjectStatus(UUID projectId, ProjectStatusUpdateDTO status) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project with ID " + projectId + " not found."));
-        project.setStatus(status.getStatus());
-        return projectMapper.toDto(projectRepository.save(project));
     }
 
 }

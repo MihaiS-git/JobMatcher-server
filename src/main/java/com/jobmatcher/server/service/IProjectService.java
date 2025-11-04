@@ -1,22 +1,22 @@
 package com.jobmatcher.server.service;
 
-import com.jobmatcher.server.domain.ProjectStatus;
 import com.jobmatcher.server.model.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface IProjectService {
 
-    PagedResponseDTO<ProjectSummaryDTO> getAllProjects(
+    Page<ProjectSummaryDTO> getAllProjects(
             String token,
             Pageable pageable,
-            ProjectStatus status,
-            Long categoryId,
-            Long subcategoryId,
-            String searchTerm
+            ProjectFilterDTO filter
+    );
+
+    Page<ProjectSummaryDTO> getAllJobFeedProjects(
+            Pageable pageable,
+            ProjectFilterDTO filter
     );
 
     ProjectDetailDTO getProjectById(UUID id);
@@ -24,11 +24,6 @@ public interface IProjectService {
     ProjectDetailDTO createProject(ProjectRequestDTO project);
     ProjectDetailDTO updateProject(UUID id, ProjectRequestDTO requestDto);
     void deleteProject(UUID id);
-
-    Page<ProjectSummaryDTO> getAllJobFeedProjects(
-            Pageable pageable,
-            JobFeedProjectFilterDTO filter
-    );
 
     ProjectDetailDTO updateProjectStatus(UUID projectId, ProjectStatusUpdateDTO status);
 }

@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
@@ -26,7 +25,7 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ResponseEntity<PagedResponseDTO<ProjectSummaryDTO>> getAllProjects(
+    public ResponseEntity<Page<ProjectSummaryDTO>> getAllProjects(
             @RequestHeader("Authorization") String authHeader,
             Pageable pageable,
             @RequestParam(required = false) String status,
@@ -45,13 +44,17 @@ public class ProjectController {
             }
         }
 
-        PagedResponseDTO<ProjectSummaryDTO> response = projectService.getAllProjects(
+        ProjectFilterDTO filter = ProjectFilterDTO.builder()
+                .status(projectStatus)
+                .categoryId(categoryId)
+                .subcategoryId(subcategoryId)
+                .searchTerm(searchTerm)
+                .build();
+
+        Page<ProjectSummaryDTO> response = projectService.getAllProjects(
                 token,
                 pageable,
-                projectStatus,
-                categoryId,
-                subcategoryId,
-                searchTerm
+                filter
         );
 
         return ResponseEntity.ok(response);
@@ -64,14 +67,12 @@ public class ProjectController {
             @RequestParam(required = false) Long subcategoryId,
             @RequestParam(required = false) String searchTerm
     ) {
-// Build filter DTO from request params
-        JobFeedProjectFilterDTO filter = JobFeedProjectFilterDTO.builder()
+        ProjectFilterDTO filter = ProjectFilterDTO.builder()
                 .categoryId(categoryId)
                 .subcategoryId(subcategoryId)
                 .searchTerm(searchTerm)
                 .build();
 
-        // Fetch paged projects using the service
         Page<ProjectSummaryDTO> projects = projectService.getAllJobFeedProjects(pageable, filter);
 
         return ResponseEntity.ok(projects);
