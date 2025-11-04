@@ -114,6 +114,28 @@ public class ProjectDataSeeder implements ApplicationRunner {
 
         projectRepository.saveAll(List.of(project1, project2, project3, project4, project5, project6));
         System.out.println("Projects seeded.");
+
+
+        for (int i = 0; i < 1000; i++) {
+            Project p = new Project();
+            CustomerProfile customer = customers.get(i % customers.size());
+            FreelancerProfile freelancer = freelancers.get(i % freelancers.size());
+            JobCategory category = categories.get(i % categories.size());
+            JobSubcategory subcategory = subcategories.get(i % subcategories.size());
+
+            p.setCustomer(customer);
+            p.setFreelancer(freelancer);
+            p.setTitle("Generated Project " + (i + 1));
+            p.setDescription("Auto-generated project for load testing #" + (i + 1));
+            p.setBudget(java.math.BigDecimal.valueOf(1000 + (i % 100) * 50));
+            p.setPaymentType(PaymentType.UPON_COMPLETION);
+            p.setDeadline(LocalDate.now().plusDays(30 + (i % 60)));
+            p.setCategory(category);
+            p.setSubcategories(Set.of(subcategory));
+            p.setStatus(ProjectStatus.OPEN);
+
+            projectRepository.save(p);
+        }
     }
 
 }

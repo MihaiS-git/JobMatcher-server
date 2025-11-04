@@ -58,6 +58,12 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'com.h2database:h2:2.4.240'
+
+    // monitoring
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.15.5'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.5.7'
+    implementation 'io.micrometer:micrometer-core'
+
 }
 
 // --- Unit test task (only unit tests) ---
@@ -150,3 +156,16 @@ tasks.register('runAllTestsWithCoverage') {
 
     dependsOn 'unitTests', 'integrationTests', 'jacocoCombinedReport'
 }
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    // run only unit tests by package or naming
+    filter {
+        includeTestsMatching "com.jobmatcher.server.service.*"
+    }
+    jacoco.destinationFile = layout.buildDirectory.file("jacoco/jacoco-test.exec").get().asFile
+    finalizedBy 'jacocoTestReport'
+}
+

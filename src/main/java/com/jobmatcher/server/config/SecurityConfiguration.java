@@ -3,6 +3,7 @@ package com.jobmatcher.server.config;
 import com.jobmatcher.server.security.CustomOAuth2FailureHandler;
 import com.jobmatcher.server.security.CustomOAuth2SuccessHandler;
 import com.jobmatcher.server.security.JwtAuthenticationFilter;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -77,11 +82,25 @@ public class SecurityConfiguration {
     }
 
     @Bean
+    public UserDetailsService prometheusUserDetailsService(
+            @Value("${SPRING_SECURITY_USER_NAME}") String username,
+            @Value("${SPRING_SECURITY_USER_PASSWORD}") String password
+    ) {
+        var user = User.withUsername(username)
+                .password(new BCryptPasswordEncoder().encode(password))
+                .roles("PROMETHEUS")
+                .build();
+        return new InMemoryUserDetailsManager(user);
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
+                // Configure public endpoints
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
                         .requestMatchers(
                                 API_VERSION + "/auth/register",
                                 API_VERSION + "/auth/login",
@@ -89,9 +108,17 @@ public class SecurityConfiguration {
                                 API_VERSION + "/auth/validate-reset-token",
                                 API_VERSION + "/auth/reset-password",
                                 API_VERSION + "/auth/refresh-token",
-                                API_VERSION + "/payments/stripe/webhook"
+                                API_VERSION + "/payments/stripe/webhook",
+                                "/error"
                         ).permitAll()
+                        // Actuator Prometheus uses HTTP Basic Auth
+                        .requestMatchers( "/actuator/prometheus").hasRole("PROMETHEUS")
+                        // All other actuator endpoints require JWT/OAuth2
+                        .requestMatchers("/actuator/**").authenticated()
+                        // All other endpoints require JWT/OAuth2
                         .anyRequest().authenticated())
+                // Enable HTTP Basic only for Prometheus scraping
+                .httpBasic(Customizer.withDefaults())
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(customOAuth2SuccessHandler)
                         .failureHandler(customOAuth2FailureHandler))
@@ -106,4 +133,11 @@ public class SecurityConfiguration {
 
         return http.build();
     }
+
+//    @PostConstruct
+//    public void printUser() {
+//        System.out.println("Prometheus user: " + System.getenv("SPRING_SECURITY_USER_NAME"));
+//        System.out.println("Prometheus password: " + System.getenv("SPRING_SECURITY_USER_PASSWORD"));
+//    }
+
 }

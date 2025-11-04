@@ -1,5 +1,8 @@
 package com.jobmatcher.server.config;
 
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,5 +16,9 @@ public class ApplicationConfig {
         return new BCryptPasswordEncoder();
     }
 
+    @Bean
+    public MeterRegistryCustomizer<MeterRegistry> metricsCommonTags() {
+        return registry -> registry.config().commonTags("application", "server");
+    }
 
 }
