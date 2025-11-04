@@ -29,14 +29,6 @@ public class ContractSpecifications {
             }
 
             // Apply filters from ContractFilterDTO
-            if (filter.getCustomerName() != null && !filter.getCustomerName().isBlank()) {
-                String likePattern = "%" + filter.getCustomerName().toLowerCase() + "%";
-                predicates.add(cb.like(cb.lower(customerJoin.get("name")), likePattern));
-            }
-            if (filter.getFreelancerName() != null && !filter.getFreelancerName().isBlank()) {
-                String likePattern = "%" + filter.getFreelancerName().toLowerCase() + "%";
-                predicates.add(cb.like(cb.lower(freelancerJoin.get("name")), likePattern));
-            }
             if (filter.getStatus() != null) {
                 predicates.add(cb.equal(root.get("status"), filter.getStatus()));
             }
@@ -47,10 +39,6 @@ public class ContractSpecifications {
                         cb.like(cb.lower(root.get("description")), likePattern)
                 ));
             }
-
-            // enforce default ordering (optional)
-            assert query != null;
-            query.orderBy(cb.desc(root.get("startDate")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

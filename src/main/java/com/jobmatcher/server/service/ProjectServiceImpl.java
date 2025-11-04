@@ -69,7 +69,7 @@ public class ProjectServiceImpl implements IProjectService {
             default -> null;
         };
 
-        var spec = ProjectSpecification.withFilters(filter, role, profileId);
+        var spec = ProjectSpecification.withFiltersAndRole(filter, role, profileId);
 
         return projectRepository.findAll(spec, pageable)
                 .map(projectMapper::toSummaryDto);
@@ -80,7 +80,7 @@ public class ProjectServiceImpl implements IProjectService {
     public Page<ProjectSummaryDTO> getAllJobFeedProjects(Pageable pageable, ProjectFilterDTO filter) {
         ProjectStatus status = filter.getStatus();
         filter.setStatus(ProjectStatus.OPEN);
-        var spec = ProjectSpecification.withFilters(filter, null, null);
+        var spec = ProjectSpecification.withFiltersAndRole(filter, null, null);
         return projectRepository.findAll(spec, pageable)
                 .map(projectMapper::toSummaryDto);
     }

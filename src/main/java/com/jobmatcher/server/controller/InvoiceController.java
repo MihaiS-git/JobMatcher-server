@@ -1,10 +1,12 @@
 package com.jobmatcher.server.controller;
 
+import com.jobmatcher.server.domain.InvoiceStatus;
 import com.jobmatcher.server.model.InvoiceDetailDTO;
 import com.jobmatcher.server.model.InvoiceFilterDTO;
 import com.jobmatcher.server.model.InvoiceRequestDTO;
 import com.jobmatcher.server.model.InvoiceSummaryDTO;
 import com.jobmatcher.server.service.IInvoiceService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import java.util.UUID;
 
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
 
+@Slf4j
 @RestController
 @RequestMapping(API_VERSION + "/invoices")
 public class InvoiceController {
@@ -28,16 +31,36 @@ public class InvoiceController {
     public ResponseEntity<Page<InvoiceSummaryDTO>> getAllInvoices(
             @RequestHeader("Authorization") String authHeader,
             Pageable pageable,
-            @ModelAttribute InvoiceFilterDTO filter
+//            @ModelAttribute InvoiceFilterDTO filter
+            @RequestParam(required = false) InvoiceStatus status,
+            @RequestParam(required = false) String contractId,
+            @RequestParam(required = false) String searchTerm
     ) {
         String token = authHeader.replace("Bearer ", "").trim();
+        log.info("Received request to get all invoices with filters - status: {}, contractId: {}, searchTerm: {}",
+                status, contractId, searchTerm);
+        InvoiceStatus invoiceStatus = null;
+        if (status != null && !status.toString().isBlank()) {
+            try {
+                invoiceStatus = InvoiceStatus.valueOf(status.toString().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid invoice status: " + status);
+            }
+        }
 
-        Page<InvoiceSummaryDTO> page = invoiceService.getAllInvoices(
+        InvoiceFilterDTO filter = InvoiceFilterDTO.builder()
+                .status(invoiceStatus)
+                .contractId((contractId != null && !contractId.isBlank()) ? UUID.fromString(contractId) : null)
+                .searchTerm(searchTerm)
+                .build();
+
+        Page<InvoiceSummaryDTO> response = invoiceService.getAllInvoices(
                 token,
                 pageable,
                 filter
         );
-        return ResponseEntity.ok(page);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{invoiceId}")

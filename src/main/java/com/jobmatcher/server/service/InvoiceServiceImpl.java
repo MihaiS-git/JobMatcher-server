@@ -76,7 +76,6 @@ public class InvoiceServiceImpl implements IInvoiceService {
             String token,
             Pageable pageable,
             InvoiceFilterDTO filter
-
     ) {
         User user = getUser(token);
         Role role = user.getRole();
@@ -87,7 +86,9 @@ public class InvoiceServiceImpl implements IInvoiceService {
             default -> null;
         };
 
-        return invoiceRepository.findAll(InvoiceSpecifications.withFiltersAndRole(filter, role, profileId), pageable)
+        var spec = InvoiceSpecifications.withFiltersAndRole(filter, role, profileId);
+
+        return invoiceRepository.findAll(spec, pageable)
                 .map(i -> {
                     ContractSummaryDTO contractDto = contractMapper.toSummaryDto(i.getContract());
                     MilestoneResponseDTO milestoneDto = i.getMilestone() != null ? milestoneMapper.toDto(i.getMilestone()) : null;

@@ -3,6 +3,7 @@ package com.jobmatcher.server.specification;
 import com.jobmatcher.server.domain.Invoice;
 import com.jobmatcher.server.domain.Role;
 import com.jobmatcher.server.model.InvoiceFilterDTO;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,11 +21,12 @@ public class InvoiceSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            var contractJoin = root.join("contract");
+            // Explicit join for lazy association
+            var contractJoin = root.join("contract", JoinType.LEFT);
 
-            if(role == Role.STAFF){
-             predicates.add(cb.equal(contractJoin.get("freelancer").get("id"), profileId));
-            } else if(role == Role.CUSTOMER){
+            if (role == Role.STAFF) {
+                predicates.add(cb.equal(contractJoin.get("freelancer").get("id"), profileId));
+            } else if (role == Role.CUSTOMER) {
                 predicates.add(cb.equal(contractJoin.get("customer").get("id"), profileId));
             }
 
@@ -36,14 +38,12 @@ public class InvoiceSpecifications {
             }
             if (filter.getSearchTerm() != null && !filter.getSearchTerm().isBlank()) {
                 String likePattern = "%" + filter.getSearchTerm().toLowerCase() + "%";
-                Path<String> usernamePath;
-                if (role == Role.STAFF) {
-                    usernamePath = contractJoin.join("freelancer").get("username");
-                } else {
-                    usernamePath = contractJoin.join("customer").get("username");
-                }
-                predicates.add(cb.like(cb.lower(usernamePath), likePattern));
+                predicates.add(cb.or(
+                        cb.like(cb.lower(contractJoin.get("title")), likePattern),
+                        cb.like(cb.lower(contractJoin.get("description")), likePattern)
+                ));
             }
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }

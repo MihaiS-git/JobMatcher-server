@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public class ProjectSpecification {
 
-    public static Specification<Project> withFilters(ProjectFilterDTO filter, Role role, UUID profileId) {
+    public static Specification<Project> withFiltersAndRole(ProjectFilterDTO filter, Role role, UUID profileId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -52,9 +52,6 @@ public class ProjectSpecification {
                         cb.like(cb.lower(root.get("description")), likePattern)
                 ));
             }
-
-            assert query != null;
-            query.distinct(true).orderBy(cb.desc(root.get("createdAt")));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

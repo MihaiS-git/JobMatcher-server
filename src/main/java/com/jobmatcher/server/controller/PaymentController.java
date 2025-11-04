@@ -63,11 +63,14 @@ public class PaymentController {
     ) {
         String token = authHeader.replace("Bearer ", "").trim();
 
+        log.info("Received request to get all payments with filters - status: {}, searchTerm: {}",
+                filter.getStatus(), filter.getSearchTerm());
         Page<PaymentSummaryDTO> page = paymentService.getAllPayments(
                 token,
                 pageable,
                 filter
         );
+        log.info("Returning {} payments", page.getNumberOfElements());
         return ResponseEntity.ok(page);
     }
 

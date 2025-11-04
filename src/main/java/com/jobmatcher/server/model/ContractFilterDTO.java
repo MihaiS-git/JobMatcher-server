@@ -8,8 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ContractFilterDTO {
-    private String customerName;
-    private String freelancerName;
     private ContractStatus status;
     private String searchTerm;
 }

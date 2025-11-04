@@ -78,15 +78,18 @@ public class PaymentServiceImpl implements IPaymentService {
             Pageable pageable,
             PaymentFilterDTO filter
     ) {
+        log.info("Fetching payments with filters: {}", filter);
         User user = getUser(token);
         Role role = user.getRole();
 
+        log.info("User {} has role {}", user.getId(), role);
         UUID profileId = switch (role) {
             case CUSTOMER -> getCustomerId(user.getId());
             case STAFF -> getFreelancerId(user.getId());
             default -> null;
         };
 
+        log.info("Using profile ID: {}", profileId);
         return paymentRepository.findAll(PaymentSpecification.withFiltersAndRole(filter, role, profileId), pageable)
                 .map(payment -> {
                     PaymentDetail paymentDetail = getPaymentDetail(payment.getInvoice());

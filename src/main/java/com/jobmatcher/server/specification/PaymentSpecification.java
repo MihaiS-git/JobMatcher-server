@@ -3,24 +3,31 @@ package com.jobmatcher.server.specification;
 import com.jobmatcher.server.domain.Payment;
 import com.jobmatcher.server.domain.Role;
 import com.jobmatcher.server.model.PaymentFilterDTO;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 public class PaymentSpecification {
     public static Specification<Payment> withFiltersAndRole(
             PaymentFilterDTO filter,
             Role role,
             UUID profileId
     ) {
+        log.info("Building Payment specification with filters: {}, role: {}, profileId: {}",
+                filter, role, profileId);
+
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            var invoiceJoin = root.join("invoice");
-            var contractJoin = invoiceJoin.join("contract");
+            log.info("Joining related entities for filtering");
+            var invoiceJoin = root.join("invoice", JoinType.LEFT);
+            var contractJoin = invoiceJoin.join("contract", JoinType.LEFT);
 
             if (role == Role.STAFF) {
                 predicates.add(cb.equal(contractJoin.get("freelancer").get("id"), profileId));
@@ -28,30 +35,21 @@ public class PaymentSpecification {
                 predicates.add(cb.equal(contractJoin.get("customer").get("id"), profileId));
             }
 
-            if (filter.getContractId() != null && !filter.getContractId().isBlank()) {
-                UUID contractId = UUID.fromString(filter.getContractId());
-                predicates.add(cb.equal(contractJoin.get("id"), contractId));
-            }
-
-            if (filter.getInvoiceId() != null && !filter.getInvoiceId().isBlank()) {
-                UUID invoiceId = UUID.fromString(filter.getInvoiceId());
-                predicates.add(cb.equal(invoiceJoin.get("id"), invoiceId));
-            }
-
             if (filter.getStatus() != null) {
                 predicates.add(cb.equal(root.get("status"), filter.getStatus()));
             }
 
             if (filter.getSearchTerm() != null && !filter.getSearchTerm().isBlank()) {
-                String likePattern = "%" + filter.getSearchTerm().toLowerCase() + "%";
-                Predicate usernamePredicate;
-                if (role == Role.STAFF) {
-                    usernamePredicate = cb.like(cb.lower(contractJoin.join("customer").get("username")), likePattern);
-                } else {
-                    usernamePredicate = cb.like(cb.lower(contractJoin.join("freelancer").get("username")), likePattern);
+                String term = filter.getSearchTerm().trim();
+
+                // UUID search
+                try {
+                    UUID uuid = UUID.fromString(term);
+                    predicates.add(cb.equal(invoiceJoin.get("id"), uuid));
+                } catch (IllegalArgumentException ignored) {
                 }
-                predicates.add(usernamePredicate);
             }
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
