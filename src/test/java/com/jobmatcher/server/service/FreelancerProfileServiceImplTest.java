@@ -74,17 +74,17 @@ class FreelancerProfileServiceImplTest {
                 .build();
     }
 
-    @Test
-    void getAllFreelancerProfiles_shouldReturnProfiles() {
-        when(profileRepository.findAll()).thenReturn(List.of(profile));
-        FreelancerSummaryDTO dto = FreelancerSummaryDTO.builder().build();
-        when(profileMapper.toFreelancerSummaryDto(profile)).thenReturn(dto);
-
-        Set<FreelancerSummaryDTO> result = service.getAllFreelancerProfiles();
-
-        assertEquals(1, result.size());
-        verify(profileRepository).findAll();
-    }
+//    @Test
+//    void getAllFreelancerProfiles_shouldReturnProfiles() {
+//        when(profileRepository.findAll()).thenReturn(List.of(profile));
+//        FreelancerSummaryDTO dto = FreelancerSummaryDTO.builder().build();
+//        when(profileMapper.toFreelancerSummaryDto(profile)).thenReturn(dto);
+//
+//        Set<FreelancerSummaryDTO> result = service.getAllFreelancerProfiles();
+//
+//        assertEquals(1, result.size());
+//        verify(profileRepository).findAll();
+//    }
 
     @Test
     void getFreelancerProfileById_found() {

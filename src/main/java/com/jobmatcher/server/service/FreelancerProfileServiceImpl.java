@@ -46,14 +46,6 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
 
     @Transactional(readOnly = true)
     @Override
-    public Set<FreelancerSummaryDTO> getAllFreelancerProfiles() {
-        return profileRepository.findAll().stream()
-                .map(profileMapper::toFreelancerSummaryDto)
-                .collect(Collectors.toSet());
-    }
-
-    @Transactional(readOnly = true)
-    @Override
     public FreelancerDetailDTO getFreelancerProfileById(UUID id) {
         FreelancerProfile profile = profileRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Profile not found for ID: " + id));

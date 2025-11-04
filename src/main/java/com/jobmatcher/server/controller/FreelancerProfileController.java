@@ -24,12 +24,6 @@ public class FreelancerProfileController {
         this.freelancerProfileService = freelancerProfileService;
     }
 
-    @GetMapping
-    public ResponseEntity<Set<FreelancerSummaryDTO>> getAllFreelancers() {
-        Set<FreelancerSummaryDTO> profiles = freelancerProfileService.getAllFreelancerProfiles();
-        return ResponseEntity.ok(profiles);
-    }
-
     @GetMapping(path = "/{id}")
     public ResponseEntity<FreelancerDetailDTO> getFreelancerById(@PathVariable UUID id) {
         FreelancerDetailDTO profile = freelancerProfileService.getFreelancerProfileById(id);

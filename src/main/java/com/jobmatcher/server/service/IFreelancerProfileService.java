@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface IFreelancerProfileService {
-    Set<FreelancerSummaryDTO> getAllFreelancerProfiles();
     FreelancerDetailDTO getFreelancerProfileById(UUID id);
     FreelancerDetailDTO getFreelancerProfileByUserId(UUID userId);
     FreelancerDetailDTO saveFreelancerProfile(FreelancerProfileRequestDTO dto);
