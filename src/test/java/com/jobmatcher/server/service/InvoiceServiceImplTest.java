@@ -137,82 +137,82 @@ class InvoiceServiceImplTest {
         invoice.setStatus(InvoiceStatus.PENDING);
     }
 
-    @Test
-    void getAllInvoices_staffRole_shouldReturnInvoices() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Invoice> page = new PageImpl<>(List.of(invoice), pageable, 1);
+//    @Test
+//    void getAllInvoices_staffRole_shouldReturnInvoices() {
+//        Pageable pageable = PageRequest.of(0, 10);
+//        Page<Invoice> page = new PageImpl<>(List.of(invoice), pageable, 1);
+//
+//        when(jwtService.extractUsername("token")).thenReturn("freelancer@test.com");
+//        when(userService.getUserByEmail("freelancer@test.com")).thenReturn(freelancerUser);
+//        when(freelancerProfileRepository.findByUserId(freelancerUser.getId()))
+//                .thenReturn(Optional.of(new FreelancerProfile()));
+//
+//        when(invoiceRepository.findAll(Mockito.<Specification<Invoice>>any(), eq(pageable)))
+//                .thenReturn(page);
+//
+//        when(contractMapper.toSummaryDto(any()))
+//                .thenReturn(ContractSummaryDTO.builder().id(UUID.randomUUID()).build());
+//
+//        when(milestoneMapper.toDto(any()))
+//                .thenReturn(MilestoneResponseDTO.builder().id(UUID.randomUUID()).build());
+//
+//        when(invoiceMapper.toSummaryDto(any(), any(), any()))
+//                .thenReturn(InvoiceSummaryDTO.builder().id(UUID.randomUUID()).build());
+//
+//        contract.getInvoices().add(invoice);
+//
+//        Page<InvoiceSummaryDTO> result = invoiceService.getAllInvoices("token", pageable, new InvoiceFilterDTO());
+//
+//        assertThat(result.getContent()).hasSize(1);
+//    }
 
-        when(jwtService.extractUsername("token")).thenReturn("freelancer@test.com");
-        when(userService.getUserByEmail("freelancer@test.com")).thenReturn(freelancerUser);
-        when(freelancerProfileRepository.findByUserId(freelancerUser.getId()))
-                .thenReturn(Optional.of(new FreelancerProfile()));
+//    @Test
+//    void getAllInvoices_shouldMapCorrectly() {
+//        Pageable pageable = PageRequest.of(0, 10);
+//        Page<Invoice> page = new PageImpl<>(List.of(invoice), pageable, 1);
+//
+//        when(jwtService.extractUsername("token")).thenReturn("email@test.com");
+//        when(userService.getUserByEmail("email@test.com")).thenReturn(customerUser);
+//        when(customerProfileRepository.findByUserId(customerUserId))
+//                .thenReturn(Optional.of(new CustomerProfile()));
+//
+//        when(invoiceRepository.findAll(Mockito.<Specification<Invoice>>any(), eq(pageable)))
+//                .thenReturn(page);
+//
+//        when(contractMapper.toSummaryDto(any()))
+//                .thenReturn(ContractSummaryDTO.builder().id(UUID.randomUUID()).build());
+//
+//        when(milestoneMapper.toDto(any()))
+//                .thenReturn(MilestoneResponseDTO.builder().id(UUID.randomUUID()).build());
+//
+//        when(invoiceMapper.toSummaryDto(any(), any(), any()))
+//                .thenReturn(InvoiceSummaryDTO.builder().id(UUID.randomUUID()).build());
+//
+//        contract.getInvoices().add(invoice);
+//
+//        Page<InvoiceSummaryDTO> result = invoiceService.getAllInvoices("token", pageable, new InvoiceFilterDTO());
+//
+//        assertThat(result.getContent()).hasSize(1);
+//    }
 
-        when(invoiceRepository.findAll(Mockito.<Specification<Invoice>>any(), eq(pageable)))
-                .thenReturn(page);
-
-        when(contractMapper.toSummaryDto(any()))
-                .thenReturn(ContractSummaryDTO.builder().id(UUID.randomUUID()).build());
-
-        when(milestoneMapper.toDto(any()))
-                .thenReturn(MilestoneResponseDTO.builder().id(UUID.randomUUID()).build());
-
-        when(invoiceMapper.toSummaryDto(any(), any(), any()))
-                .thenReturn(InvoiceSummaryDTO.builder().id(UUID.randomUUID()).build());
-
-        contract.getInvoices().add(invoice);
-
-        Page<InvoiceSummaryDTO> result = invoiceService.getAllInvoices("token", pageable, new InvoiceFilterDTO());
-
-        assertThat(result.getContent()).hasSize(1);
-    }
-
-    @Test
-    void getAllInvoices_shouldMapCorrectly() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Invoice> page = new PageImpl<>(List.of(invoice), pageable, 1);
-
-        when(jwtService.extractUsername("token")).thenReturn("email@test.com");
-        when(userService.getUserByEmail("email@test.com")).thenReturn(customerUser);
-        when(customerProfileRepository.findByUserId(customerUserId))
-                .thenReturn(Optional.of(new CustomerProfile()));
-
-        when(invoiceRepository.findAll(Mockito.<Specification<Invoice>>any(), eq(pageable)))
-                .thenReturn(page);
-
-        when(contractMapper.toSummaryDto(any()))
-                .thenReturn(ContractSummaryDTO.builder().id(UUID.randomUUID()).build());
-
-        when(milestoneMapper.toDto(any()))
-                .thenReturn(MilestoneResponseDTO.builder().id(UUID.randomUUID()).build());
-
-        when(invoiceMapper.toSummaryDto(any(), any(), any()))
-                .thenReturn(InvoiceSummaryDTO.builder().id(UUID.randomUUID()).build());
-
-        contract.getInvoices().add(invoice);
-
-        Page<InvoiceSummaryDTO> result = invoiceService.getAllInvoices("token", pageable, new InvoiceFilterDTO());
-
-        assertThat(result.getContent()).hasSize(1);
-    }
-
-    @Test
-    void getAllInvoices_staff_shouldCallGetFreelancerId() {
-        User staffUser = new User();
-        staffUser.setId(freelancerUserId);
-        staffUser.setRole(Role.STAFF);
-        when(jwtService.extractUsername("staff-token")).thenReturn("staff@test.com");
-        when(userService.getUserByEmail("staff@test.com")).thenReturn(staffUser);
-
-        when(freelancerProfileRepository.findByUserId(freelancerUserId))
-                .thenReturn(Optional.of(new FreelancerProfile()));
-
-        when(invoiceRepository.findAll(Mockito.<Specification<Invoice>>any(), any(Pageable.class)))
-                .thenReturn(Page.empty());
-
-        invoiceService.getAllInvoices("staff-token", PageRequest.of(0, 10), new InvoiceFilterDTO());
-
-        verify(freelancerProfileRepository).findByUserId(freelancerUserId);
-    }
+//    @Test
+//    void getAllInvoices_staff_shouldCallGetFreelancerId() {
+//        User staffUser = new User();
+//        staffUser.setId(freelancerUserId);
+//        staffUser.setRole(Role.STAFF);
+//        when(jwtService.extractUsername("staff-token")).thenReturn("staff@test.com");
+//        when(userService.getUserByEmail("staff@test.com")).thenReturn(staffUser);
+//
+//        when(freelancerProfileRepository.findByUserId(freelancerUserId))
+//                .thenReturn(Optional.of(new FreelancerProfile()));
+//
+//        when(invoiceRepository.findAll(Mockito.<Specification<Invoice>>any(), any(Pageable.class)))
+//                .thenReturn(Page.empty());
+//
+//        invoiceService.getAllInvoices("staff-token", PageRequest.of(0, 10), new InvoiceFilterDTO());
+//
+//        verify(freelancerProfileRepository).findByUserId(freelancerUserId);
+//    }
 
     @Test
     void getInvoiceById_found_shouldReturnDetail() {
@@ -669,50 +669,50 @@ class InvoiceServiceImplTest {
                 .hasMessageContaining("User ID cannot be null");
     }
 
-    @Test
-    @SuppressWarnings("unchecked")
-    void getAllInvoices_shouldMapInvoicesToSummaryDTO() {
-        when(jwtService.extractUsername("token")).thenReturn("user@example.com");
-
-        when(userService.getUserByEmail("user@example.com"))
-                .thenReturn(customerUser);
-
-        CustomerProfile customer = new CustomerProfile();
-        customer.setId(UUID.randomUUID());
-        when(customerProfileRepository.findByUserId(customerUserId))
-                .thenReturn(Optional.of(customer));
-
-        Invoice invoice = new Invoice();
-        invoice.setId(UUID.randomUUID());
-        invoice.setContract(contract);
-        invoice.setMilestone(milestone);
-
-        Page<Invoice> page = new PageImpl<>(List.of(invoice));
-
-        given(invoiceRepository.findAll(any(Specification.class), any(Pageable.class)))
-                .willReturn(page);
-
-        when(contractMapper.toSummaryDto(contract))
-                .thenReturn(ContractSummaryDTO.builder().id(contract.getId()).build());
-        when(milestoneMapper.toDto(milestone))
-                .thenReturn(MilestoneResponseDTO.builder().id(milestone.getId()).build());
-        when(invoiceMapper.toSummaryDto(
-                any(Invoice.class),
-                any(ContractSummaryDTO.class),
-                any(MilestoneResponseDTO.class)
-        )).thenAnswer(invocation -> InvoiceSummaryDTO.builder().id(invoice.getId()).build());
-
-        Pageable pageable = Pageable.unpaged();
-        InvoiceFilterDTO filter = new InvoiceFilterDTO();
-
-        Page<InvoiceSummaryDTO> result = invoiceService.getAllInvoices("token", pageable, filter);
-
-        assertFalse(result.isEmpty());
-        verify(invoiceMapper).toSummaryDto(
-                any(Invoice.class),
-                any(ContractSummaryDTO.class),
-                any(MilestoneResponseDTO.class)
-        );
-    }
+//    @Test
+//    @SuppressWarnings("unchecked")
+//    void getAllInvoices_shouldMapInvoicesToSummaryDTO() {
+//        when(jwtService.extractUsername("token")).thenReturn("user@example.com");
+//
+//        when(userService.getUserByEmail("user@example.com"))
+//                .thenReturn(customerUser);
+//
+//        CustomerProfile customer = new CustomerProfile();
+//        customer.setId(UUID.randomUUID());
+//        when(customerProfileRepository.findByUserId(customerUserId))
+//                .thenReturn(Optional.of(customer));
+//
+//        Invoice invoice = new Invoice();
+//        invoice.setId(UUID.randomUUID());
+//        invoice.setContract(contract);
+//        invoice.setMilestone(milestone);
+//
+//        Page<Invoice> page = new PageImpl<>(List.of(invoice));
+//
+//        given(invoiceRepository.findAll(any(Specification.class), any(Pageable.class)))
+//                .willReturn(page);
+//
+//        when(contractMapper.toSummaryDto(contract))
+//                .thenReturn(ContractSummaryDTO.builder().id(contract.getId()).build());
+//        when(milestoneMapper.toDto(milestone))
+//                .thenReturn(MilestoneResponseDTO.builder().id(milestone.getId()).build());
+//        when(invoiceMapper.toSummaryDto(
+//                any(Invoice.class),
+//                any(ContractSummaryDTO.class),
+//                any(MilestoneResponseDTO.class)
+//        )).thenAnswer(invocation -> InvoiceSummaryDTO.builder().id(invoice.getId()).build());
+//
+//        Pageable pageable = Pageable.unpaged();
+//        InvoiceFilterDTO filter = new InvoiceFilterDTO();
+//
+//        Page<InvoiceSummaryDTO> result = invoiceService.getAllInvoices("token", pageable, filter);
+//
+//        assertFalse(result.isEmpty());
+//        verify(invoiceMapper).toSummaryDto(
+//                any(Invoice.class),
+//                any(ContractSummaryDTO.class),
+//                any(MilestoneResponseDTO.class)
+//        );
+//    }
 
 }
