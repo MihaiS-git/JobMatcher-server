@@ -25,6 +25,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static com.jobmatcher.server.model.ApiConstants.API_VERSION;
 
@@ -73,7 +74,7 @@ public class SecurityConfiguration {
                 FRONTEND_URL_BUILT
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -83,8 +84,8 @@ public class SecurityConfiguration {
 
     @Bean
     public UserDetailsService prometheusUserDetailsService(
-            @Value("${SPRING_SECURITY_USER_NAME}") String username,
-            @Value("${SPRING_SECURITY_USER_PASSWORD}") String password
+            @Value("${spring.security.user.name}") String username,
+            @Value("${spring.security.user.password}") String password
     ) {
         var user = User.withUsername(username)
                 .password(new BCryptPasswordEncoder().encode(password))

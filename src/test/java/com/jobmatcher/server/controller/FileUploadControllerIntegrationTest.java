@@ -1,6 +1,5 @@
 package com.jobmatcher.server.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jobmatcher.server.controller.config.AbstractIntegrationTest;
 import com.jobmatcher.server.domain.User;
 import com.jobmatcher.server.model.AuthenticationRequest;

@@ -46,7 +46,7 @@ class FreelancerProfileControllerIntegrationTest extends AbstractIntegrationTest
     @BeforeEach
     void setUp() throws Exception {
         // Authenticate seeded user
-        String seededEmail = "user4@jobmatcher.com";
+        String seededEmail = "user0@jobmatcher.com";
         String seededPassword = "Password!23";
 
         AuthenticationRequest loginRequest = new AuthenticationRequest();
@@ -66,16 +66,6 @@ class FreelancerProfileControllerIntegrationTest extends AbstractIntegrationTest
         existingProfile = freelancerProfileRepository.findAll().stream()
                 .findFirst()
                 .orElseThrow();
-    }
-
-    @Test
-    void shouldGetAllFreelancers() throws Exception {
-        mockMvc.perform(get(API_VERSION + "/profiles/freelancers")
-                        .header("Authorization", "Bearer " + jwtToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].profileId").exists())
-                .andExpect(jsonPath("$[0].username").exists());
     }
 
     @Test

@@ -43,7 +43,7 @@ class CustomerAnalyticsControllerIntegrationTest extends AbstractIntegrationTest
     void setUp() throws Exception {
         // Authenticate seeded customer user
         var loginRequest = new com.jobmatcher.server.model.AuthenticationRequest();
-        loginRequest.setEmail("user4@jobmatcher.com"); // matches seeded data
+        loginRequest.setEmail("user1@jobmatcher.com"); // matches seeded data
         loginRequest.setPassword("Password!23");
 
         String responseBody = mockMvc.perform(
@@ -58,7 +58,7 @@ class CustomerAnalyticsControllerIntegrationTest extends AbstractIntegrationTest
 
         // Fetch the already seeded customer
         seededCustomer = customerRepository.findAll().stream()
-                .filter(c -> c.getUser().getEmail().equals("user4@jobmatcher.com"))
+                .filter(c -> c.getUser().getEmail().equals("user1@jobmatcher.com"))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Seeded customer not found"));
 

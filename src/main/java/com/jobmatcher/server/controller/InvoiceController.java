@@ -31,8 +31,7 @@ public class InvoiceController {
     public ResponseEntity<Page<InvoiceSummaryDTO>> getAllInvoices(
             @RequestHeader("Authorization") String authHeader,
             Pageable pageable,
-//            @ModelAttribute InvoiceFilterDTO filter
-            @RequestParam(required = false) InvoiceStatus status,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String contractId,
             @RequestParam(required = false) String searchTerm
     ) {
@@ -40,9 +39,9 @@ public class InvoiceController {
         log.info("Received request to get all invoices with filters - status: {}, contractId: {}, searchTerm: {}",
                 status, contractId, searchTerm);
         InvoiceStatus invoiceStatus = null;
-        if (status != null && !status.toString().isBlank()) {
+        if (status != null && !status.isBlank()) {
             try {
-                invoiceStatus = InvoiceStatus.valueOf(status.toString().toUpperCase());
+                invoiceStatus = InvoiceStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid invoice status: " + status);
             }

@@ -6,7 +6,6 @@ import com.jobmatcher.server.exception.ResourceNotFoundException;
 import com.jobmatcher.server.mapper.FreelancerProfileMapper;
 import com.jobmatcher.server.model.FreelancerDetailDTO;
 import com.jobmatcher.server.model.FreelancerProfileRequestDTO;
-import com.jobmatcher.server.model.FreelancerSummaryDTO;
 import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.util.SanitizationUtil;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,18 +72,6 @@ class FreelancerProfileServiceImplTest {
                 .socialMedia(Set.of())
                 .build();
     }
-
-//    @Test
-//    void getAllFreelancerProfiles_shouldReturnProfiles() {
-//        when(profileRepository.findAll()).thenReturn(List.of(profile));
-//        FreelancerSummaryDTO dto = FreelancerSummaryDTO.builder().build();
-//        when(profileMapper.toFreelancerSummaryDto(profile)).thenReturn(dto);
-//
-//        Set<FreelancerSummaryDTO> result = service.getAllFreelancerProfiles();
-//
-//        assertEquals(1, result.size());
-//        verify(profileRepository).findAll();
-//    }
 
     @Test
     void getFreelancerProfileById_found() {
@@ -1035,6 +1022,4 @@ class FreelancerProfileServiceImplTest {
             assertNull(saved.getAbout(), "Blank about should be treated as null");
         }
     }
-
-
 }

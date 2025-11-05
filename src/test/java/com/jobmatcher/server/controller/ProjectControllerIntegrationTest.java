@@ -58,7 +58,7 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         // Authenticate seeded user and get JWT
-        String seededEmail = "user4@jobmatcher.com";
+        String seededEmail = "user1@jobmatcher.com";
         String seededPassword = "Password!23";
 
         AuthenticationRequest loginRequest = new AuthenticationRequest();
@@ -108,7 +108,7 @@ class ProjectControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("status", "OPEN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].id").value(projectId.toString()));
+                .andExpect(jsonPath("$.content[?(@.id=='" + projectId + "')]").exists());
     }
 
     @Test

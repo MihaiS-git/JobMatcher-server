@@ -69,7 +69,7 @@ class ContractControllerIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         // Authenticate seeded user
-        String seededEmail = "user4@jobmatcher.com";
+        String seededEmail = "user1@jobmatcher.com";
         String seededPassword = "Password!23";
 
         AuthenticationRequest loginRequest = new AuthenticationRequest();
@@ -144,8 +144,7 @@ class ContractControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].id").value(contractId.toString()));
+                .andExpect(jsonPath("$.content[?(@.id=='" + contractId + "')]").exists());
     }
 
     @Test

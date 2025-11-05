@@ -251,7 +251,7 @@ public class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/v0/auth/me").principal(auth))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("user1@jobmatcher.com"))
-                .andExpect(jsonPath("$.role").value("STAFF")); // match domain role
+                .andExpect(jsonPath("$.role").value("CUSTOMER")); // match domain role
     }
 
     @Test

@@ -43,7 +43,7 @@ class CustomerProfileControllerIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         // Authenticate seeded user
-        String seededEmail = "user4@jobmatcher.com";
+        String seededEmail = "user1@jobmatcher.com";
         String seededPassword = "Password!23";
 
         AuthenticationRequest loginRequest = new AuthenticationRequest();

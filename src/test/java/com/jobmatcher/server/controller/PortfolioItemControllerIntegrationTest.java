@@ -82,7 +82,7 @@ public class PortfolioItemControllerIntegrationTest extends AbstractIntegrationT
     @BeforeEach
     void setUp() throws Exception {
         // Authenticate seeded user and get JWT
-        String seededEmail = "user1@jobmatcher.com";
+        String seededEmail = "user0@jobmatcher.com";
         String seededPassword = "Password!23";
 
         AuthenticationRequest loginRequest = new AuthenticationRequest();

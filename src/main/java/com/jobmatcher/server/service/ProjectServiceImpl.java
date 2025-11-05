@@ -78,7 +78,6 @@ public class ProjectServiceImpl implements IProjectService {
     @Transactional(readOnly = true)
     @Override
     public Page<ProjectSummaryDTO> getAllJobFeedProjects(Pageable pageable, ProjectFilterDTO filter) {
-        ProjectStatus status = filter.getStatus();
         filter.setStatus(ProjectStatus.OPEN);
         var spec = ProjectSpecification.withFiltersAndRole(filter, null, null);
         return projectRepository.findAll(spec, pageable)

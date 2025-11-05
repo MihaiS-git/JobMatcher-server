@@ -1,6 +1,5 @@
 package com.jobmatcher.server.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jobmatcher.server.controller.config.AbstractIntegrationTest;
 import com.jobmatcher.server.domain.FreelancerProfile;
@@ -38,7 +37,7 @@ class FreelancerAnalyticsControllerIntegrationTest extends AbstractIntegrationTe
     void setUp() throws Exception {
         // Authenticate a seeded freelancer
         var loginRequest = new com.jobmatcher.server.model.AuthenticationRequest();
-        loginRequest.setEmail("user1@jobmatcher.com");
+        loginRequest.setEmail("user0@jobmatcher.com");
         loginRequest.setPassword("Password!23");
 
         String responseBody = mockMvc.perform(

@@ -99,6 +99,23 @@ class InvoiceControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void shouldGetAllPaidInvoices() throws Exception {
+        mockMvc.perform(get(API_VERSION + "/invoices?status=PAID&contractId=&searchTerm=")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
+    }
+
+    @Test
+    void shouldThrowGetAllUnpaidInvoices() throws Exception {
+        mockMvc.perform(get(API_VERSION + "/invoices?status=UNPAID&contractId=&searchTerm=")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid invoice status: UNPAID"));
+    }
+
+    @Test
     void shouldGetInvoiceById() throws Exception {
         mockMvc.perform(get(API_VERSION + "/invoices/{id}", existingInvoiceId)
                         .header("Authorization", "Bearer " + jwtToken))

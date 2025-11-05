@@ -9,15 +9,11 @@ import com.jobmatcher.server.repository.*;
 import com.jobmatcher.server.util.SanitizationUtil;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -303,19 +299,44 @@ class ProjectServiceImplTest {
     // ───────────────────────────────────────────────
     // getAllJobFeedProjects
     // ───────────────────────────────────────────────
-//    @Test
-//    void getAllJobFeedProjects_shouldReturnPagedResponse() {
-//        Pageable pageable = PageRequest.of(0, 2, Sort.by("title"));
-//        List<UUID> ids = List.of(UUID.randomUUID(), UUID.randomUUID());
-//        when(projectRepository.findFilteredJobFeedProjectIds(any(), any(), any(), any())).thenReturn(ids);
-//        when(projectRepository.findByIdIn(ids))
-//                .thenReturn(new ArrayList<>(List.of(project, project)));
-//
-//        when(projectMapper.toSummaryDto(any())).thenReturn(new ProjectSummaryDTO());
-//
-//        PagedResponseDTO<ProjectSummaryDTO> result = projectService.getAllJobFeedProjects(pageable, List.of(ProjectStatus.IN_PROGRESS), 1L, 2L, "term");
-//        assertThat(result.content()).hasSize(2);
-//    }
+    @Test
+    void getAllJobFeedProjects_shouldReturnPagedResponse() {
+        Pageable pageable = PageRequest.of(0, 10);
+        ProjectFilterDTO filter = ProjectFilterDTO.builder().build(); // no status set yet
+        Project projectEntity = new Project();
+        ProjectSummaryDTO summaryDTO = new ProjectSummaryDTO();
+
+        Page<Project> entityPage = new PageImpl<>(List.of(projectEntity));
+        when(projectRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(entityPage);
+        when(projectMapper.toSummaryDto(projectEntity)).thenReturn(summaryDTO);
+
+        Page<ProjectSummaryDTO> result = projectService.getAllJobFeedProjects(pageable, filter);
+
+        assertThat(1).isEqualTo(result.getTotalElements());
+        assertThat(summaryDTO).isEqualTo(result.getContent().get(0));
+
+        assertThat(ProjectStatus.OPEN).isEqualTo(filter.getStatus());
+
+        verify(projectRepository).findAll(any(Specification.class), eq(pageable));
+        verify(projectMapper).toSummaryDto(projectEntity);
+    }
+
+    @Test
+    void getAllJobFeedProjects_shouldHandleEmptyResults() {
+        Pageable pageable = PageRequest.of(0, 5);
+        ProjectFilterDTO filter = ProjectFilterDTO.builder().build();
+
+        when(projectRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(Page.empty(pageable));
+
+        Page<ProjectSummaryDTO> result = projectService.getAllJobFeedProjects(pageable, filter);
+
+        assertThat(result).isEmpty();
+        assertThat(ProjectStatus.OPEN).isEqualTo(filter.getStatus());
+        verify(projectRepository).findAll(any(Specification.class), eq(pageable));
+        verifyNoInteractions(projectMapper);
+    }
 
     // ───────────────────────────────────────────────
     // updateProjectStatus
@@ -359,89 +380,6 @@ class ProjectServiceImplTest {
         }
     }
 
-//    @Test
-//    void getAllProjects_asCustomer_shouldUseCustomerId() {
-//        String token = "token";
-//        UUID userId = UUID.randomUUID();
-//        UUID customerId = UUID.randomUUID();
-//
-//        User user = new User();
-//        user.setId(userId);
-//        user.setRole(Role.CUSTOMER);
-//
-//        CustomerProfile customerProfile = new CustomerProfile();
-//        customerProfile.setId(customerId);
-//        customerProfile.setUser(user);
-//
-//        when(jwtService.extractUsername(token)).thenReturn("user@example.com");
-//        when(userService.getUserByEmail("user@example.com")).thenReturn(user);
-//        when(customerProfileRepository.findByUserId(userId))
-//                .thenReturn(Optional.of(customerProfile));
-//        when(projectRepository.findFilteredProjectIds(any(), any(), any(), any(), any()))
-//                .thenReturn(List.of(UUID.randomUUID()));
-//
-//        Pageable pageable = PageRequest.of(0, 10);
-//        when(projectRepository.findByIdIn(any())).thenReturn(new ArrayList<>(List.of(new Project())));
-//        when(projectMapper.toSummaryDto(any())).thenReturn(new ProjectSummaryDTO());
-//
-//        projectService.getAllProjects(token, pageable, ProjectStatus.OPEN, 1L, 2L, "test");
-//
-//        verify(customerProfileRepository).findByUserId(userId);
-//    }
-
-//    @Test
-//    void getAllProjects_asStaff_shouldUseFreelancerId() {
-//        String token = "token";
-//        UUID userId = UUID.randomUUID();
-//        UUID freelancerId = UUID.randomUUID();
-//
-//        User user = new User();
-//        user.setId(userId);
-//        user.setRole(Role.STAFF);
-//
-//        FreelancerProfile freelancerProfile = new FreelancerProfile();
-//        freelancerProfile.setId(freelancerId);
-//        freelancerProfile.setUser(user);
-//
-//        when(jwtService.extractUsername(token)).thenReturn("staff@example.com");
-//        when(userService.getUserByEmail("staff@example.com")).thenReturn(user);
-//        when(freelancerProfileRepository.findByUserId(userId))
-//                .thenReturn(Optional.of(freelancerProfile));
-//        when(projectRepository.findFilteredProjectIds(any(), any(), any(), any(), any()))
-//                .thenReturn(List.of(UUID.randomUUID()));
-//
-//        Pageable pageable = PageRequest.of(0, 10);
-//        when(projectRepository.findByIdIn(any()))
-//                .thenReturn(new ArrayList<>(List.of(new Project())));
-//        when(projectMapper.toSummaryDto(any())).thenReturn(new ProjectSummaryDTO());
-//
-//        projectService.getAllProjects(token, pageable, ProjectStatus.OPEN, 1L, 2L, "test");
-//
-//        verify(freelancerProfileRepository).findByUserId(userId);
-//    }
-
-//    @Test
-//    void getAllProjects_asOtherRole_shouldUseNullProfileId() {
-//        User user = new User();
-//        user.setRole(Role.ADMIN);
-//
-//        when(jwtService.extractUsername(any())).thenReturn("admin@example.com");
-//        when(userService.getUserByEmail(any())).thenReturn(user);
-//        when(projectRepository.findFilteredProjectIds(
-//                isNull(), any(), any(), any(), any()
-//        )).thenReturn(List.of(UUID.randomUUID()));
-//
-//        Pageable pageable = PageRequest.of(0, 10);
-//        when(projectRepository.findByIdIn(any())).thenReturn(new ArrayList<>(List.of(new Project())));
-//        when(projectMapper.toSummaryDto(any())).thenReturn(new ProjectSummaryDTO());
-//
-//        projectService.getAllProjects("token", pageable, ProjectStatus.OPEN, 1L, 2L, "test");
-//
-//        verify(projectRepository).findFilteredProjectIds(
-//                isNull(), any(), any(), any(), any()
-//        );
-//    }
-
     @Test
     void updateProject_shouldClearAssociationsWhenIdsNull() {
         UUID projectId = UUID.randomUUID();
@@ -463,62 +401,103 @@ class ProjectServiceImplTest {
         verify(projectRepository).save(existing);
     }
 
-//    @ParameterizedTest
-//    @ValueSource(strings = {"status", "category", "deadline", "paymentType", "budget"})
-//    void buildPageResponse_shouldSortByVariousFields(String field) throws Exception {
-//        Pageable pageable = PageRequest.of(0, 5, Sort.by(field));
-//
-//        Project p1 = new Project();
-//        p1.setId(UUID.randomUUID());
-//        p1.setTitle("B");
-//        p1.setStatus(ProjectStatus.IN_PROGRESS);
-//        p1.setDeadline(LocalDate.now().plusDays(3));
-//        p1.setBudget(BigDecimal.TEN);
-//        p1.setPaymentType(PaymentType.UPON_COMPLETION);
-//        JobCategory cat = new JobCategory();
-//        cat.setName("Alpha");
-//        p1.setCategory(cat);
-//
-//        Project p2 = new Project();
-//        p2.setId(UUID.randomUUID());
-//        p2.setTitle("A");
-//        p2.setStatus(ProjectStatus.COMPLETED);
-//        p2.setDeadline(LocalDate.now().plusDays(1));
-//        p2.setBudget(BigDecimal.ONE);
-//        p2.setPaymentType(PaymentType.MILESTONE);
-//        JobCategory cat2 = new JobCategory();
-//        cat2.setName("Beta");
-//        p2.setCategory(cat2);
-//
-//        List<Project> projects = new ArrayList<>(List.of(p1, p2));
-//
-//        when(projectRepository.findByIdIn(any())).thenReturn(projects);
-//        when(projectMapper.toSummaryDto(any())).thenReturn(new ProjectSummaryDTO());
-//
-//        PagedResponseDTO<ProjectSummaryDTO> result = invokePrivateBuildPageResponse(pageable, List.of(p1.getId(), p2.getId()));
-//
-//        assertThat(result.content()).hasSize(2);
-//    }
+    // ───────────────────────────────────────────────
+    // getAllProjects
+    // ───────────────────────────────────────────────
+    @Test
+    void getAllProjects_shouldReturnMappedPage_whenRoleCustomer() {
+        // given
+        String token = "fake-token";
+        Pageable pageable = PageRequest.of(0, 5);
+        ProjectFilterDTO filter = ProjectFilterDTO.builder().build();
 
-//    @Test
-//    void buildPageResponse_shouldUseDefaultComparatorWhenUnsorted() throws Exception {
-//        Pageable pageable = PageRequest.of(0, 5);
-//        Project p1 = new Project(); p1.setLastUpdate(OffsetDateTime.now().minusDays(1));
-//        Project p2 = new Project(); p2.setLastUpdate(OffsetDateTime.now());
-//        when(projectRepository.findByIdIn(any())).thenReturn(new ArrayList<>(List.of(p1, p2)));
-//        when(projectMapper.toSummaryDto(any())).thenReturn(new ProjectSummaryDTO());
-//
-//        PagedResponseDTO<ProjectSummaryDTO> result = invokePrivateBuildPageResponse(pageable, List.of(UUID.randomUUID()));
-//
-//        assertThat(result).isNotNull();
-//    }
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setRole(Role.CUSTOMER);
 
-    @SuppressWarnings("unchecked")
-    private PagedResponseDTO<ProjectSummaryDTO> invokePrivateBuildPageResponse(Pageable pageable, List<UUID> ids) throws Exception {
-        Method method = ProjectServiceImpl.class.getDeclaredMethod("buildPageResponse", Pageable.class, List.class);
-        method.setAccessible(true);  // allow calling private method
-        return (PagedResponseDTO<ProjectSummaryDTO>) method.invoke(projectService, pageable, ids);
+        UUID customerId = UUID.randomUUID();
+        CustomerProfile customerProfile = new CustomerProfile();
+        customerProfile.setId(customerId);
+
+        Project project = new Project();
+        ProjectSummaryDTO dto = new ProjectSummaryDTO();
+
+        when(jwtService.extractUsername(token)).thenReturn("user@example.com");
+        when(userService.getUserByEmail("user@example.com")).thenReturn(user);
+        when(customerProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(customerProfile));
+
+        Page<Project> entityPage = new PageImpl<>(List.of(project));
+        when(projectRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(entityPage);
+        when(projectMapper.toSummaryDto(project)).thenReturn(dto);
+
+        // when
+        Page<ProjectSummaryDTO> result = projectService.getAllProjects(token, pageable, filter);
+
+        // then
+        assertThat(result.getContent()).containsExactly(dto);
+        verify(projectRepository).findAll(any(Specification.class), eq(pageable));
+        verify(projectMapper).toSummaryDto(project);
     }
 
+    @Test
+    void getAllProjects_shouldReturnMappedPage_whenRoleStaff() {
+        // given
+        String token = "staff-token";
+        Pageable pageable = PageRequest.of(0, 5);
+        ProjectFilterDTO filter = ProjectFilterDTO.builder().build();
+
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setRole(Role.STAFF);
+
+        UUID freelancerId = UUID.randomUUID();
+        FreelancerProfile freelancerProfile = new FreelancerProfile();
+        freelancerProfile.setId(freelancerId);
+
+        Project project = new Project();
+        ProjectSummaryDTO dto = new ProjectSummaryDTO();
+
+        when(jwtService.extractUsername(token)).thenReturn("staff@example.com");
+        when(userService.getUserByEmail("staff@example.com")).thenReturn(user);
+        when(freelancerProfileRepository.findByUserId(user.getId())).thenReturn(Optional.of(freelancerProfile));
+        when(projectRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(project)));
+        when(projectMapper.toSummaryDto(project)).thenReturn(dto);
+
+        // when
+        Page<ProjectSummaryDTO> result = projectService.getAllProjects(token, pageable, filter);
+
+        // then
+        assertThat(result.getContent()).containsExactly(dto);
+        verify(freelancerProfileRepository).findByUserId(user.getId());
+    }
+
+    @Test
+    void getAllProjects_shouldHandleOtherRolesGracefully() {
+        // given
+        String token = "freelancer-token";
+        Pageable pageable = PageRequest.of(0, 5);
+        ProjectFilterDTO filter = ProjectFilterDTO.builder().build();
+
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setRole(Role.ADMIN); // not CUSTOMER or STAFF
+
+        Project project = new Project();
+        ProjectSummaryDTO dto = new ProjectSummaryDTO();
+
+        when(jwtService.extractUsername(token)).thenReturn("admin@example.com");
+        when(userService.getUserByEmail("admin@example.com")).thenReturn(user);
+        when(projectRepository.findAll(any(Specification.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(project)));
+        when(projectMapper.toSummaryDto(project)).thenReturn(dto);
+
+        // when
+        Page<ProjectSummaryDTO> result = projectService.getAllProjects(token, pageable, filter);
+
+        // then
+        assertThat(result.getContent()).containsExactly(dto);
+        // null profileId branch implicitly covered
+    }
 
 }
