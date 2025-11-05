@@ -6,6 +6,7 @@ import com.jobmatcher.server.model.ProposalRequestDTO;
 import com.jobmatcher.server.model.ProposalStatusRequestDTO;
 import com.jobmatcher.server.model.ProposalSummaryDTO;
 import com.jobmatcher.server.service.IProposalService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,7 +30,7 @@ public class ProposalController {
 
     @GetMapping
     public ResponseEntity<Page<ProposalSummaryDTO>> getProposalsByProjectId(
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
             @RequestParam("projectId") String projectId,
             @RequestParam(value = "status", required = false) ProposalStatus status
     ) {
@@ -40,7 +41,7 @@ public class ProposalController {
     @GetMapping(path = "/freelancer/{freelancerId}")
     public ResponseEntity<Page<ProposalSummaryDTO>> getProposalsByFreelancerId(
             @PathVariable("freelancerId") String freelancerId,
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
             @RequestParam(value = "status", required = false) ProposalStatus status
     ) {
         Page<ProposalSummaryDTO> proposals = proposalService.getProposalsByFreelancerId(UUID.fromString(freelancerId), pageable, status);

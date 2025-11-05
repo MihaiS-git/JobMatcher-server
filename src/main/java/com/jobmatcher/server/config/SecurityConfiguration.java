@@ -110,6 +110,9 @@ public class SecurityConfiguration {
                                 API_VERSION + "/auth/reset-password",
                                 API_VERSION + "/auth/refresh-token",
                                 API_VERSION + "/payments/stripe/webhook",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
                                 "/error"
                         ).permitAll()
                         // Actuator Prometheus uses HTTP Basic Auth

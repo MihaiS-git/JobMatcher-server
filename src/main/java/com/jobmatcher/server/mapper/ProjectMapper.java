@@ -70,6 +70,8 @@ public class ProjectMapper {
         return ProjectSummaryDTO.builder()
                 .id(entity.getId())
                 .title(entity.getTitle())
+                .customerId(entity.getCustomer().getId())
+                .freelancerId(entity.getFreelancer().getId())
                 .description(entity.getDescription())
                 .status(entity.getStatus())
                 .budget(entity.getBudget())

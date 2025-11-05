@@ -4,6 +4,7 @@ import com.jobmatcher.server.domain.ProjectStatus;
 import com.jobmatcher.server.model.*;
 import com.jobmatcher.server.service.IProjectService;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -27,13 +28,11 @@ public class ProjectController {
     @GetMapping
     public ResponseEntity<Page<ProjectSummaryDTO>> getAllProjects(
             @RequestHeader("Authorization") String authHeader,
-            Pageable pageable,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long subcategoryId,
-            @RequestParam(required = false) String searchTerm
+            @ParameterObject Pageable pageable,
+            @ParameterObject ProjectFilterDTO filter
     ) {
         String token = authHeader.replace("Bearer ", "").trim();
+        String status = filter.getStatus() != null ? filter.getStatus().toString() : null;
 
         ProjectStatus projectStatus = null;
         if (status != null && !status.isBlank()) {
@@ -44,12 +43,7 @@ public class ProjectController {
             }
         }
 
-        ProjectFilterDTO filter = ProjectFilterDTO.builder()
-                .status(projectStatus)
-                .categoryId(categoryId)
-                .subcategoryId(subcategoryId)
-                .searchTerm(searchTerm)
-                .build();
+        filter.setStatus(projectStatus);
 
         Page<ProjectSummaryDTO> response = projectService.getAllProjects(
                 token,
@@ -62,28 +56,17 @@ public class ProjectController {
 
     @GetMapping("/job-feed")
     public ResponseEntity<Page<ProjectSummaryDTO>> getAllJobFeedProjects(
-            Pageable pageable,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long subcategoryId,
-            @RequestParam(required = false) String searchTerm
+            @ParameterObject Pageable pageable,
+            @ParameterObject ProjectFilterDTO filter
     ) {
-        ProjectFilterDTO filter = ProjectFilterDTO.builder()
-                .categoryId(categoryId)
-                .subcategoryId(subcategoryId)
-                .searchTerm(searchTerm)
-                .build();
-
         Page<ProjectSummaryDTO> projects = projectService.getAllJobFeedProjects(pageable, filter);
-
         return ResponseEntity.ok(projects);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProjectDetailDTO> getProjectById(
-            @RequestHeader("Authorization") String authHeader,
             @PathVariable String id
     ) {
-        String token = authHeader.replace("Bearer ", "").trim();
         ProjectDetailDTO project = projectService.getProjectById(UUID.fromString(id));
         return ResponseEntity.ok(project);
     }

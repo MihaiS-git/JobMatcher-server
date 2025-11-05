@@ -7,6 +7,8 @@ import com.jobmatcher.server.service.AuthenticationService;
 import com.jobmatcher.server.service.IRefreshTokenService;
 import com.jobmatcher.server.service.PasswordRecoveryService;
 import com.jobmatcher.server.service.RegistrationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -37,18 +39,21 @@ public class AuthController {
         this.refreshTokenService = refreshTokenService;
     }
 
+    @Operation(summary = "Register", security = @SecurityRequirement(name = ""))
     @PostMapping("/register")
     public ResponseEntity<SuccessResponse> register(@Valid @RequestBody RegisterRequest request) {
         registrationService.register(request);
         return ResponseEntity.ok().body(new SuccessResponse(true));
     }
 
+    @Operation(summary = "Login", security = @SecurityRequirement(name = ""))
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthenticationRequest request) {
         AuthResponse authResponse = authenticationService.login(request);
         return ResponseEntity.ok(authResponse);
     }
 
+    @Operation(summary = "Recover Password", security = @SecurityRequirement(name = ""))
     @PostMapping("/recover-password")
     public ResponseEntity<SuccessResponse> recoverPassword(@RequestBody RecoverPasswordRequest request) {
         boolean success = passwordRecoveryService.recoverPassword(request);
@@ -58,6 +63,7 @@ public class AuthController {
         return ResponseEntity.ok().body(new SuccessResponse(true));
     }
 
+    @Operation(summary = "validate-reset-token", security = @SecurityRequirement(name = ""))
     @GetMapping("/validate-reset-token")
     public ResponseEntity<GenericResponse> validateResetToken(@RequestParam String token) {
         boolean valid = passwordRecoveryService.validateResetToken(token);
@@ -67,6 +73,7 @@ public class AuthController {
         return ResponseEntity.ok(new GenericResponse(true, "Token is valid."));
     }
 
+    @Operation(summary = "reset-password", security = @SecurityRequirement(name = ""))
     @PutMapping("/reset-password")
     public ResponseEntity<SuccessResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
         passwordRecoveryService.resetPassword(request);
@@ -79,6 +86,7 @@ public class AuthController {
         return ResponseEntity.ok(authUserDTO);
     }
 
+    @Operation(summary = "refresh-token", security = @SecurityRequirement(name = ""))
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
         AuthResponse authResponse = refreshTokenService.refreshToken(refreshTokenRequest.getRefreshToken());
