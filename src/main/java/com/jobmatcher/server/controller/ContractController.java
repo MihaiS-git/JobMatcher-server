@@ -5,6 +5,7 @@ import com.jobmatcher.server.model.ContractFilterDTO;
 import com.jobmatcher.server.model.ContractStatusRequestDTO;
 import com.jobmatcher.server.model.ContractSummaryDTO;
 import com.jobmatcher.server.service.*;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -27,8 +28,8 @@ public class ContractController {
     @GetMapping
     public ResponseEntity<Page<ContractSummaryDTO>> getAllContractsByProfileId(
             @RequestHeader("Authorization") String authHeader,
-            Pageable pageable,
-            @ModelAttribute ContractFilterDTO filter
+            @ParameterObject Pageable pageable,
+            @ParameterObject ContractFilterDTO filter
     ) {
         String token = authHeader.replace("Bearer ", "").trim();
 

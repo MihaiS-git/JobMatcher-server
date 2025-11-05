@@ -7,6 +7,7 @@ import com.jobmatcher.server.model.InvoiceRequestDTO;
 import com.jobmatcher.server.model.InvoiceSummaryDTO;
 import com.jobmatcher.server.service.IInvoiceService;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,7 @@ public class InvoiceController {
     @GetMapping
     public ResponseEntity<Page<InvoiceSummaryDTO>> getAllInvoices(
             @RequestHeader("Authorization") String authHeader,
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String contractId,
             @RequestParam(required = false) String searchTerm

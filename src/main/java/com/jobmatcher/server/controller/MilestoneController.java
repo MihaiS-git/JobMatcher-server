@@ -3,6 +3,7 @@ package com.jobmatcher.server.controller;
 import com.jobmatcher.server.model.MilestoneRequestDTO;
 import com.jobmatcher.server.model.MilestoneResponseDTO;
 import com.jobmatcher.server.service.IMilestoneService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -27,7 +28,7 @@ public class MilestoneController {
     @GetMapping
     public ResponseEntity<Page<MilestoneResponseDTO>> getMilestonesByContractId(
             @RequestParam("contractId") UUID contractId,
-            Pageable pageable
+            @ParameterObject Pageable pageable
             ) {
         Page<MilestoneResponseDTO> milestones = milestoneService.getMilestonesByContractId(contractId, pageable);
         return ResponseEntity.ok(milestones);

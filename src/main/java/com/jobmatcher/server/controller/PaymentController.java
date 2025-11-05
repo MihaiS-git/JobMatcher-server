@@ -17,6 +17,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,7 +59,7 @@ public class PaymentController {
     @GetMapping
     public ResponseEntity<Page<PaymentSummaryDTO>> getAllPayments(
             @RequestHeader("Authorization") String authHeader,
-            Pageable pageable,
+            @ParameterObject Pageable pageable,
             @ModelAttribute PaymentFilterDTO filter
     ) {
         String token = authHeader.replace("Bearer ", "").trim();
