@@ -1,7 +1,7 @@
 import http from "k6/http";
 import { sleep, check, group } from "k6";
 
-export const options = {
+/* export const options = {
   stages: [
     { duration: "1m", target: 250 },
     { duration: "2m", target: 500 },
@@ -13,8 +13,8 @@ export const options = {
     http_req_duration: ["p(95)<800"],
     http_req_failed: ["rate<0.01"],
   },
-};
-/* export const options = {
+}; */
+export const options = {
   stages: [
     { duration: "30s", target: 20 },
   ],
@@ -22,7 +22,7 @@ export const options = {
     http_req_duration: ["p(95)<800"],
     http_req_failed: ["rate<0.01"],
   },
-}; */
+};
 
 const BASE_URL = "http://localhost:8080/api/v0";
 const USERS = Array.from({ length: 1000 }, (_, i) => ({

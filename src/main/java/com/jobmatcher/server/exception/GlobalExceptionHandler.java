@@ -169,11 +169,23 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("A database error occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI(), ErrorCode.DATABASE_ERROR);
     }
 
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<ErrorResponse> handleNullPointerException(NullPointerException ex, HttpServletRequest request) {
+        log.error("NullPointerException caught", ex);
+        return buildErrorResponse(
+                "A required object was null. Please check your input or state.",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                request.getRequestURI(),
+                ErrorCode.INTERNAL_ERROR
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex, HttpServletRequest request) {
         Throwable rootCause = getRootCause(ex);
         log.warn("Unhandled exception: {}", ex.getMessage());
+        log.error("Stack trace: ", ex);
         return buildErrorResponse(
                 rootCause.getMessage() != null ? rootCause.getMessage() : "Unexpected error",
                 HttpStatus.INTERNAL_SERVER_ERROR,
