@@ -3,6 +3,7 @@ package com.jobmatcher.server.config;
 import com.jobmatcher.server.security.CustomOAuth2FailureHandler;
 import com.jobmatcher.server.security.CustomOAuth2SuccessHandler;
 import com.jobmatcher.server.security.JwtAuthenticationFilter;
+import com.jobmatcher.server.security.RateLimitingFilter;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -45,6 +46,7 @@ public class SecurityConfiguration {
 
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitingFilter rateLimitingFilter;
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final CustomOAuth2FailureHandler customOAuth2FailureHandler;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
@@ -52,12 +54,14 @@ public class SecurityConfiguration {
 
     public SecurityConfiguration(
             JwtAuthenticationFilter jwtAuthenticationFilter,
+            RateLimitingFilter rateLimitingFilter,
             CustomOAuth2SuccessHandler customOAuth2SuccessHandler,
             CustomOAuth2FailureHandler customOAuth2FailureHandler,
             CustomAccessDeniedHandler customAccessDeniedHandler,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.rateLimitingFilter = rateLimitingFilter;
         this.customOAuth2SuccessHandler = customOAuth2SuccessHandler;
         this.customOAuth2FailureHandler = customOAuth2FailureHandler;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
@@ -133,7 +137,8 @@ public class SecurityConfiguration {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, RateLimitingFilter.class);
 
         return http.build();
     }
