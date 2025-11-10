@@ -1,6 +1,7 @@
 package com.jobmatcher.server.specification;
 
 import com.jobmatcher.server.domain.Project;
+import com.jobmatcher.server.domain.ProjectStatus;
 import com.jobmatcher.server.domain.Role;
 import com.jobmatcher.server.model.ProjectFilterDTO;
 import jakarta.persistence.criteria.JoinType;
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 public class ProjectSpecification {
 
-    public static Specification<Project> withFiltersAndRole(ProjectFilterDTO filter, Role role, UUID profileId) {
+    public static Specification<Project> withFiltersAndRole(ProjectFilterDTO filter, Role role, UUID profileId, ProjectStatus status) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -30,8 +31,8 @@ public class ProjectSpecification {
             }
 
             //Status filter
-            if (filter.getStatus() != null) {
-                predicates.add(cb.equal(root.get("status"), filter.getStatus()));
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
             }
 
             // Category filter

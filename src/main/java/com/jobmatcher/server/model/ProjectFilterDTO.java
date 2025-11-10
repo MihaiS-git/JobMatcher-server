@@ -1,6 +1,5 @@
 package com.jobmatcher.server.model;
 
-import com.jobmatcher.server.domain.ProjectStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +8,7 @@ import lombok.Setter;
 @Setter
 @Builder
 public class ProjectFilterDTO {
-    ProjectStatus status;
+    String status;
     Long categoryId;
     Long subcategoryId;
     String searchTerm;

@@ -32,12 +32,14 @@ public class ProjectController {
             @ParameterObject ProjectFilterDTO filter
     ) {
         String token = authHeader.replace("Bearer ", "").trim();
-        String status = filter.getStatus() != null ? filter.getStatus().toString() : null;
+        String status = filter.getStatus() != null ? filter.getStatus() : null;
 
-        ProjectStatus projectStatus = null;
+
+
+        String projectStatus = null;
         if (status != null && !status.isBlank()) {
             try {
-                projectStatus = ProjectStatus.valueOf(status.toUpperCase());
+                projectStatus = status.toUpperCase();
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid project status: " + status);
             }

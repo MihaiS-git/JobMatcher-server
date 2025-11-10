@@ -69,7 +69,18 @@ public class ProjectServiceImpl implements IProjectService {
             default -> null;
         };
 
-        var spec = ProjectSpecification.withFiltersAndRole(filter, role, profileId);
+        String statusStr = filter.getStatus();
+
+        ProjectStatus status = null;
+        if(statusStr != null && !statusStr.isBlank()) {
+            try {
+                status = ProjectStatus.valueOf(statusStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid project status: " + statusStr);
+            }
+        }
+
+        var spec = ProjectSpecification.withFiltersAndRole(filter, role, profileId, status);
 
         return projectRepository.findAll(spec, pageable)
                 .map(projectMapper::toSummaryDto);
@@ -78,8 +89,8 @@ public class ProjectServiceImpl implements IProjectService {
     @Transactional(readOnly = true)
     @Override
     public Page<ProjectSummaryDTO> getAllJobFeedProjects(Pageable pageable, ProjectFilterDTO filter) {
-        filter.setStatus(ProjectStatus.OPEN);
-        var spec = ProjectSpecification.withFiltersAndRole(filter, null, null);
+        filter.setStatus("OPEN");
+        var spec = ProjectSpecification.withFiltersAndRole(filter, null, null, null);
         return projectRepository.findAll(spec, pageable)
                 .map(projectMapper::toSummaryDto);
     }

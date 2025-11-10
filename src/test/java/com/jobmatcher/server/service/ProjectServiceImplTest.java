@@ -316,7 +316,7 @@ class ProjectServiceImplTest {
         assertThat(1).isEqualTo(result.getTotalElements());
         assertThat(summaryDTO).isEqualTo(result.getContent().get(0));
 
-        assertThat(ProjectStatus.OPEN).isEqualTo(filter.getStatus());
+        assertThat(ProjectStatus.OPEN).isEqualTo(ProjectStatus.valueOf(filter.getStatus()));
 
         verify(projectRepository).findAll(any(Specification.class), eq(pageable));
         verify(projectMapper).toSummaryDto(projectEntity);
@@ -333,7 +333,7 @@ class ProjectServiceImplTest {
         Page<ProjectSummaryDTO> result = projectService.getAllJobFeedProjects(pageable, filter);
 
         assertThat(result).isEmpty();
-        assertThat(ProjectStatus.OPEN).isEqualTo(filter.getStatus());
+        assertThat(ProjectStatus.OPEN).isEqualTo(ProjectStatus.valueOf(filter.getStatus()));
         verify(projectRepository).findAll(any(Specification.class), eq(pageable));
         verifyNoInteractions(projectMapper);
     }
