@@ -116,7 +116,7 @@ public class ProjectDataSeeder implements ApplicationRunner {
         System.out.println("Projects seeded.");
 
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 25; i++) {
             Project p = new Project();
             CustomerProfile customer = customers.get(i % customers.size());
             FreelancerProfile freelancer = freelancers.get(i % freelancers.size());

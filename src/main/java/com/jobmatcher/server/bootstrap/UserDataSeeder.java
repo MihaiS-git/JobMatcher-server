@@ -53,8 +53,9 @@ public class UserDataSeeder implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         if (userRepository.count() > 0) return;
 
+        System.out.println("Seeding users, addresses & profiles...");
         List<Address> addressList = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             Address address = new Address();
             address.setStreet(i + " Main St");
             address.setCity("Metropolis");
@@ -64,7 +65,7 @@ public class UserDataSeeder implements ApplicationRunner {
             addressList.add(address);
         }
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             Address address = addressList.get(i);
 
             User user = new User();
