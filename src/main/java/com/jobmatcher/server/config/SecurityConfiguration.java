@@ -103,44 +103,88 @@ public class SecurityConfiguration {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                // Configure public endpoints
-                .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers(
-                                API_VERSION + "/auth/register",
-                                API_VERSION + "/auth/login",
-                                API_VERSION + "/auth/recover-password",
-                                API_VERSION + "/auth/validate-reset-token",
-                                API_VERSION + "/auth/reset-password",
-                                API_VERSION + "/auth/refresh-token",
-                                API_VERSION + "/payments/stripe/webhook",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/error"
-                        ).permitAll()
-                        // Actuator Prometheus uses HTTP Basic Auth
-                        .requestMatchers( "/actuator/prometheus").hasRole("PROMETHEUS")
-                        // All other actuator endpoints require JWT/OAuth2
-                        .requestMatchers("/actuator/**").authenticated()
-                        // All other endpoints require JWT/OAuth2
-                        .anyRequest().authenticated())
-                // Enable HTTP Basic only for Prometheus scraping
-                .httpBasic(Customizer.withDefaults())
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(customOAuth2SuccessHandler)
-                        .failureHandler(customOAuth2FailureHandler))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, RateLimitingFilter.class);
 
         return http.build();
+    }
+
+    private void configureDemoMode(HttpSecurity http) throws Exception {
+
+        http.authorizeHttpRequests(auth -> auth
+                // ✅ allow login ONLY
+                .requestMatchers(
+                        API_VERSION + "/auth/login",
+                        API_VERSION + "/auth/refresh-token"
+                ).permitAll()
+
+                // ❌ block everything else auth-related
+                .requestMatchers(
+                        API_VERSION + "/auth/register",
+                        API_VERSION + "/auth/recover-password",
+                        API_VERSION + "/auth/validate-reset-token",
+                        API_VERSION + "/auth/reset-password",
+                        "/oauth2/**"
+                ).denyAll()
+
+                // keep existing public infra
+                .requestMatchers(
+                        API_VERSION + "/payments/stripe/webhook",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/error"
+                ).permitAll()
+
+                // actuator rules unchanged
+                .requestMatchers("/actuator/prometheus").hasRole("PROMETHEUS")
+                .requestMatchers("/actuator/**").authenticated()
+
+                // everything else requires JWT
+                .anyRequest().authenticated()
+        );
+
+        // ❌ explicitly disable OAuth
+        http.oauth2Login(AbstractHttpConfigurer::disable);
+
+        // ✔ keep basic auth only for Prometheus
+        http.httpBasic(Customizer.withDefaults());
+    }
+
+    private void configureNormalMode(HttpSecurity http) throws Exception {
+
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        API_VERSION + "/auth/register",
+                        API_VERSION + "/auth/login",
+                        API_VERSION + "/auth/recover-password",
+                        API_VERSION + "/auth/validate-reset-token",
+                        API_VERSION + "/auth/reset-password",
+                        API_VERSION + "/auth/refresh-token",
+                        API_VERSION + "/payments/stripe/webhook",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/error"
+                ).permitAll()
+                .requestMatchers("/actuator/prometheus").hasRole("PROMETHEUS")
+                .requestMatchers("/actuator/**").authenticated()
+                .anyRequest().authenticated()
+        );
+
+        http.httpBasic(Customizer.withDefaults());
+
+        http.oauth2Login(oauth2 -> oauth2
+                .successHandler(customOAuth2SuccessHandler)
+                .failureHandler(customOAuth2FailureHandler)
+        );
     }
 
 //    @PostConstruct

@@ -55,3 +55,5 @@ docker-compose.yaml
 
 ### Data-init ###
 data-init/
+
+prometheus.yml
