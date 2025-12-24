@@ -51,6 +51,7 @@ public class SecurityConfiguration {
     private final CustomOAuth2FailureHandler customOAuth2FailureHandler;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final AppProperties appProperties;
 
     public SecurityConfiguration(
             JwtAuthenticationFilter jwtAuthenticationFilter,
@@ -58,7 +59,7 @@ public class SecurityConfiguration {
             CustomOAuth2SuccessHandler customOAuth2SuccessHandler,
             CustomOAuth2FailureHandler customOAuth2FailureHandler,
             CustomAccessDeniedHandler customAccessDeniedHandler,
-            CustomAuthenticationEntryPoint customAuthenticationEntryPoint
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint, AppProperties appProperties
     ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.rateLimitingFilter = rateLimitingFilter;
@@ -66,6 +67,7 @@ public class SecurityConfiguration {
         this.customOAuth2FailureHandler = customOAuth2FailureHandler;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+        this.appProperties = appProperties;
     }
 
     @Bean
@@ -112,7 +114,11 @@ public class SecurityConfiguration {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, RateLimitingFilter.class);
-
+        if(appProperties.demoMode() ) {
+            configureDemoMode(http);
+        } else {
+            configureNormalMode(http);
+        }
         return http.build();
     }
 
